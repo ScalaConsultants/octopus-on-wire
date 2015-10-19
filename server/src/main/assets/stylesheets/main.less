@@ -1,18 +1,43 @@
 @import "lib/bootstrap/less/bootstrap.less";
 @import "lib/font-awesome/less/font-awesome.less";
 
-#root{
+@blue-background: #5595c3;
+#root {
   max-width: 500px;
-  ul{
-    padding: 10px;
-    li{
+  background: rgba(85, 149, 195, 0.2);
+  padding: 10px;
+  ul {
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    li {
+      margin: 0;
       list-style: none;
-      &:not(:last-of-type){
-        margin-bottom: 10px;
-      }
-      background: #5595c3;
       color: white;
       padding: 10px;
+      transition: .5s;
+
+      div {
+        background: @blue-background;
+        padding: 10px;
+      }
+
+      &:not(:last-of-type) {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+      }
+
+      &.right {
+        transform: translateX(100%)
+      }
+
+      &.left {
+        transform: translateX(-100%)
+      }
     }
   }
 }
