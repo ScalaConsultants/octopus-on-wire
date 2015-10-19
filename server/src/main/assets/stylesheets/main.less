@@ -1,2 +1,18 @@
 @import "lib/bootstrap/less/bootstrap.less";
 @import "lib/font-awesome/less/font-awesome.less";
+
+#root{
+  max-width: 500px;
+  ul{
+    padding: 10px;
+    li{
+      list-style: none;
+      &:not(:last-of-type){
+        margin-bottom: 10px;
+      }
+      background: #5595c3;
+      color: white;
+      padding: 10px;
+    }
+  }
+}
