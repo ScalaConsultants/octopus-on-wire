@@ -1,5 +1,7 @@
 package spatutorial.shared
 
 trait Api {
-  def hello(): String
+  def getItems(limit: Int): Array[Event]
 }
+
+case class Event(id: Int, name: String)
