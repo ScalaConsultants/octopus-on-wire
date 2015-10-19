@@ -3,6 +3,7 @@ package io.scalac.octopus.client
 import autowire._
 import org.scalajs.dom.html._
 import spatutorial.shared.Api
+import boopickle.Default._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
