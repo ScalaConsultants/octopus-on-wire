@@ -1,7 +1,7 @@
 package io.scalac.octopus.client
 
 import autowire._
-import org.scalajs.dom.html._
+import org.scalajs.dom.html.{Div, UList}
 import spatutorial.shared.Api
 import boopickle.Default._
 
@@ -9,6 +9,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.timers
+import scala.scalajs.js.timers.SetIntervalHandle
 import scalatags.JsDom.all._
 
 @JSExport("OctopusClient")
@@ -52,25 +53,40 @@ object OctopusClient extends js.JSApp {
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
 
-    val list: UList = ul.render
     var currentIndex = ClientConfig.InitialSlideIndex
+    var intervalHandle: Option[SetIntervalHandle] = None
+
+    lazy val list: UList = ul(
+      onmouseover := {() => intervalHandle = stopInterval()},
+      onmouseout := {() => intervalHandle = startInterval()}
+    ).render
 
     def moveToNextItem() = {
       currentIndex = nextIndex(currentIndex, list.childElementCount)
       updateClasses(list, currentIndex)
     }
 
+    def startInterval() = intervalHandle match {
+      case Some(interval) => Some(interval)
+      case None => Some(timers.setInterval(ClientConfig.ItemChangeInterval)(moveToNextItem()))
+    }
+
+    def stopInterval() = intervalHandle match{
+      case Some(interval) =>
+        timers.clearInterval(interval)
+        None
+      case None => None
+    }
+
     AutowireClient[Api].getItems(ClientConfig.ItemsToFetch).call().foreach { items =>
       items foreach {
         item => list.appendChild(
-          li(div(`class` := "item", span(item.name), div(`class` := "next", title := "Next", onclick := moveToNextItem _))).render)
+          li(div(`class` := "item", span(item.name), div(`class` := "next", title := "Next", onclick := moveToNextItem _))).render
+        )
       }
 
       updateClasses(list, currentIndex)
-
-      timers.setInterval(ClientConfig.ItemChangeInterval) {
-        moveToNextItem()
-      }
+      intervalHandle = startInterval()
     }
 
     root.appendChild(list.render)
