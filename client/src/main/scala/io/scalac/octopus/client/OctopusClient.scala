@@ -55,21 +55,27 @@ object OctopusClient extends js.JSApp {
     val list: UList = ul.render
     var currentIndex = ClientConfig.InitialSlideIndex
 
+    def moveToNextItem() = {
+      currentIndex = nextIndex(currentIndex, list.childElementCount)
+      updateClasses(list, currentIndex)
+    }
+
     AutowireClient[Api].getItems(ClientConfig.ItemsToFetch).call().foreach { items =>
       items foreach {
-        item => list.appendChild(li(div(item.name)).render)
+        item => list.appendChild(
+          li(div(`class` := "item", span(item.name), div(`class` := "next", title := "Next", onclick := moveToNextItem _))).render)
       }
 
       updateClasses(list, currentIndex)
 
       timers.setInterval(ClientConfig.ItemChangeInterval) {
-        currentIndex = nextIndex(currentIndex, list.childElementCount)
-        updateClasses(list, currentIndex)
+        moveToNextItem()
       }
     }
 
     root.appendChild(list.render)
   }
+
 
   @JSExport
   override def main(): Unit = ()

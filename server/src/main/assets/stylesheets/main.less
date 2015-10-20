@@ -17,10 +17,18 @@
       color: white;
       padding: 10px;
       transition: .5s;
-
-      div {
-        background: @blue-background;
+      .item {
         padding: 10px;
+        background: @blue-background;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .next{
+        background: url("../images/next_icon.png") no-repeat center / contain;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
       }
 
       &:not(:last-of-type) {
