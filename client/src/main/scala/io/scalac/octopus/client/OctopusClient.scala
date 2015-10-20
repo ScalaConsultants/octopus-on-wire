@@ -17,34 +17,36 @@ object OctopusClient extends js.JSApp {
   /**
    * Returns the next possible index.
    * If increasing the index would result in going over the bounds, returns 0.
-   * */
+   **/
   def nextIndex(i: Int, max: Int) = if (i == max - 1) 0 else i + 1
 
   /**
    * Called after updating the index.
    * Adds, removes appropriate classes to items in list
-   * */
-  def updateClasses(aList: UList, index: Int): Unit = for (i <- 0 until aList.childElementCount) {
-    val elem = aList.children(i)
+   **/
+  def updateClasses(aList: UList, index: Int): Unit =
+    for (i <- 0 until aList.childElementCount) {
+      val elem = aList.children(i)
 
-    // Item on the right
-    if (i > index) {
-      elem.classList.add("right")
-      elem.classList.remove("left")
-    }
+      i compareTo index match {
 
-    // Item on the left
-    else if (i < index) {
-      elem.classList.add("left")
-      elem.classList.remove("right")
-    }
+        // Item on the right
+        case diff if diff < 0 =>
+          elem.classList.add("right")
+          elem.classList.remove("left")
 
-    // Current item - remove adjustment classes
-    else {
-      elem.classList.remove("right")
-      elem.classList.remove("left")
+        // Item on the left
+        case diff if diff > 0 =>
+          elem.classList.add("left")
+          elem.classList.remove("right")
+
+        // Current item - remove adjustment classes
+        case _ =>
+          elem.classList.remove("right")
+          elem.classList.remove("left")
+      }
+
     }
-  }
 
   @JSExport
   def buildWidget(root: Div): Unit = {
