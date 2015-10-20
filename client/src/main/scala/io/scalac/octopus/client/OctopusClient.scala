@@ -53,16 +53,16 @@ object OctopusClient extends js.JSApp {
     println(s"Starting")
 
     val list: UList = ul.render
-    var currentIndex = 0
+    var currentIndex = ClientConfig.InitialSlideIndex
 
-    AutowireClient[Api].getItems(3).call().foreach { items =>
+    AutowireClient[Api].getItems(ClientConfig.ItemsToFetch).call().foreach { items =>
       items foreach {
         item => list.appendChild(li(div(item.name)).render)
       }
 
       updateClasses(list, currentIndex)
 
-      timers.setInterval(5000) {
+      timers.setInterval(ClientConfig.ItemChangeInterval) {
         currentIndex = nextIndex(currentIndex, list.childElementCount)
         updateClasses(list, currentIndex)
       }
