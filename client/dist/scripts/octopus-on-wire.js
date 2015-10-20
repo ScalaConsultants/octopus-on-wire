@@ -12215,12 +12215,12 @@ function $h_Lio_scalac_octopus_client_OctopusClient$() {
   /*<skip>*/
 }
 $h_Lio_scalac_octopus_client_OctopusClient$.prototype = $c_Lio_scalac_octopus_client_OctopusClient$.prototype;
-$c_Lio_scalac_octopus_client_OctopusClient$.prototype.io$scalac$octopus$client$OctopusClient$$list$1__sr_IntRef__sr_ObjectRef__sr_ObjectRef__sr_VolatileByteRef__Lorg_scalajs_dom_raw_HTMLUListElement = (function(currentIndex$1, intervalHandle$1, list$lzy$1, bitmap$0$1) {
-  return (((1 & bitmap$0$1.elem$1) === 0) ? this.list$lzycompute$1__p1__sr_IntRef__sr_ObjectRef__sr_ObjectRef__sr_VolatileByteRef__Lorg_scalajs_dom_raw_HTMLUListElement(currentIndex$1, intervalHandle$1, list$lzy$1, bitmap$0$1) : list$lzy$1.elem$1)
-});
 $c_Lio_scalac_octopus_client_OctopusClient$.prototype.init___ = (function() {
   $n_Lio_scalac_octopus_client_OctopusClient$ = this;
   return this
+});
+$c_Lio_scalac_octopus_client_OctopusClient$.prototype.io$scalac$octopus$client$OctopusClient$$list$1__sr_IntRef__sr_ObjectRef__sr_ObjectRef__sr_VolatileByteRef__Lorg_scalajs_dom_raw_HTMLUListElement = (function(currentIndex$1, intervalHandle$1, list$lzy$1, bitmap$0$1) {
+  return (((1 & bitmap$0$1.elem$1) === 0) ? this.list$lzycompute$1__p1__sr_IntRef__sr_ObjectRef__sr_ObjectRef__sr_VolatileByteRef__Lorg_scalajs_dom_raw_HTMLUListElement(currentIndex$1, intervalHandle$1, list$lzy$1, bitmap$0$1) : list$lzy$1.elem$1)
 });
 $c_Lio_scalac_octopus_client_OctopusClient$.prototype.updateClasses__Lorg_scalajs_dom_raw_HTMLUListElement__I__V = (function(aList, index) {
   var end = $uI(aList["childElementCount"]);
@@ -15869,7 +15869,7 @@ $c_Lio_scalac_octopus_client_AutowireClient$.prototype.doCall__Lautowire_Core$Re
   var this$2 = $m_s_Console$();
   var this$3 = this$2.outVar$2;
   $as_Ljava_io_PrintStream(this$3.tl$1.get__O()).println__O__V(x);
-  var x$1 = ("/api/" + req.path$1.mkString__T__T("/"));
+  var x$1 = ("//localhost:9000/api/" + req.path$1.mkString__T__T("/"));
   var array = [new $c_T2().init___O__O("Content-Type", "application/octet-stream")];
   var this$7 = new $c_scm_MapBuilder().init___sc_GenMap($m_sci_Map$EmptyMap$());
   var i = 0;
