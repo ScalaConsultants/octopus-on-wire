@@ -31,12 +31,12 @@ object OctopusClient extends js.JSApp {
       i compareTo index match {
 
         // Item on the right
-        case diff if diff < 0 =>
+        case diff if diff > 0 =>
           elem.classList.add("right")
           elem.classList.remove("left")
 
         // Item on the left
-        case diff if diff > 0 =>
+        case diff if diff < 0 =>
           elem.classList.add("left")
           elem.classList.remove("right")
 
