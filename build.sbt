@@ -1,3 +1,5 @@
+import java.io.File
+
 import sbt.Keys._
 import sbt.Project.projectToRef
 
@@ -41,6 +43,23 @@ lazy val client: Project = (project in file("client"))
   .enablePlugins(ScalaJSPlugin, ScalaJSPlay)
   .dependsOn(sharedJS)
 
+lazy val copyClientFile = taskKey[Iterable[sbt.File]]("Copy client file to a more significant name")
+copyClientFile := {
+  val paths: Map[String, String] =
+    Map("client/target/scala-2.11/client-fastopt.js" -> "client/dist/octopus-on-wire.js",
+      "server/target/web/less/main/stylesheets/main.min.css" -> "client/dist/octopus-on-wire.min.css"
+    )
+  val toCopy = for {
+    (src, dest) <- paths
+    original = file(src)
+    copied = file(dest)
+  } yield (original, copied)
+
+  toCopy.foreach(p => IO.copyFile(p._1, p._2))
+  toCopy.map(_._2)
+}
+
+
 // Client projects (just one in this case)
 lazy val clients = Seq(client)
 
@@ -63,7 +82,7 @@ lazy val server = (project in file("server"))
   .aggregate(clients.map(projectToRef): _*)
   .dependsOn(sharedJVM)
 
-// lazy val root = (project in file(".")).aggregate(client, server)
+ lazy val root = (project in file(".")).aggregate(client, server)
 
 // loads the Play server project at sbt startup
 onLoad in Global := (Command.process("project server", _: State)) compose (onLoad in Global).value
