@@ -10,11 +10,37 @@ import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.timers
 import scala.scalajs.js.timers.SetIntervalHandle
 import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.domain.Event
 import scalatags.JsDom.all._
 
 @JSExport("OctopusClient")
-object OctopusClient extends js.JSApp {
+object OctopusClient extends js.JSApp{
+
+  lazy val list: UList = ul(
+    onmouseover := {() => intervalHandle = stopInterval()},
+    onmouseout := {() => intervalHandle = startInterval()}
+  ).render
+
+  implicit lazy val octopusHome: Div = div(id := "octopus-home", list).render
+
+  var currentIndex = ClientConfig.InitialSlideIndex
+  var intervalHandle: Option[SetIntervalHandle] = None
+
+  def startInterval() = intervalHandle match {
+    case Some(interval) => intervalHandle
+    case None => Some(timers.setInterval(ClientConfig.ItemChangeInterval)(moveToNextItem()))
+  }
+
+  def stopInterval() = intervalHandle match {
+    case Some(interval) =>
+      timers.clearInterval(interval)
+      None
+    case None => None
+  }
+
+  def moveToNextItem() = {
+    currentIndex = nextIndex(currentIndex, list.childElementCount)
+    updateClasses(list, currentIndex)
+  }
 
   /**
    * Returns the next possible index.
@@ -53,73 +79,11 @@ object OctopusClient extends js.JSApp {
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
 
-    var currentIndex = ClientConfig.InitialSlideIndex
-    var intervalHandle: Option[SetIntervalHandle] = None
-
-    var eventWindow: Option[(Event, Div)] = None
-
-    lazy val list: UList = ul(
-      onmouseover := {() => intervalHandle = stopInterval()},
-      onmouseout := {() => intervalHandle = startInterval()}
-    ).render
-
-    lazy val octopusHome = div(id := "octopus-home", list).render
-
-    lazy val outside: Div = div(`class` := "octopus-outside",
-      onclick := {() => eventWindow = closeEventWindow()}
-    ).render
-
-    def openEventWindow(item: Event): Option[(Event, Div)] = eventWindow match{
-      case Some((event, window)) if event.id == item.id =>
-        eventWindow
-      case Some((_, window))=>
-          eventWindow = closeEventWindow()
-          openEventWindow(item)
-      case _ =>
-        val window =
-          div(`class` := "octopus-window closed",
-            h1(item.name, `class` := "octopus-event-name"),
-            p("date placeholder", `class` := "octopus-event-date"),
-            p(item.location, `class` := "octopus-event-location"),
-            div(`class` := "octopus-window-bottom-arrow arrow-center")
-          ).render
-        octopusHome.appendChild(window)
-        octopusHome.appendChild(outside)
-        timers.setTimeout(ClientConfig.WindowOpenDelay)(window.classList.remove("closed"))
-        Some(item, window)
-    }
-
-    def closeEventWindow() = eventWindow match{
-      case Some((_, window)) =>
-        octopusHome.removeChild(outside)
-        window.classList.add("closed")
-        timers.setTimeout(ClientConfig.WindowLoadTime)(octopusHome.removeChild(window))
-        None
-      case None => None
-    }
-
-    def moveToNextItem() = {
-      currentIndex = nextIndex(currentIndex, list.childElementCount)
-      updateClasses(list, currentIndex)
-    }
-
-    def startInterval() = intervalHandle match {
-      case Some(interval) => intervalHandle
-      case None => Some(timers.setInterval(ClientConfig.ItemChangeInterval)(moveToNextItem()))
-    }
-
-    def stopInterval() = intervalHandle match {
-      case Some(interval) =>
-        timers.clearInterval(interval)
-        None
-      case None => None
-    }
-
     AutowireClient[Api].getItems(ClientConfig.ItemsToFetch).call().foreach { items =>
       items foreach {
         item => list.appendChild(
           li(div(`class` := "item",
-            span(item.name, onclick := { () => eventWindow = openEventWindow(item)}),
+            span(item.name, onclick := { () => EventWindowOperations.openEventWindow(item)}),
             div(`class` := "next", title := "Next", onclick := moveToNextItem _)
           )).render
         )
@@ -131,7 +95,6 @@ object OctopusClient extends js.JSApp {
 
     root.appendChild(octopusHome)
   }
-
 
   @JSExport
   override def main(): Unit = ()
