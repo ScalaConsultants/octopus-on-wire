@@ -6,7 +6,7 @@
 GET     /                                 controllers.Application.index
 
 #Apply CORS
-OPTIONS        /*path                           controllers.Application.options(path)
+OPTIONS        /api/*path                           controllers.Application.options(path)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/fonts/*file               controllers.Assets.at(path="/public/lib/font-awesome/fonts", file)
