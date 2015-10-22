@@ -1,4 +1,4 @@
-package spatutorial.shared.domain
+package scalac.octopusonwire.shared.domain
 
 /**
  * @author kubukoz
