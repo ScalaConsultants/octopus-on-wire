@@ -2,15 +2,36 @@
 @import "lib/font-awesome/less/font-awesome.less";
 
 @max-width: 500px;
+@window-load-time: .3s;
+@window-max-height: 400px;
 @blue-background: #5595c3;
+@window-background: #0288D1;
+
+html, body {
+  width: 100%;
+  height: 100%;
+}
+body{
+  font-size: 16px;
+}
+
 #root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#octopus-home {
+  position: relative;
   max-width: @max-width;
   background: rgba(85, 149, 195, 0.2);
-  padding: 10px;
+  z-index: 1;
   ul {
+    margin: 10px;
     position: relative;
     overflow: hidden;
-    margin: 0;
     padding: 0;
     li {
       margin: 0;
@@ -24,13 +45,16 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        span{
+        span {
+          font-size: 1em;
+          font-family: sans-serif;
           overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;
+          cursor: pointer;
         }
       }
-      .next{
+      .next {
         background: url("../images/next_icon.png") no-repeat center / contain;
         width: 18px;
         height: 18px;
@@ -54,4 +78,61 @@
       }
     }
   }
+}
+.octopus-outside{
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: -1;
+  background: none;
+}
+.octopus-window{
+  background: @window-background;
+  width: 100%;
+  max-width: @max-width;
+  max-height: @window-max-height;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  border-radius: 5px;
+  transition: @window-load-time;
+  z-index: 1;
+  margin-bottom: 20px;
+  &.closed{
+    opacity: 0;
+  }
+}
+.octopus-window-bottom-arrow{
+  position: absolute;
+  top: 100%;
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 20px solid @window-background;
+  z-index: 9;
+  &.arrow-center{
+    left: 0;
+    right: 0;
+    margin: auto;
+  }
+}
+.octopus-event-name{
+  font-size: 1.5em;
+  font-family: sans-serif;
+  color: white;
+}
+.octopus-event-date{
+  font-size: 1em;
+  font-family: sans-serif;
+  color: white;
+}
+.octopus-event-location{
+  font-size: 1em;
+  font-family: sans-serif;
+  color: white;
 }
