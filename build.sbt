@@ -1,5 +1,3 @@
-import java.io.File
-
 import sbt.Keys._
 import sbt.Project.projectToRef
 
@@ -46,17 +44,18 @@ lazy val client: Project = (project in file("client"))
 lazy val copyClientFile = taskKey[Iterable[sbt.File]]("Copy client file to a more significant name")
 copyClientFile := {
   val paths: Map[String, String] =
-    Map("client/target/scala-2.11/client-fastopt.js" -> "client/dist/octopus-on-wire.js",
-      "server/target/web/less/main/stylesheets/main.min.css" -> "client/dist/octopus-on-wire.min.css"
+    Map("client/target/scala-2.11/client-fastopt.js" -> "client/dist/scripts/octopus-on-wire.js",
+      "server/target/web/less/main/stylesheets/main.min.css" -> "client/dist/styles/octopus-on-wire.min.css",
+      "server/target/web/public/images/next_icon.png" -> "client/dist/images/next_icon.png"
     )
-  val toCopy = for {
+  val toCopy: Map[sbt.File, sbt.File] = (for {
     (src, dest) <- paths
     original = file(src)
     copied = file(dest)
-  } yield (original, copied)
+  } yield original -> copied).toMap
 
   toCopy.foreach(p => IO.copyFile(p._1, p._2))
-  toCopy.map(_._2)
+  toCopy.values
 }
 
 
