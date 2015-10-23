@@ -28,11 +28,13 @@ object EventWindowOperations extends WindowOperations {
       
     /*The window is not opened. Open it.*/
     case _ =>
+      import EventDateOps._
       val window =
-        div(`class` := "octopus-window closed",
+      div(`class` := "octopus-window closed",
           h1(item.name, `class` := "octopus-event-name"),
-          p("date placeholder", `class` := "octopus-event-date"),
+          p(item.datesToString, `class` := "octopus-event-date"),
           p(item.location, `class` := "octopus-event-location"),
+          a(href := item.url, `class` := "octopus-event-link", target := "_blank"),
           div(`class` := "octopus-window-bottom-arrow arrow-center")
         ).render
 
