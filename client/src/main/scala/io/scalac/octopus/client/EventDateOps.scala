@@ -17,7 +17,7 @@ class EventDateOps(event: Event) {
   def datesToString = startDateFull + " - " + (if (days.size > 1) endDateFull else endDateHour)
 
   def days = (for {
-    dayMs <- event.startDate to event.endDate by ClientConfig.SecondsInDay
+    dayMs <- event.startDate to event.endDate by ClientConfig.MillisecondsInDay
     dayStart = EventDateOps.beginningOfDay(new Date(dayMs))
   } yield dayStart).distinct
 }
