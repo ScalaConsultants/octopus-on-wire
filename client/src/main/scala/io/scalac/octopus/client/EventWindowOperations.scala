@@ -12,20 +12,23 @@ import scalatags.JsDom.all._
 object EventWindowOperations extends WindowOperations {
   protected var eventWindow: Option[(Event, Div)] = None
 
-  def openEventWindow(item: Event)(implicit octopusHome: Div): Unit = eventWindow = getEventWindow(item)
+  def openEventWindow(item: Event)(implicit octopusHome: Div): Unit = {
+    CalendarWindowOperations.closeWindow(octopusHome)
+    eventWindow = getEventWindow(item)
+  }
 
   protected def getEventWindow(item: Event)(implicit octopusHome: Div): Option[(Event, Div)] = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
       Do nothing (return the same thing we matched)*/
     case Some((event, window)) if event.id == item.id =>
       eventWindow
-    
+
     /*The window is visible, but the clicked event is another one.
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
       closeWindow(octopusHome)
       getEventWindow(item)
-      
+
     /*The window is not opened. Open it.*/
     case _ =>
       import EventDateOps._
@@ -42,9 +45,9 @@ object EventWindowOperations extends WindowOperations {
       Some(item, window)
   }
 
-  override protected def closeWindow(window: Div)(implicit octopusHome: Div): Unit = eventWindow = eventWindow match {
+  override def closeWindow(implicit octopusHome: Div): Unit = eventWindow = eventWindow match {
     case Some((_, openedWindow)) =>
-      super.closeWindow(openedWindow)(octopusHome)
+      super.removeWindow(openedWindow)
       None
     case None => None
   }
