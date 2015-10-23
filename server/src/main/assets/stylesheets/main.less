@@ -97,11 +97,13 @@ body{
   bottom: 100%;
   left: 0;
   right: 0;
-  padding: 10px;
+  padding: 20px;
   border-radius: 5px;
   transition: @window-load-time;
   z-index: 1;
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
   &.closed{
     opacity: 0;
   }
@@ -135,4 +137,12 @@ body{
   font-size: 1em;
   font-family: sans-serif;
   color: white;
+}
+.octopus-event-link{
+  background: url("../images/link-arrow.png") no-repeat center / contain;
+  display: block;
+  align-self: flex-end;
+  width: 22px;
+  height: 22px;
+
 }
