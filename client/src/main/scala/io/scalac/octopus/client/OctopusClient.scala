@@ -83,6 +83,7 @@ object OctopusClient extends js.JSApp{
       items foreach {
         item => list.appendChild(
           li(div(`class` := "item",
+            span(`class` := "calendar-icon", title := "All events", onclick := { () => CalendarWindowOperations.openCalendarWindow}),
             span(item.name, onclick := { () => EventWindowOperations.openEventWindow(item)}),
             div(`class` := "next", title := "Next", onclick := moveToNextItem _)
           )).render
