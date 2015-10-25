@@ -34,7 +34,6 @@ object CalendarWindowOperations extends WindowOperations {
         import EventDateOps._
 
         val now = new Date(Date.now())
-        val selectedDate = new Date(now.getFullYear(), now.getMonth(), 1)
 
         val window: Div = div(
           div(),
@@ -47,23 +46,25 @@ object CalendarWindowOperations extends WindowOperations {
           def calendarTable(currentMonth: Date): Table = CalendarTable(
             currentMonth,
             marker = calendarDay =>
-              events.exists(_ takesPlaceOn calendarDay),
+              (calendarDay isSameMonth now) && events.exists(_ takesPlaceOn calendarDay),
             clickListener = { date =>
               clearShortList()
-              events.filter(_ takesPlaceOn date).foreach(event =>
-                eventShortlist.appendChild(
-                  li(
-                    event.name,
-                    `class` := "octopus-preview-element",
-                    onclick := { () =>
-                      closeWindow
-                      timers.setTimeout(ClientConfig.WindowOpenDelay) {
-                        EventWindowOperations.openEventWindow(event)
+              if(date isSameMonth now){
+                events.filter(_ takesPlaceOn date).foreach(event =>
+                  eventShortlist.appendChild(
+                    li(
+                      event.name,
+                      `class` := "octopus-preview-element",
+                      onclick := { () =>
+                        closeWindow
+                        timers.setTimeout(ClientConfig.WindowOpenDelay) {
+                          EventWindowOperations.openEventWindow(event)
+                        }
                       }
-                    }
-                  ).render
+                    ).render
+                  )
                 )
-              )
+              }
             }
           ).render
 
@@ -91,7 +92,7 @@ object CalendarWindowOperations extends WindowOperations {
             ).render
         }
 
-        window.replaceChild(CalendarUtils.tableWithSelector(selectedDate), window.firstChild)
+        window.replaceChild(CalendarUtils.tableWithSelector(now), window.firstChild)
         openWindow(window)
         Option(window)
     }
@@ -104,4 +105,3 @@ object CalendarWindowOperations extends WindowOperations {
     case None => None
   }
 }
-
