@@ -18,8 +18,8 @@ object CalendarTable {
 
     import scala.language.postfixOps
 
-    val monthStart = now - ((now.getDate() - 1) days)
-    val calendarStart = monthStart - ((monthStart.getDay() - 1) days)
+    val monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    val calendarStart = monthStart - (((monthStart.getDay() + 6) % 7) days)
 
     val weeksAndDays = for {
       wI <- 0 until ClientConfig.WeeksToDisplay
