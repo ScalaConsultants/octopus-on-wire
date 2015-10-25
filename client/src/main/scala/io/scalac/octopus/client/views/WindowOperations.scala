@@ -1,5 +1,6 @@
-package io.scalac.octopus.client
+package io.scalac.octopus.client.views
 
+import io.scalac.octopus.client.config.ClientConfig
 import org.scalajs.dom.html.Div
 
 import scala.scalajs.js.timers

@@ -1,4 +1,7 @@
-package io.scalac.octopus.client
+package io.scalac.octopus.client.views
+
+import io.scalac.octopus.client.config.ClientConfig
+import io.scalac.octopus.client.tools.{DateOps, TimeUnit}
 
 import scala.scalajs.js.Date
 import scalatags.JsDom.all._

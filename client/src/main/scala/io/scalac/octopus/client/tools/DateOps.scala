@@ -1,4 +1,4 @@
-package io.scalac.octopus.client
+package io.scalac.octopus.client.tools
 
 import scala.scalajs.js.Date
 
