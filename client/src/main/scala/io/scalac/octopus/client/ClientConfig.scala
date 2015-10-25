@@ -6,5 +6,5 @@ object ClientConfig {
   val InitialSlideIndex = 0
   val WindowLoadTime = 300
   val WindowOpenDelay = 50
-  val MillisecondsInDay = 86400000
+  val WeeksToDisplay = 5
 }

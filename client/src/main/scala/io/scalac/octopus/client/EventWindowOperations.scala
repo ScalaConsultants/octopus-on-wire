@@ -2,7 +2,6 @@ package io.scalac.octopus.client
 
 import org.scalajs.dom.html.Div
 
-import scala.scalajs.js.timers
 import scalac.octopusonwire.shared.domain.Event
 import scalatags.JsDom.all._
 
@@ -10,14 +9,15 @@ import scalatags.JsDom.all._
  * Manages the event detail window view.
  */
 object EventWindowOperations extends WindowOperations {
-  protected var eventWindow: Option[(Event, Div)] = None
+  type EventWindowOption = Option[(Event, Div)]
+  protected var eventWindow: EventWindowOption = None
 
   def openEventWindow(item: Event)(implicit octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
     eventWindow = getEventWindow(item)
   }
 
-  protected def getEventWindow(item: Event)(implicit octopusHome: Div): Option[(Event, Div)] = eventWindow match {
+  protected def getEventWindow(item: Event)(implicit octopusHome: Div): EventWindowOption = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
       Do nothing (return the same thing we matched)*/
     case Some((event, window)) if event.id == item.id =>
@@ -33,7 +33,7 @@ object EventWindowOperations extends WindowOperations {
     case _ =>
       import EventDateOps._
       val window =
-      div(`class` := "octopus-window closed",
+        div(`class` := "octopus-window closed",
           h1(item.name, `class` := "octopus-event-name"),
           p(item.datesToString, `class` := "octopus-event-date"),
           p(item.location, `class` := "octopus-event-location"),
@@ -42,7 +42,7 @@ object EventWindowOperations extends WindowOperations {
         ).render
 
       openWindow(window)
-      Some(item, window)
+      Option((item, window))
   }
 
   override def closeWindow(implicit octopusHome: Div): Unit = eventWindow = eventWindow match {

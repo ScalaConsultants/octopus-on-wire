@@ -8,6 +8,7 @@
 dist/*
 target/
 lib_managed/
+/client/src/main/scala/io/scalac/octopus/client/CalendarTable.scala
 src_managed/
 project/boot/
 project/plugins/project/
