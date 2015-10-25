@@ -15,12 +15,13 @@ object CalendarWindowOperations extends WindowOperations {
 
   def openCalendarWindow(events: Array[Event])(implicit octopusHome: Div): Unit = {
     EventWindowOperations.closeWindow(octopusHome)
-    calendarWindow = findOrCreateCalendarWindow(events)
+    calendarWindow = switchCalendarWindow(events)
   }
 
-  def findOrCreateCalendarWindow(events: Array[Event])(implicit octopusHome: Div): CalendarWindowOption = calendarWindow match {
+  def switchCalendarWindow(events: Array[Event])(implicit octopusHome: Div): CalendarWindowOption = calendarWindow match {
     case Some(window) =>
-      calendarWindow
+      closeWindow
+      None
     case None =>
       import DateOps._
       import EventDateOps._
