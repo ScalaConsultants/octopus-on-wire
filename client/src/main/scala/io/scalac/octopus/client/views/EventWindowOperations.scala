@@ -15,20 +15,21 @@ object EventWindowOperations extends WindowOperations {
 
   def openEventWindow(item: Event)(implicit octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
-    eventWindow = findOrCreateEventWindow(item)
+    eventWindow = switchEventWindow(item)
   }
 
-  protected def findOrCreateEventWindow(item: Event)(implicit octopusHome: Div): EventWindowOption = eventWindow match {
+  protected def switchEventWindow(item: Event)(implicit octopusHome: Div): EventWindowOption = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
       Do nothing (return the same thing we matched)*/
     case Some((event, window)) if event.id == item.id =>
-      eventWindow
+      closeWindow
+      None
 
     /*The window is visible, but the clicked event is another one.
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
       closeWindow(octopusHome)
-      findOrCreateEventWindow(item)
+      switchEventWindow(item)
 
     /*The window is not opened. Open it.*/
     case _ =>
