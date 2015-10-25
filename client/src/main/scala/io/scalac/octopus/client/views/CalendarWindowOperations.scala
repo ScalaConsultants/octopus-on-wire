@@ -2,7 +2,7 @@ package io.scalac.octopus.client.views
 
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.tools.{DateOps, EventDateOps}
-import org.scalajs.dom.html.{Div, Table, UList}
+import org.scalajs.dom.html.Div
 
 import scala.scalajs.js.{Date, timers}
 import scalac.octopusonwire.shared.domain.Event
@@ -12,11 +12,6 @@ object CalendarWindowOperations extends WindowOperations {
   type CalendarWindowOption = Option[Div]
 
   protected var calendarWindow: CalendarWindowOption = None
-  val eventShortlist: UList = ul(`class` := "octopus-preview").render
-
-  def clearShortList() =
-    while (eventShortlist.hasChildNodes())
-      eventShortlist.removeChild(eventShortlist.lastChild)
 
   /*todo replace events parameter with an API call to events in given month*/
   def openCalendarWindow(events: Array[Event])(implicit octopusHome: Div): Unit = {
@@ -37,34 +32,32 @@ object CalendarWindowOperations extends WindowOperations {
 
         val window: Div = div(
           div(),
-          eventShortlist,
           `class` := "octopus-window octopus-calendar closed",
           div(`class` := "octopus-window-bottom-arrow arrow-left")
         ).render
 
         object CalendarUtils {
-          def calendarTable(currentMonth: Date): Table = CalendarTable(
+          def calendarTable(currentMonth: Date): Div = CalendarTable(
             currentMonth,
             marker = calendarDay =>
-              (calendarDay isSameMonth now) && events.exists(_ takesPlaceOn calendarDay),
-            clickListener = { date =>
-              clearShortList()
-              if(date isSameMonth now){
-                events.filter(_ takesPlaceOn date).foreach(event =>
-                  eventShortlist.appendChild(
-                    li(
-                      event.name,
-                      `class` := "octopus-preview-element",
-                      onclick := { () =>
-                        closeWindow
-                        timers.setTimeout(ClientConfig.WindowOpenDelay) {
-                          EventWindowOperations.openEventWindow(event)
+              (calendarDay isSameMonth currentMonth) && events.exists(_ takesPlaceOn calendarDay),
+            modifier = {
+              case date if (date isSameMonth currentMonth) && events.exists(_ takesPlaceOn date) =>
+                Array(span(date.getDate()),
+                  div(
+                    `class` := "octopus-preview",
+                    events.filter(_ takesPlaceOn date).map { event =>
+                      div(
+                        event.name,
+                        `class` := "octopus-preview-element",
+                        onclick := { () =>
+                          closeWindow
+                          timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event))
                         }
-                      }
-                    ).render
-                  )
-                )
-              }
+                      )
+                    }
+                  ))
+              case date => Array(date.getDate().toString)
             }
           ).render
 
@@ -100,7 +93,6 @@ object CalendarWindowOperations extends WindowOperations {
   def closeWindow(implicit octopusHome: Div): Unit = calendarWindow = calendarWindow match {
     case Some(openedWindow) =>
       removeWindow(openedWindow)
-      timers.setTimeout(ClientConfig.WindowLoadTime)(clearShortList())
       None
     case None => None
   }
