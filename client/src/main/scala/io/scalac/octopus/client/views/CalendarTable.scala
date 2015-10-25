@@ -16,7 +16,7 @@ object CalendarTable {
     import DateOps._
     import TimeUnit._
 
-    import scala.language.{implicitConversions, postfixOps}
+    import scala.language.postfixOps
 
     val monthStart = now - ((now.getDate() - 1) days)
     val calendarStart = monthStart - ((monthStart.getDay() - 1) days)
