@@ -17,6 +17,8 @@ class EventDateOps(event: Event) {
   def days = for {
     dayMs <- event.startDate to event.endDate by TimeUnit.Day
   } yield new Date(dayMs)
+  import DateOps._
+  def takesPlaceOn(day: Date) = days.exists(day isSameDay)
 }
 
 object EventDateOps {

@@ -19,6 +19,7 @@ import scalatags.JsDom.all._
 object OctopusClient extends js.JSApp {
 
   val list: UList = ul(
+    `class` := "octopus-shuffle-list",
     onmouseover := { () => slideIntervalHandle = stopSlideInterval() },
     onmouseout := { () => slideIntervalHandle = startSlideInterval(list) }
   ).render

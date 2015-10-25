@@ -11,7 +11,8 @@ html, body {
   width: 100%;
   height: 100%;
 }
-body{
+
+body {
   font-size: 16px;
 }
 
@@ -19,78 +20,81 @@ body{
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
 }
 
 #octopus-home {
   position: relative;
+  bottom: 100px;
   max-width: @max-width;
   background: rgba(85, 149, 195, 0.2);
   z-index: 1;
-  ul {
-    margin: 10px;
-    position: relative;
-    overflow: hidden;
-    padding: 0;
-    li {
-      margin: 0;
-      list-style: none;
-      color: white;
+}
+
+.octopus-shuffle-list {
+  margin: 10px;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  li {
+    margin: 0;
+    list-style: none;
+    color: white;
+    padding: 10px;
+    transition: .5s;
+    .item {
       padding: 10px;
-      transition: .5s;
-      .item {
-        padding: 10px;
-        background: @blue-background;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        span {
-          font-size: 1em;
-          font-family: sans-serif;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-          cursor: pointer;
-        }
-      }
-      .calendar-icon{
-        flex: 0 0 18px;
-        background: url("../images/calendar-icon.png") no-repeat center / contain;
-        position: relative;
-        bottom: 1px;
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        margin-right: 10px;
-      }
-      .next {
-        flex: 0 0 16px;
-        background: url("../images/next-icon.svg") no-repeat center / contain;
-        width: 16px;
-        height: 16px;
+      background: @blue-background;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      span {
+        font-size: 1em;
+        font-family: sans-serif;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
         cursor: pointer;
       }
+    }
+    .calendar-icon {
+      flex: 0 0 18px;
+      background: url("../images/calendar-icon.png") no-repeat center / contain;
+      position: relative;
+      bottom: 1px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .next {
+      flex: 0 0 16px;
+      background: url("../images/next-icon.svg") no-repeat center / contain;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
 
-      &:not(:last-of-type) {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-      }
+    &:not(:last-of-type) {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
 
-      &.right {
-        transform: translateX(100%)
-      }
+    &.right {
+      transform: translateX(100%)
+    }
 
-      &.left {
-        transform: translateX(-100%)
-      }
+    &.left {
+      transform: translateX(-100%)
     }
   }
 }
-.octopus-outside{
+
+.octopus-outside {
   position: fixed;
   top: 0;
   right: 0;
@@ -99,7 +103,8 @@ body{
   z-index: -1;
   background: none;
 }
-.octopus-window{
+
+.octopus-window {
   display: flex;
   flex-direction: column;
   background: @window-background;
@@ -114,11 +119,12 @@ body{
   transition: @window-load-time;
   z-index: 1;
   margin-bottom: 10px;
-  &.closed{
+  &.closed {
     opacity: 0;
   }
 }
-.octopus-window-bottom-arrow{
+
+.octopus-window-bottom-arrow {
   position: absolute;
   top: 100%;
   width: 0;
@@ -127,31 +133,35 @@ body{
   border-right: 20px solid transparent;
   border-top: 20px solid @window-background;
   z-index: 9;
-  &.arrow-center{
+  &.arrow-center {
     left: 0;
     right: 0;
     margin: auto;
   }
-  &.arrow-left{
+  &.arrow-left {
     left: 20px;
   }
 }
-.octopus-event-name{
+
+.octopus-event-name {
   font-size: 1.5em;
   font-family: sans-serif;
   color: white;
 }
-.octopus-event-date{
+
+.octopus-event-date {
   font-size: 1em;
   font-family: sans-serif;
   color: white;
 }
-.octopus-event-location{
+
+.octopus-event-location {
   font-size: 1em;
   font-family: sans-serif;
   color: white;
 }
-.octopus-event-link{
+
+.octopus-event-link {
   background: url("../images/link-arrow.png") no-repeat center / contain;
   display: block;
   align-self: flex-end;
@@ -159,31 +169,86 @@ body{
   height: 22px;
 }
 
-.octopus-calendar{
+.octopus-calendar {
   display: inline-block;
   right: auto;
-  table{
+  .table {
     display: inline-block;
   }
-  tr{
-    &:first-of-type{
+  tr {
+    display: flex;
+    flex-wrap: wrap;
+    &:first-of-type {
       border-bottom: 1px solid white;
     }
+    td {
+      flex: 14%;
+      font-size: 1em;
+      padding: 6px;
+      color: white;
+      text-align: center;
+      transition: .2s;
+      box-sizing: border-box;
+      &.current-day {
+        border: 1px solid white;
+      }
+      &.marked {
+        background: white;
+        cursor: pointer;
+        border: 1px solid white;
+        color: @blue-background;
+      }
+      &.other-month {
+        color: rgba(254, 253, 255, 0.5);
+      }
+    }
+    &:not(:first-of-type) {
+      td {
+        &:hover {
+          background: rgba(255, 255, 255, .7);
+          color: @blue-background;
+        }
+      }
+    }
   }
-  td{
-    font-size: 1em;
-    padding: 5px;
-    color: white;
-    text-align: center;
-    &.current-day{
-      border: 1px solid white;
-    }
-    &.marked{
-      background: white;
-      color: @blue-background;
-    }
-    &.other-month{
-      color: rgba(254, 253, 255, 0.5);
-    }
+}
+.octopus-table-wrapper{
+  display: inline-block;
+}
+
+.octopus-calendar-arrow-wrapper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.octopus-calendar-arrow {
+  cursor: pointer;
+  background: url("../images/next-icon.svg") no-repeat center / contain;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  &.arrow-left {
+    transform: rotate(180deg);
   }
+}
+
+.octopus-calendar-month {
+  color: white;
+  text-transform: uppercase;
+}
+
+.octopus-preview {
+  padding-left: 0;
+}
+
+.octopus-preview-element {
+  &:first-of-type {
+    margin-top: 20px;
+  }
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: white;
 }
