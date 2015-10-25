@@ -1,5 +1,6 @@
-package io.scalac.octopus.client
+package io.scalac.octopus.client.views
 
+import io.scalac.octopus.client.tools.EventDateOps
 import org.scalajs.dom.html.Div
 
 import scalac.octopusonwire.shared.domain.Event
@@ -14,10 +15,10 @@ object EventWindowOperations extends WindowOperations {
 
   def openEventWindow(item: Event)(implicit octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
-    eventWindow = getEventWindow(item)
+    eventWindow = findOrCreateEventWindow(item)
   }
 
-  protected def getEventWindow(item: Event)(implicit octopusHome: Div): EventWindowOption = eventWindow match {
+  protected def findOrCreateEventWindow(item: Event)(implicit octopusHome: Div): EventWindowOption = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
       Do nothing (return the same thing we matched)*/
     case Some((event, window)) if event.id == item.id =>
@@ -27,7 +28,7 @@ object EventWindowOperations extends WindowOperations {
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
       closeWindow(octopusHome)
-      getEventWindow(item)
+      findOrCreateEventWindow(item)
 
     /*The window is not opened. Open it.*/
     case _ =>

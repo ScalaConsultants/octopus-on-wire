@@ -1,5 +1,7 @@
-package io.scalac.octopus.client
+package io.scalac.octopus.client.views
 
+import io.scalac.octopus.client._
+import io.scalac.octopus.client.tools.{EventDateOps, DateOps}
 import org.scalajs.dom.html.Div
 
 import scala.scalajs.js.Date
@@ -9,14 +11,14 @@ import scalatags.JsDom.all._
 object CalendarWindowOperations extends WindowOperations {
   type CalendarWindowOption = Option[Div]
 
-  var calendarWindow: CalendarWindowOption = None
+  protected var calendarWindow: CalendarWindowOption = None
 
   def openCalendarWindow(events: Array[Event])(implicit octopusHome: Div): Unit = {
     EventWindowOperations.closeWindow(octopusHome)
-    calendarWindow = getCalendarWindow(events)
+    calendarWindow = findOrCreateCalendarWindow(events)
   }
 
-  def getCalendarWindow(events: Array[Event])(implicit octopusHome: Div): CalendarWindowOption = calendarWindow match {
+  def findOrCreateCalendarWindow(events: Array[Event])(implicit octopusHome: Div): CalendarWindowOption = calendarWindow match {
     case Some(window) =>
       calendarWindow
     case None =>

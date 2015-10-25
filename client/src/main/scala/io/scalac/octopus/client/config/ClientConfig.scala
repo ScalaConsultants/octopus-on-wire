@@ -1,4 +1,4 @@
-package io.scalac.octopus.client
+package io.scalac.octopus.client.config
 
 object ClientConfig {
   val ItemsToFetch = 3
