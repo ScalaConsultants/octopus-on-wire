@@ -11,25 +11,20 @@ object DateOps {
 }
 
 class DateOps(date: Date) {
-  def +(another: Date) = {
+  def +(another: Date) =
     new Date(date.valueOf() + another.valueOf())
-  }
 
-  def -(another: Date) = {
+  def -(another: Date) =
     new Date(date.valueOf() - another.valueOf())
-  }
 
-  def isSameYear(another: Date) = {
+  def isSameYear(another: Date) =
     date.getFullYear() == another.getFullYear()
-  }
 
-  def isSameMonth(another: Date) = {
+  def isSameMonth(another: Date) =
     isSameYear(another) && date.getMonth() == another.getMonth()
-  }
 
-  def isSameDay(another: Date) = {
+  def isSameDay(another: Date) =
     isSameMonth(another) && date.getDate() == another.getDate()
-  }
 }
 
 object TimeUnit {
