@@ -1,4 +1,5 @@
 package io.scalac.octopus.client
+
 import org.scalajs.dom.html.Div
 
 import scala.scalajs.js.timers
@@ -6,7 +7,7 @@ import scalatags.JsDom.all._
 
 /**
  * Defines basic operations on windows.
- * */
+ **/
 trait WindowOperations {
   protected var outsideListener: Div = _
 
@@ -17,9 +18,10 @@ trait WindowOperations {
     timers.setTimeout(ClientConfig.WindowOpenDelay)(window.classList.remove("closed"))
   }
 
-  protected def getOutsideListener(implicit octopusHome: Div): Div = div(`class` := "octopus-outside",
-    onclick := { () => closeWindow(octopusHome) }
-  ).render
+  protected def getOutsideListener(implicit octopusHome: Div): Div =
+    div(`class` := "octopus-outside",
+      onclick := { () => closeWindow(octopusHome) }
+    ).render
 
   protected def removeWindow(window: Div)(implicit octopusHome: Div): Unit = {
     octopusHome.removeChild(outsideListener)

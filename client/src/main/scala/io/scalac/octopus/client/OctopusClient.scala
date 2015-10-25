@@ -2,28 +2,30 @@ package io.scalac.octopus.client
 
 import autowire._
 import org.scalajs.dom.html.{Div, UList}
+
 import boopickle.Default._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
-import scala.scalajs.js.timers
 import scala.scalajs.js.timers.SetIntervalHandle
+import scala.scalajs.js.timers
 import scalac.octopusonwire.shared.Api
 import scalatags.JsDom.all._
 
 @JSExport("OctopusClient")
-object OctopusClient extends js.JSApp{
+object OctopusClient extends js.JSApp {
 
-  lazy val list: UList = ul(
-    onmouseover := {() => intervalHandle = stopInterval()},
-    onmouseout := {() => intervalHandle = startInterval()}
-  ).render
-
-  implicit lazy val octopusHome: Div = div(id := "octopus-home", list).render
+  var intervalHandle: Option[SetIntervalHandle] = None
 
   var currentIndex = ClientConfig.InitialSlideIndex
-  var intervalHandle: Option[SetIntervalHandle] = None
+
+  val list: UList = ul(
+    onmouseover := { () => intervalHandle = stopInterval() },
+    onmouseout := { () => intervalHandle = startInterval() }
+  ).render
+
+  implicit val octopusHome: Div = div(id := "octopus-home", list).render
 
   def startInterval() = intervalHandle match {
     case Some(interval) => intervalHandle
@@ -79,12 +81,12 @@ object OctopusClient extends js.JSApp{
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
 
-    AutowireClient[Api].getItems(ClientConfig.ItemsToFetch).call().foreach { items =>
+    AutowireClient[Api].getItems(ClientConfig.ItemsToFetch).call().map { items =>
       items foreach {
         item => list.appendChild(
           li(div(`class` := "item",
-            span(`class` := "calendar-icon", title := "All events", onclick := { () => CalendarWindowOperations.openCalendarWindow}),
-            span(item.name, onclick := { () => EventWindowOperations.openEventWindow(item)}),
+            span(`class` := "calendar-icon", title := "All events", onclick := { () => CalendarWindowOperations.openCalendarWindow(items) }),
+            span(item.name, onclick := { () => EventWindowOperations.openEventWindow(item) }),
             div(`class` := "next", title := "Next", onclick := moveToNextItem _)
           )).render
         )
