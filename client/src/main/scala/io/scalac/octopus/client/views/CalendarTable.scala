@@ -12,7 +12,7 @@ object CalendarTable {
    * Creates a calendar table including the current month (specified by the "now" date parameter).
    * It will add a "marked" class to every day for which the marker function returns true.
    **/
-  def apply(now: Date, marker: Date => Boolean, clickListener: Date => Unit = { d => () }) = {
+  def apply(now: Date, marker: Date => Boolean, modifier: Date => Array[Modifier]) = {
     import DateOps._
     import TimeUnit._
 
@@ -36,21 +36,25 @@ object CalendarTable {
       day = calendarStart + ((i - 1) days)
     } yield Days(day.getDay())
 
-    table(
-      tr(dayNames.map(td(_))),
+    div(
+      `class` := "table",
+      div(
+        `class` := "row",
+        dayNames.map(div(_, `class` := "cell"))
+      ),
 
       weeksAndDays.map(wad =>
-        tr(
+        div(
+          `class` := "row",
           wad.map(day =>
-            td(
-              day.getDate(),
-              `class` := (day match {
+            div(
+              modifier(day),
+              `class` := "cell " + (day match {
                 case theDay if marker(theDay) => "marked"
                 case theDay if theDay isSameDay new Date(Date.now()) => "current-day"
                 case theDay if theDay isSameMonth now => "current-month"
                 case _ => "other-month"
-              }),
-              onclick := { () => clickListener(day) }
+              })
             ).render)
         )
       )
