@@ -23,9 +23,9 @@ class ApiService extends Api {
 
   override def getFutureItems(limit: Int): Array[Event] = {
     val now = System.currentTimeMillis()
-    items.filter(event =>
+    items.filter { event =>
       event.startDate > now || event.endDate > now
-    ) sortBy (_.startDate) take limit
+    } sortBy (_.startDate) take limit
   }
 
 }
