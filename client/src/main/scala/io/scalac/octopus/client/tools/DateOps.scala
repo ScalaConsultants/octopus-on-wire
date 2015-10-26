@@ -3,9 +3,9 @@ package io.scalac.octopus.client.tools
 import io.scalac.octopus.client.tools.TimeUnit.MillisecondsInMinute
 
 import scala.scalajs.js.Date
+import scala.language.implicitConversions
 
 object DateOps {
-  import scala.language.implicitConversions
   implicit def date2DateOps(d: Date): DateOps = new DateOps(d)
 
   val MonthsShort = Array("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -21,7 +21,10 @@ object DateOps {
   def getPreviousMonth(currentMonth: Date): Date = {
     val willPassYear = currentMonth.getMonth() == 0
     val currentYear = currentMonth.getFullYear()
-    new Date(if (willPassYear) currentYear - 1 else currentYear, if (willPassYear) 11 else currentMonth.getMonth() - 1, 1)
+    new Date(
+      year = if (willPassYear) currentYear - 1 else currentYear,
+      month = if (willPassYear) 11 else currentMonth.getMonth() - 1,
+      date = 1)
   }
 }
 

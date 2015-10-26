@@ -24,18 +24,18 @@ object OctopusClient extends js.JSApp {
     onmouseout := { () => slideIntervalHandle = startSlideInterval(list) }
   ).render
 
-  implicit val octopusHome: Div = div(id := "octopus-home", list).render
+  val octopusHome: Div = div(id := "octopus-home", list).render
 
   @JSExport
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
 
-    AutowireClient[Api].getItems(ClientConfig.ItemsToFetch).call().map { items =>
+    AutowireClient[Api].getFutureItems(ClientConfig.ItemsToFetch).call().map { items =>
       items foreach {
         item => list.appendChild(
           li(div(`class` := "item",
-            span(`class` := "calendar-icon", title := "All events", onclick := { () => CalendarWindowOperations.openCalendarWindow(items) }),
-            span(item.name, onclick := { () => EventWindowOperations.openEventWindow(item) }),
+            span(`class` := "calendar-icon", title := "All events", onclick := { () => CalendarWindowOperations.openCalendarWindow(items)(octopusHome) }),
+            span(`class` := "item-name", item.name, onclick := { () => EventWindowOperations.openEventWindow(item)(octopusHome) }),
             div(`class` := "next", title := "Next", onclick := { () => moveToNextItem(list) })
           )).render
         )
