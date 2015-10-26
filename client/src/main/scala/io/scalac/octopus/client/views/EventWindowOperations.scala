@@ -13,23 +13,23 @@ object EventWindowOperations extends WindowOperations {
   type EventWindowOption = Option[(Event, Div)]
   protected var eventWindow: EventWindowOption = None
 
-  def openEventWindow(item: Event)(implicit octopusHome: Div): Unit = {
+  def openEventWindow(item: Event)(octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
-    eventWindow = switchEventWindow(item)
+    eventWindow = switchEventWindow(item)(octopusHome)
   }
 
-  protected def switchEventWindow(item: Event)(implicit octopusHome: Div): EventWindowOption = eventWindow match {
+  protected def switchEventWindow(item: Event)(octopusHome: Div): EventWindowOption = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
       Do nothing (return the same thing we matched)*/
     case Some((event, window)) if event.id == item.id =>
-      closeWindow
+      closeWindow(octopusHome)
       None
 
     /*The window is visible, but the clicked event is another one.
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
       closeWindow(octopusHome)
-      switchEventWindow(item)
+      switchEventWindow(item)(octopusHome)
 
     /*The window is not opened. Open it.*/
     case _ =>
@@ -43,13 +43,13 @@ object EventWindowOperations extends WindowOperations {
           div(`class` := "octopus-window-bottom-arrow arrow-center")
         ).render
 
-      openWindow(window)
+      openWindow(window)(octopusHome)
       Option((item, window))
   }
 
-  override def closeWindow(implicit octopusHome: Div): Unit = eventWindow = eventWindow match {
+  override def closeWindow(octopusHome: Div): Unit = eventWindow = eventWindow match {
     case Some((_, openedWindow)) =>
-      super.removeWindow(openedWindow)
+      removeWindow(openedWindow)(octopusHome)
       None
     case None => None
   }

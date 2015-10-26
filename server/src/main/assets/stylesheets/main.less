@@ -57,6 +57,9 @@ body {
         white-space: nowrap;
         text-overflow: ellipsis;
         cursor: pointer;
+        &.item-name{
+          flex: 1;
+        }
       }
     }
     .calendar-icon {
@@ -272,9 +275,19 @@ body {
   padding: 5px 5px 3px;
   color: white;
   cursor: pointer;
+  text-align: left;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  &:before{
+    background: url("../images/next-icon.svg") no-repeat center / contain;
+    position: relative;
+    width: 6px;
+    height: 8px;
+    margin-right: 2px;
+    display: inline-block;
+    content: '';
+  }
   &:not(:last-of-type){
     padding: 5px 5px 0;
   }

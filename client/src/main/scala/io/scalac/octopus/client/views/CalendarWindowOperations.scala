@@ -14,15 +14,15 @@ object CalendarWindowOperations extends WindowOperations {
   protected var calendarWindow: CalendarWindowOption = None
 
   /*todo replace events parameter with an API call to events in given month*/
-  def openCalendarWindow(events: Array[Event])(implicit octopusHome: Div): Unit = {
+  def openCalendarWindow(events: Array[Event])(octopusHome: Div): Unit = {
     EventWindowOperations.closeWindow(octopusHome)
-    calendarWindow = switchCalendarWindow(events)
+    calendarWindow = switchCalendarWindow(events)(octopusHome)
   }
 
-  def switchCalendarWindow(events: Array[Event])(implicit octopusHome: Div): CalendarWindowOption =
+  def switchCalendarWindow(events: Array[Event])(octopusHome: Div): CalendarWindowOption =
     calendarWindow match {
       case Some(window) =>
-        closeWindow
+        closeWindow(octopusHome)
         None
       case None =>
         import DateOps._
@@ -51,8 +51,8 @@ object CalendarWindowOperations extends WindowOperations {
                         event.name,
                         `class` := "octopus-preview-element",
                         onclick := { () =>
-                          closeWindow
-                          timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event))
+                          closeWindow(octopusHome)
+                          timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event)(octopusHome))
                         }
                       )
                     }
@@ -86,13 +86,13 @@ object CalendarWindowOperations extends WindowOperations {
         }
 
         window.replaceChild(CalendarUtils.tableWithSelector(now), window.firstChild)
-        openWindow(window)
+        openWindow(window)(octopusHome)
         Option(window)
     }
 
-  def closeWindow(implicit octopusHome: Div): Unit = calendarWindow = calendarWindow match {
+  def closeWindow(octopusHome: Div): Unit = calendarWindow = calendarWindow match {
     case Some(openedWindow) =>
-      removeWindow(openedWindow)
+      removeWindow(openedWindow)(octopusHome)
       None
     case None => None
   }

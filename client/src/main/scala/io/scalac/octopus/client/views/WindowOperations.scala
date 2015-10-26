@@ -12,23 +12,23 @@ import scalatags.JsDom.all._
 trait WindowOperations {
   protected var outsideListener: Div = _
 
-  protected def openWindow(window: Div)(implicit octopusHome: Div) = {
+  protected def openWindow(window: Div)(octopusHome: Div) = {
     octopusHome.appendChild(window)
     outsideListener = getOutsideListener(octopusHome)
     octopusHome.appendChild(outsideListener)
     timers.setTimeout(ClientConfig.WindowOpenDelay)(window.classList.remove("closed"))
   }
 
-  protected def getOutsideListener(implicit octopusHome: Div): Div =
+  protected def getOutsideListener(octopusHome: Div): Div =
     div(`class` := "octopus-outside",
       onclick := { () => closeWindow(octopusHome) }
     ).render
 
-  protected def removeWindow(window: Div)(implicit octopusHome: Div): Unit = {
+  protected def removeWindow(window: Div)(octopusHome: Div): Unit = {
     octopusHome.removeChild(outsideListener)
     window.classList.add("closed")
     timers.setTimeout(ClientConfig.WindowLoadTime)(octopusHome.removeChild(window))
   }
 
-  def closeWindow(implicit octopusHome: Div): Unit
+  def closeWindow(octopusHome: Div): Unit
 }

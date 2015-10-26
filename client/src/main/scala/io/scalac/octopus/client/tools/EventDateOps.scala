@@ -2,6 +2,7 @@ package io.scalac.octopus.client.tools
 
 import scala.scalajs.js.Date
 import scalac.octopusonwire.shared.domain.Event
+import DateOps._
 
 class EventDateOps(event: Event) {
   def startDateFull = EventDateOps.dateToString(new Date(event.startDate))
@@ -17,12 +18,11 @@ class EventDateOps(event: Event) {
   def days = for {
     dayMs <- event.startDate to event.endDate by TimeUnit.Day
   } yield new Date(dayMs)
-  import DateOps._
+
   def takesPlaceOn(day: Date) = days.exists(day isSameDay)
 }
 
 object EventDateOps {
-  import DateOps.MonthsShort
 
   implicit def event2EventOps(e: Event): EventDateOps = new EventDateOps(e)
 
