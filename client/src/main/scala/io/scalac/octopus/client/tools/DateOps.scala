@@ -15,7 +15,11 @@ object DateOps {
   def getNextMonth(currentMonth: Date): Date = {
     val willPassYear = currentMonth.getMonth() == 11
     val currentYear = currentMonth.getFullYear()
-    new Date(if (willPassYear) currentYear + 1 else currentYear, if (willPassYear) 0 else currentMonth.getMonth() + 1, 1)
+    new Date(
+      year = if (willPassYear) currentYear + 1 else currentYear,
+      month = if (willPassYear) 0 else currentMonth.getMonth() + 1,
+      date = 1
+    )
   }
 
   def getPreviousMonth(currentMonth: Date): Date = {
@@ -24,7 +28,8 @@ object DateOps {
     new Date(
       year = if (willPassYear) currentYear - 1 else currentYear,
       month = if (willPassYear) 11 else currentMonth.getMonth() - 1,
-      date = 1)
+      date = 1
+    )
   }
 }
 
