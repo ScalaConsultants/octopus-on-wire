@@ -51,7 +51,6 @@ class DateOps(date: Date) {
 }
 
 object TimeUnit {
-  import scala.language.implicitConversions
   implicit def int2TimeUnit(i: Int): TimeUnit = new TimeUnit(i)
 
   val MillisecondsInMinute = 60000

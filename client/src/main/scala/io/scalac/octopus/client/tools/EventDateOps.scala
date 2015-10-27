@@ -1,7 +1,10 @@
 package io.scalac.octopus.client.tools
 
+import scala.language.implicitConversions
+import scala.language.postfixOps
 import scala.scalajs.js.Date
 import scalac.octopusonwire.shared.domain.Event
+
 import DateOps._
 
 class EventDateOps(event: Event) {
