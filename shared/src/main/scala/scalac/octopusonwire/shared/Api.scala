@@ -3,5 +3,5 @@ package scalac.octopusonwire.shared
 import scalac.octopusonwire.shared.domain.Event
 
 trait Api {
-  def getItems(limit: Int): Array[Event]
+  def getFutureItems(limit: Int): Array[Event]
 }

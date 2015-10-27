@@ -1,4 +1,4 @@
-package io.scalac.octopus.client
+package io.scalac.octopus.client.config
 
 import java.nio.ByteBuffer
 
