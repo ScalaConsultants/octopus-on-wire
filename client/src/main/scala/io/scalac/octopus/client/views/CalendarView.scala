@@ -20,16 +20,19 @@ class CalendarView(window: Div, octopusHome: Div) {
           Array(span(date.getDate()),
             div(
               `class` := "octopus-preview",
-              events.filter(_ takesPlaceOn date).map { event =>
-                div(
-                  event.name,
-                  `class` := "octopus-preview-element",
-                  onclick := { () =>
-                    CalendarWindowOperations.closeWindow(octopusHome)
-                    timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event)(octopusHome))
-                  }
-                )
-              }
+              div(
+                `class` := "octopus-preview-elements",
+                events.filter(_ takesPlaceOn date).map { event =>
+                  div(
+                    event.name,
+                    `class` := "octopus-preview-element",
+                    onclick := { () =>
+                      CalendarWindowOperations.closeWindow(octopusHome)
+                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event)(octopusHome))
+                    }
+                  )
+                }
+              )
             ))
         case date => Array(date.getDate().toString)
       }
