@@ -8,6 +8,7 @@ import play.api.mvc._
 import services.ApiService
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scalac.octopusonwire.shared.Api
 
 object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
@@ -25,6 +26,13 @@ object Application extends Controller {
 
   val router = Router.route[Api](apiService)
 
+  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
+    result.withHeaders(
+      ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
+      ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
+      CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`
+    )
+
   def autowireApi(path: String) = Action.async(parse.raw) { implicit request =>
     println(s"Request path: $path")
 
@@ -36,15 +44,14 @@ object Application extends Controller {
     router(req).map(buffer => {
       val data = Array.ofDim[Byte](buffer.remaining())
       buffer.get(data)
-      Ok(data)
+      CorsEnabled(
+        Ok(data)
+      )
     })
   }
 
+
+
   /*Enables CORS*/
-  def options(path: String) = Action { request =>
-    NoContent.withHeaders(
-      ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
-      ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
-      CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
-  }
+  def options(path: String) = Action(implicit request => CorsEnabled(NoContent))
 }
