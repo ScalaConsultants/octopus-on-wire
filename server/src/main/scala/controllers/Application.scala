@@ -6,9 +6,9 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import play.api.mvc._
 import services.ApiService
-import spatutorial.shared.Api
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scalac.octopusonwire.shared.Api
 
 object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
   override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
