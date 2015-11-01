@@ -18,7 +18,8 @@ class ApiService extends Api {
     Event(4, "Don't fear the Monad - Java User Group Łódź (Łódź) - Meetup", "2015-10-22 18:00".getTime, "2015-10-22 20:30".getTime, "Sala A2, DMCS, ul. Wólczanska 221/223, budynek B18 90-924, Łódź", "http://www.meetup.com/Java-User-Group-Lodz/events/226099814/"),
     Event(5, "JUGToberfest 2015 - Java User Group Łódź (Łódź) - Meetup", "2015-10-29 18:00".getTime, "2015-10-30 0:00".getTime, "Tektura Kawa & Bistro, Tymienieckiego 3, Łódź", "http://www.meetup.com/Java-User-Group-Lodz/events/225901253/"),
     Event(6, "Global Day of Code Retreat - Java User Group Łódź (Łódź) - Meetup", "2015-11-14 09:30".getTime, "2015-11-14 17:15".getTime, "Fujitsu Rnd Łódź, Fabryczna 17, Łódź", "http://www.meetup.com/Java-User-Group-Lodz/events/226169070/"),
-    Event(7, "TSUG (we are coming back after holiday break!)", "2015-10-29 18:00".getTime, "2015-10-29 20:30".getTime, "Olivia Business Centre, Olivia FOUR, aleja Grunwaldzka 472a, Gdansk", "http://www.meetup.com/Tricity-Scala-Users-Group/events/225945602/")
+    Event(7, "TSUG (we are coming back after holiday break!)", "2015-10-29 18:00".getTime, "2015-10-29 20:30".getTime, "Olivia Business Centre, Olivia FOUR, aleja Grunwaldzka 472a, Gdansk", "http://www.meetup.com/Tricity-Scala-Users-Group/events/225945602/"),
+    Event(8, "Best Scala event", System.currentTimeMillis() + 3600000*24, System.currentTimeMillis() + 3600000 * 28, "Some nice place", "https://scalac.io")
   )
 
   override def getFutureItems(limit: Int): Array[Event] = {
