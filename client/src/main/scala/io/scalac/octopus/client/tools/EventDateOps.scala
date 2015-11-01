@@ -13,7 +13,6 @@ class EventDateOps(event: Event) {
 
   def endDateHour = {
     val date = new Date(event.endDate)
-    println("%02d:%02d".format(date.getHours(), date.getMinutes()))
     "%02d:%02d".format(date.getHours(), date.getMinutes())
   }
 
