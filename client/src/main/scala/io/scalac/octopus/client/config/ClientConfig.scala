@@ -7,4 +7,5 @@ object ClientConfig {
   val WindowLoadTime = 300
   val WindowOpenDelay = 50
   val WeeksToDisplay = 6
+  val ApiUrl = "http://octowire.com:9000"
 }

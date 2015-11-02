@@ -1,7 +1,7 @@
 package io.scalac.octopus.client
 
 import autowire._
-import io.scalac.octopus.client.views.{SliderViewOperations, EventWindowOperations, CalendarWindowOperations}
+import io.scalac.octopus.client.views.SliderViewOperations
 import SliderViewOperations._
 import io.scalac.octopus.client.config.{ClientConfig, AutowireClient}
 import io.scalac.octopus.client.views.{EventWindowOperations, CalendarWindowOperations}

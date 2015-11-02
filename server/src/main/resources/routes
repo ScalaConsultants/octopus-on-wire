@@ -3,14 +3,15 @@
 # ~~~~
 
 # Home page
-GET     /                                 controllers.Application.index
+GET            /                          controllers.Application.index
 
 #Apply CORS
-OPTIONS        /api/*path                           controllers.Application.options(path)
+OPTIONS        /api/*path                 controllers.Application.options(path)
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/fonts/*file               controllers.Assets.at(path="/public/lib/font-awesome/fonts", file)
-GET     /assets/*file                     controllers.Assets.at(path="/public", file)
+GET            /assets/fonts/*file        controllers.Assets.at(path="/public/lib/font-awesome/fonts", file)
+GET            /assets/*file              controllers.Assets.at(path="/public", file)
 
 # Autowire calls
-POST    /api/*path                        controllers.Application.autowireApi(path: String)
+POST           /api/*path                 controllers.Application.autowireApi(path: String)
+GET            /github                    controllers.Application.githubAuthorize(code, source_url)
