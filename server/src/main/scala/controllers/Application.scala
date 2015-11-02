@@ -4,17 +4,15 @@ import java.nio.ByteBuffer
 
 import boopickle.Default._
 import com.google.common.net.MediaType
-import config.Github
 import config.Github._
 import play.api.libs.ws.WS
 import play.api.mvc._
 import services.ApiService
-import scala.concurrent.{Future, Await}
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.language.postfixOps
 import play.api.Play.current
-import scala.util.Try
 import scalac.octopusonwire.shared.Api
 
 object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {

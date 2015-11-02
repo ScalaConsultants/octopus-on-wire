@@ -4,8 +4,9 @@
 @max-width: 500px;
 @window-load-time: .3s;
 @window-max-height: 400px;
-@blue-background: #5595c3;
-@window-background: #0288D1;
+@blue-light: #5595c3;
+@blue-translucent: rgba(85, 149, 195, .2);
+@blue-dark: #0288D1;
 @gray-background: #455A64;
 
 html, body {
@@ -27,10 +28,12 @@ body {
 
 #octopus-home {
   position: relative;
-  bottom: 100px;
+  display: inline-block;
+  //bottom: 100px;
   max-width: @max-width;
-  background: rgba(85, 149, 195, 0.2);
+  background: @blue-translucent;
   z-index: 1;
+  width: 100%;
 }
 
 .octopus-shuffle-list {
@@ -46,7 +49,7 @@ body {
     transition: .5s;
     .item {
       padding: 10px;
-      background: @window-background;
+      background: @blue-dark;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -57,7 +60,7 @@ body {
         white-space: nowrap;
         text-overflow: ellipsis;
         cursor: pointer;
-        &.item-name{
+        &.item-name {
           flex: 1;
         }
       }
@@ -111,7 +114,8 @@ body {
 .octopus-window {
   display: flex;
   flex-direction: column;
-  background: @window-background;
+  align-items: flex-start;
+  background: @blue-dark;
   max-width: @max-width;
   max-height: @window-max-height;
   position: absolute;
@@ -122,6 +126,7 @@ body {
   border-radius: 5px;
   transition: @window-load-time;
   z-index: 1;
+  text-align: left;
   margin-bottom: 10px;
   &.closed {
     opacity: 0;
@@ -154,7 +159,7 @@ body {
   height: 0;
   border-left: 20px solid transparent;
   border-right: 20px solid transparent;
-  border-top: 20px solid @window-background;
+  border-top: 20px solid @blue-dark;
   z-index: 9;
   &.arrow-center {
     left: 0;
@@ -219,13 +224,13 @@ body {
         background: white;
         cursor: pointer;
         border: 1px solid white;
-        color: @blue-background;
+        color: @blue-light;
       }
       &.other-month {
         color: rgba(254, 253, 255, 0.5);
       }
-      &:not(:hover){
-        .octopus-preview{
+      &:not(:hover) {
+        .octopus-preview {
           visibility: hidden;
           opacity: 0;
         }
@@ -233,7 +238,6 @@ body {
     }
   }
 }
-
 .octopus-table-wrapper{
   display: inline-block;
 }
@@ -267,7 +271,7 @@ body {
   z-index: 2;
   padding-left: 6px;
   transition: .1s;
-  &:before{
+  &:before {
     display: block;
     content: '';
     position: absolute;
@@ -278,6 +282,33 @@ body {
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
   }
+  @media screen and (max-width: 480px) {
+    & {
+      left: -100px;
+      right: -100px;
+      margin: auto;
+      top: auto;
+      bottom: 100%;
+      padding-left: 0;
+      padding-bottom: 6px;
+    }
+
+    &:before {
+      left: 50%;
+      transform: translateX(-50%);
+      top: auto;
+      bottom: 1px;
+      border-bottom: none;
+      border-top: 5px solid @gray-background;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+    }
+  }
+}
+
+.octopus-preview-elements {
+  max-height: 100px;
+  overflow: auto;
 }
 
 .octopus-preview-element {
@@ -290,7 +321,7 @@ body {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  &:before{
+  &:before {
     background: url("../images/next-icon.svg") no-repeat center / contain;
     position: relative;
     width: 6px;
@@ -299,7 +330,7 @@ body {
     display: inline-block;
     content: '';
   }
-  &:not(:last-of-type){
+  &:not(:last-of-type) {
     padding: 5px 5px 0;
   }
 }
