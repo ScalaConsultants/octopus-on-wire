@@ -1,14 +1,18 @@
 package io.scalac.octopus.client.views
 
+import io.scalac.octopus.client.config.{Github, ClientConfig}
+import io.scalac.octopus.client.config.ClientConfig._
 import io.scalac.octopus.client.tools.EventDateOps
+import org.scalajs.dom
+import org.scalajs.dom.Window
 import org.scalajs.dom.html.Div
 
 import scalac.octopusonwire.shared.domain.Event
 import scalatags.JsDom.all._
 
 /**
- * Manages the event detail window view.
- */
+  * Manages the event detail window view.
+  */
 object EventWindowOperations extends WindowOperations {
   type EventWindowOption = Option[(Event, Div)]
   protected var eventWindow: EventWindowOption = None
@@ -34,12 +38,20 @@ object EventWindowOperations extends WindowOperations {
     /*The window is not opened. Open it.*/
     case _ =>
       import EventDateOps._
+
+      val githubLoginUrl = s"${Github.AuthorizeUrl}?client_id=${Github.ClientId}&redirect_uri=${ClientConfig.ApiUrl}/github?source_url=${dom.window.location.href}"
+
       val window =
         div(`class` := "octopus-window closed",
           h1(item.name, `class` := "octopus-event-name"),
           p(item.datesToString, `class` := "octopus-event-date"),
           p(item.location, `class` := "octopus-event-location"),
-          a(href := item.url, `class` := "octopus-event-link", target := "_blank"),
+          div(
+            `class` := "octopus-event-bottom",
+          /*TODO ask server if user logged in and use appropriate location*/
+            a(onclick := {() => dom.window.location assign githubLoginUrl}, `class` := "octopus-event-join-link", "Join"),
+            a(href := item.url, `class` := "octopus-event-link", target := "_blank")
+          ),
           div(`class` := "octopus-window-bottom-arrow arrow-center")
         ).render
 
