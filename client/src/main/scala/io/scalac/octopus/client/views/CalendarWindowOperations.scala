@@ -11,7 +11,6 @@ object CalendarWindowOperations extends WindowOperations {
 
   protected var calendarWindow: CalendarWindowOption = None
 
-  /*todo replace events parameter with an API call to events in given month*/
   def openCalendarWindow(events: Array[Event])(octopusHome: Div): Unit = {
     EventWindowOperations.closeWindow(octopusHome)
     calendarWindow = switchCalendarWindow(events)(octopusHome)
