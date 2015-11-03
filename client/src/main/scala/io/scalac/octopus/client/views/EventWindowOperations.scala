@@ -1,31 +1,36 @@
 package io.scalac.octopus.client.views
 
-import io.scalac.octopus.client.config.{Github, ClientConfig}
-import io.scalac.octopus.client.config.ClientConfig._
-import io.scalac.octopus.client.tools.EventDateOps
+import autowire._
+import boopickle.Default._
+import io.scalac.octopus.client.config.{AutowireClient, Github}
+import io.scalac.octopus.client.tools.EventDateOps._
 import org.scalajs.dom
-import org.scalajs.dom.Window
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.html.{Anchor, Div}
 
-import scalac.octopusonwire.shared.domain.Event
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scalac.octopusonwire.shared.Api
 import scalatags.JsDom.all._
 
 /**
   * Manages the event detail window view.
   */
 object EventWindowOperations extends WindowOperations {
-  type EventWindowOption = Option[(Event, Div)]
-  protected var eventWindow: EventWindowOption = None
+  type EventWindowOption = Option[(Long, Div)]
+  val api = AutowireClient[Api]
 
-  def openEventWindow(item: Event)(octopusHome: Div): Unit = {
+
+  protected var eventWindow: EventWindowOption = None
+  var userLoggedIn: Boolean = false
+
+  def openEventWindow(eventId: Long)(octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
-    eventWindow = switchEventWindow(item)(octopusHome)
+    eventWindow = switchEventWindow(eventId)(octopusHome)
   }
 
-  protected def switchEventWindow(item: Event)(octopusHome: Div): EventWindowOption = eventWindow match {
+  protected def switchEventWindow(eventId: Long)(octopusHome: Div): EventWindowOption = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
       Do nothing (return the same thing we matched)*/
-    case Some((event, window)) if event.id == item.id =>
+    case Some((storedEventId, window)) if storedEventId == eventId =>
       closeWindow(octopusHome)
       None
 
@@ -33,30 +38,63 @@ object EventWindowOperations extends WindowOperations {
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
       closeWindow(octopusHome)
-      switchEventWindow(item)(octopusHome)
+      switchEventWindow(eventId)(octopusHome)
 
     /*The window is not opened. Open it.*/
     case _ =>
-      import EventDateOps._
+      api.isUserLoggedIn().call().foreach(userLoggedIn = _)
 
-      val githubLoginUrl = s"${Github.AuthorizeUrl}?client_id=${Github.ClientId}&redirect_uri=${ClientConfig.ApiUrl}/github?source_url=${dom.window.location.href}"
+      val bottomArrow = div(`class` := "octopus-window-bottom-arrow arrow-center")
+      val window = div(
+        `class` := "octopus-window closed",
+        span("Loading...", `class` := "octopus-loading-text"),
+        bottomArrow
+      ).render
 
-      val window =
-        div(`class` := "octopus-window closed",
-          h1(item.name, `class` := "octopus-event-name"),
-          p(item.datesToString, `class` := "octopus-event-date"),
-          p(item.location, `class` := "octopus-event-location"),
-          div(
-            `class` := "octopus-event-bottom",
-          /*TODO ask server if user logged in and use appropriate location*/
-            a(onclick := {() => dom.window.location assign githubLoginUrl}, `class` := "octopus-event-join-link", "Join"),
-            a(href := item.url, `class` := "octopus-event-link", target := "_blank")
-          ),
-          div(`class` := "octopus-window-bottom-arrow arrow-center")
-        ).render
+      /** If there's no token found, redirect to login page
+        * If there's a token, just join the event
+        * If the event has already been joined, do nothing */
+      def joinButton(joined: Boolean): Anchor = {
+        a(
+          if (!joined) "Join" else "Joined",
+          `class` := "octopus-event-join-link",
+          onclick := { () =>
+            if (userLoggedIn) {
+              if (!joined) api.joinEvent(eventId).call().foreach {
+                (_: Unit) => {
+                  val bottom = window.childNodes(window.childElementCount - 2)
+                  bottom.replaceChild(joinButton(true), bottom.childNodes(0))
+                }
+              }
+            }
+            else
+              dom.window.location assign Github.LoginWithJoinUrl(dom.window.location.href, eventId)
+          }).render
+      }
+
+      api.getEventAndUserJoined(eventId).call().foreach {
+        case (Some(event), joined) =>
+
+          //clear window
+          while(window.childElementCount > 0)
+            window.removeChild(window.firstChild)
+
+          Array(
+            h1(event.name, `class` := "octopus-event-name"),
+            p(event.datesToString, `class` := "octopus-event-date"),
+            p(event.location, `class` := "octopus-event-location"),
+            div(
+              `class` := "octopus-event-bottom",
+              joinButton(joined),
+              a(href := event.url, `class` := "octopus-event-link", target := "_blank")
+            ),
+            bottomArrow
+          ).foreach(a => window.appendChild(a.render))
+        case _ => /* no such event */
+      }
 
       openWindow(window)(octopusHome)
-      Option((item, window))
+      Option((eventId, window))
   }
 
   override def closeWindow(octopusHome: Div): Unit = eventWindow = eventWindow match {

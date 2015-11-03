@@ -4,10 +4,11 @@ import java.nio.ByteBuffer
 
 import boopickle.Default._
 import com.google.common.net.MediaType
+import config.Github
 import config.Github._
 import play.api.libs.ws.WS
 import play.api.mvc._
-import services.ApiService
+import services.{EventSource, ApiService}
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -22,13 +23,11 @@ object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
 }
 
 object Application extends Controller {
-  val apiService = new ApiService()
-
   def index = Action {
     Ok(views.html.index())
   }
 
-  def githubAuthorize(code: String, sourceUrl: String) = Action { request =>
+  def githubAuthorize(joinEvent: Long, code: String, sourceUrl: String) = Action { request =>
     val result = Await.result(
       awaitable = WS url AccessTokenUrl
         withRequestTimeout 5000
@@ -38,25 +37,33 @@ object Application extends Controller {
 
     val token = (result.xml \ AccessToken).text
 
+    EventSource.joinEvent(Option(token), joinEvent)
+
     Redirect(sourceUrl).withCookies(Cookie(
       name = AccessToken,
       value = token,
       maxAge = Option(14 * 3600 * 24),
-      domain = None, //if not on localhost: Some(".octowire.com"),
+      domain = Some(".octowire.com"),
       secure = false, //we don't have HTTPS yet
       httpOnly = true
     ))
   }
 
-  val router = Router.route[Api](apiService)
 
   def CorsEnabled(result: Result)(implicit request: Request[Any]): Result = result.withHeaders(
     ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
     ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
+    ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true",
     CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
 
   def autowireApi(path: String) = Action.async(parse.raw) { implicit request =>
     println(s"Request path: $path")
+
+    val tokenCookie: Option[String] = request.cookies.get(Github.AccessToken).map(_.value)
+
+    val apiService = new ApiService(tokenCookie)
+
+    val router = Router.route[Api](apiService)
 
     // get the request body as Array[Byte]
     val b = request.body.asBytes(parse.UNLIMITED).get
