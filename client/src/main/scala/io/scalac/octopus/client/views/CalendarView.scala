@@ -28,7 +28,7 @@ class CalendarView(window: Div, octopusHome: Div) {
                     `class` := "octopus-preview-element",
                     onclick := { () =>
                       CalendarWindowOperations.closeWindow(octopusHome)
-                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event)(octopusHome))
+                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event.id)(octopusHome))
                     }
                   )
                 }

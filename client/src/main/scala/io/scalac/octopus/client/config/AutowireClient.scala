@@ -17,7 +17,8 @@ object AutowireClient extends autowire.Client[ByteBuffer, Pickler, Pickler] {
       url = ClientConfig.ApiUrl + "/api/" + req.path.mkString("/"),
       headers = Map("Content-Type" -> "application/octet-stream"),
       data = Pickle.intoBytes(req.args),
-      responseType = "arraybuffer"
+      responseType = "arraybuffer",
+      withCredentials = true
     ).map(r => TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer]))
   }
 
