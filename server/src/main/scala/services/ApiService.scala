@@ -6,7 +6,7 @@ import services.EventSource._
 
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.domain.{Event, SimpleEvent}
+import scalac.octopusonwire.shared.domain.{UserEventInfo, Event, SimpleEvent}
 
 object EventSource {
   val events: Array[Event] = Array(
@@ -21,31 +21,40 @@ object EventSource {
   )
 
   //todo don't keep tokens here
-  var eventJoins = List[(String, Long)]()
+  var eventJoins = Set[(String, Long)]()
 
-  def joinEvent(userToken: Option[String], eventId: Long): Unit = userToken match {
-    case Some(token) if eventById(eventId).isDefined =>
-        eventJoins = (token, eventId) :: eventJoins
-    case None =>
+  def joinEvent(userToken: Option[String], eventId: Long): Long = {
+    userToken match {
+      case Some(token) if eventById(eventId).isDefined =>
+        eventJoins += ((token, eventId))
+      case None =>
+    }
+    countJoins(eventId)
   }
 
   def eventById(id: Long): Option[Event] = events find (_.id == id)
+
+  def countJoins(eventId: Long) = eventJoins.count(_._2 == eventId)
 }
 
 class ApiService(userToken: Option[String]) extends Api {
 
-  override def getEventAndUserJoined(eventId: Long): (Option[Event], Boolean) =
+  override def getUserEventInfo(eventId: Long): UserEventInfo =
     eventById(eventId) match {
       case Some(event) =>
-        (Option(event), userToken exists (token => eventJoins contains ((token, event.id))))
-      case None => (None, false)
+        UserEventInfo(
+          eventOption = Option(event),
+          userJoined = userToken exists (token => eventJoins contains ((token, event.id))),
+          joinCount = countJoins(eventId)
+        )
+      case None => UserEventInfo(None, userJoined = false, 0)
     }
 
   override def getFutureItems(limit: Int): Array[SimpleEvent] = {
     val now = System.currentTimeMillis()
     events.filter { event =>
       event.startDate > now || event.endDate > now
-    } sortBy (_.startDate) take limit map(_.toSimple)
+    } sortBy (_.startDate) take limit map (_.toSimple)
   }
 
   override def getEventsForRange(from: Long, to: Long): Array[Event] =
@@ -56,7 +65,7 @@ class ApiService(userToken: Option[String]) extends Api {
 
   override def isUserLoggedIn() = userToken.isDefined
 
-  override def joinEvent(eventId: Long): Unit = EventSource.joinEvent(userToken, eventId)
+  override def joinEventAndGetJoins(eventId: Long): Long = EventSource.joinEvent(userToken, eventId)
 }
 
 object ApiService {

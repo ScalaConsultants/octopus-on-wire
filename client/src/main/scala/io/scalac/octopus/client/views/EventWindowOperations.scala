@@ -9,6 +9,7 @@ import org.scalajs.dom.html.{Anchor, Div}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalac.octopusonwire.shared.Api
+import scalac.octopusonwire.shared.domain.UserEventInfo
 import scalatags.JsDom.all._
 
 /**
@@ -54,16 +55,16 @@ object EventWindowOperations extends WindowOperations {
       /** If there's no token found, redirect to login page
         * If there's a token, just join the event
         * If the event has already been joined, do nothing */
-      def joinButton(joined: Boolean): Anchor = {
+      def joinButton(joined: Boolean, joinCount: Long): Anchor = {
         a(
-          if (!joined) "Join" else "Joined",
+          s"${if (!joined) "Join" else "Joined"} ($joinCount)",
           `class` := "octopus-event-join-link",
           onclick := { () =>
             if (userLoggedIn) {
-              if (!joined) api.joinEvent(eventId).call().foreach {
-                (_: Unit) => {
+              if (!joined) api.joinEventAndGetJoins(eventId).call().foreach {
+                eventJoinCount => {
                   val bottom = window.childNodes(window.childElementCount - 2)
-                  bottom.replaceChild(joinButton(true), bottom.childNodes(0))
+                  bottom.replaceChild(joinButton(joined = true, eventJoinCount), bottom.childNodes(0))
                 }
               }
             }
@@ -72,11 +73,11 @@ object EventWindowOperations extends WindowOperations {
           }).render
       }
 
-      api.getEventAndUserJoined(eventId).call().foreach {
-        case (Some(event), joined) =>
+      api.getUserEventInfo(eventId).call().foreach {
+        case UserEventInfo(Some(event), joined, joinCount) =>
 
           //clear window
-          while(window.childElementCount > 0)
+          while (window.childElementCount > 0)
             window.removeChild(window.firstChild)
 
           Array(
@@ -85,7 +86,7 @@ object EventWindowOperations extends WindowOperations {
             p(event.location, `class` := "octopus-event-location"),
             div(
               `class` := "octopus-event-bottom",
-              joinButton(joined),
+              joinButton(joined, joinCount),
               a(href := event.url, `class` := "octopus-event-link", target := "_blank")
             ),
             bottomArrow
