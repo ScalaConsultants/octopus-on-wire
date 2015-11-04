@@ -12,6 +12,10 @@ object DateOps {
   val Months = Array("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
   val Days = Array("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
+  def getMonthStart(now: Date): Date = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  def getMonthEnd(now: Date): Date = getNextMonth(getMonthStart(now))
+
   def getNextMonth(currentMonth: Date): Date = {
     val willPassYear = currentMonth.getMonth() == 11
     val currentYear = currentMonth.getFullYear()

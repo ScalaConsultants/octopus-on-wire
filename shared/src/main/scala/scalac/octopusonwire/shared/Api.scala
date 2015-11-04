@@ -1,9 +1,11 @@
 package scalac.octopusonwire.shared
 
-import scalac.octopusonwire.shared.domain.Event
+import scalac.octopusonwire.shared.domain.{SimpleEvent, Event}
 
 trait Api {
-  def getFutureItems(limit: Int): Array[Event]
+  def getFutureItems(limit: Int): Array[SimpleEvent]
+
+  def getEventsForRange(from: Long, to: Long): Array[Event]
 
   def getEventAndUserJoined(eventId: Long): (Option[Event], Boolean)
 
