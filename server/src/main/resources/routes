@@ -14,4 +14,4 @@ GET            /assets/*file                          controllers.Assets.at(path
 
 # Autowire calls
 POST           /api/*path                             controllers.Application.autowireApi(path: String)
-GET            /github/withJoin/:joinEventById        controllers.Application.githubAuthorize(joinEventById: Long, code, source_url)
+GET            /github/withJoin/:joinEventById        controllers.Application.joinEventWithGithub(joinEventById: Long, code, source_url)

@@ -27,7 +27,7 @@ object Application extends Controller {
     Ok(views.html.index())
   }
 
-  def githubAuthorize(joinEvent: Long, code: String, sourceUrl: String) = Action { request =>
+  def getGithubToken(code: String): String = {
     val result = Await.result(
       awaitable = WS url AccessTokenUrl
         withRequestTimeout 5000
@@ -35,7 +35,11 @@ object Application extends Controller {
         withQueryString("client_id" -> ClientId, "client_secret" -> ClientSecret, "code" -> code)
         execute "POST", atMost = Duration.Inf)
 
-    val token = (result.xml \ AccessToken).text
+    (result.xml \ AccessToken).text
+  }
+
+  def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action { request =>
+    val token = getGithubToken(code)
 
     EventSource.joinEvent(Option(token), joinEvent)
 
