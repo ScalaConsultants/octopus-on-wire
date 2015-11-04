@@ -39,15 +39,15 @@ object EventSource {
 
 class ApiService(userToken: Option[String]) extends Api {
 
-  override def getUserEventInfo(eventId: Long): UserEventInfo =
+  override def getUserEventInfo(eventId: Long): Option[UserEventInfo] =
     eventById(eventId) match {
       case Some(event) =>
-        UserEventInfo(
-          eventOption = Option(event),
-          userJoined = userToken exists (token => eventJoins contains ((token, event.id))),
-          joinCount = countJoins(eventId)
-        )
-      case None => UserEventInfo(None, userJoined = false, 0)
+        Option(UserEventInfo(
+          event,
+          userToken exists (token => eventJoins contains ((token, event.id))),
+          countJoins(eventId)
+        ))
+      case None => None
     }
 
   override def getFutureItems(limit: Int): Array[SimpleEvent] = {
