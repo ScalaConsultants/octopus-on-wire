@@ -1,22 +1,27 @@
 package io.scalac.octopus.client.views
 
-import io.scalac.octopus.client.config.ClientConfig
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import autowire._
+import io.scalac.octopus.client.config.{AutowireClient, ClientConfig}
 import io.scalac.octopus.client.tools.DateOps._
 import io.scalac.octopus.client.tools.EventDateOps._
 import org.scalajs.dom.html.Div
+import boopickle.Default._
 
 import scala.scalajs.js.{Date, timers}
+import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.Event
 import scalatags.JsDom.all._
 
 class CalendarView(window: Div, octopusHome: Div) {
-  def apply(current: Date, events: Array[Event]): Div = {
-    val calendarTable: Div = CalendarTable(
+  def apply(current: Date): Div = {
+
+    def calendarTable(events: Array[Event]): Div = CalendarTable(
       current,
       marker = calendarDay =>
-        (calendarDay isSameMonth current) && events.exists(_ takesPlaceOn calendarDay),
+        events.exists(_ takesPlaceOn calendarDay),
       modifier = {
-        case date if (date isSameMonth current) && events.exists(_ takesPlaceOn date) =>
+        case date if events.exists(_ takesPlaceOn date) =>
           Array(span(date.getDate()),
             div(
               `class` := "octopus-preview",
@@ -43,21 +48,27 @@ class CalendarView(window: Div, octopusHome: Div) {
       div(
         `class` := "octopus-calendar-arrow-wrapper",
         span(`class` := "octopus-calendar-arrow arrow-left", onclick := { () =>
-          window.replaceChild(apply(getPreviousMonth(current), events), window.firstChild)
+          window.replaceChild(apply(getPreviousMonth(current)), window.firstChild)
         }),
         span(Months(current.getMonth()) + " '" + yearString.substring(yearString.length - 2),
           `class` := "octopus-calendar-month"
         ),
         span(`class` := "octopus-calendar-arrow arrow-right", onclick := { () =>
-          window.replaceChild(apply(getNextMonth(current), events), window.firstChild)
+          window.replaceChild(apply(getNextMonth(current)), window.firstChild)
         })
       ).render
     }
 
-    div(
+    val view = div(
       `class` := "octopus-table-wrapper",
       monthSelector,
-      calendarTable
+      calendarTable(Array())
     ).render
+
+    AutowireClient[Api].getEventsForRange(getMonthStart(current).valueOf().toLong, getMonthEnd(current).valueOf().toLong).call().foreach{monthEvents =>
+      view.replaceChild(calendarTable(monthEvents), view.lastChild)
+    }
+
+    view
   }
 }
