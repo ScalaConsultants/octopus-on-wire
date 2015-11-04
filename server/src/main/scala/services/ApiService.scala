@@ -24,8 +24,7 @@ object EventSource {
   var eventJoins = List[(String, Long)]()
 
   def joinEvent(userToken: Option[String], eventId: Long): Unit = userToken match {
-    case Some(token) =>
-      if (eventById(eventId).isDefined)
+    case Some(token) if eventById(eventId).isDefined =>
         eventJoins = (token, eventId) :: eventJoins
     case None =>
   }
@@ -38,11 +37,7 @@ class ApiService(userToken: Option[String]) extends Api {
   override def getEventAndUserJoined(eventId: Long): (Option[Event], Boolean) =
     eventById(eventId) match {
       case Some(event) =>
-        (Option(event),
-          userToken match {
-            case Some(token) => eventJoins contains ((token, event.id))
-            case None => false
-          })
+        (Option(event), userToken exists (token => eventJoins contains ((token, event.id))))
       case None => (None, false)
     }
 
