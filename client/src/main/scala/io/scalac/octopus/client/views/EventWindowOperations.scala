@@ -74,7 +74,7 @@ object EventWindowOperations extends WindowOperations {
       }
 
       api.getUserEventInfo(eventId).call().foreach {
-        case UserEventInfo(Some(event), joined, joinCount) =>
+        case Some(UserEventInfo(event, joined, joinCount)) =>
 
           //clear window
           while (window.childElementCount > 0)

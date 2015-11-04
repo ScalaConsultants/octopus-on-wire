@@ -7,7 +7,7 @@ trait Api {
 
   def getEventsForRange(from: Long, to: Long): Array[Event]
 
-  def getUserEventInfo(eventId: Long): UserEventInfo
+  def getUserEventInfo(eventId: Long): Option[UserEventInfo]
 
   //TODO maybe we could get rid of the parentheses here
   def isUserLoggedIn(): Boolean

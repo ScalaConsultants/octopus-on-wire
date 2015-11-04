@@ -6,4 +6,4 @@ case class Event(id: Long, name: String, startDate: Long, endDate: Long, locatio
 
 case class SimpleEvent(id: Long, name: String)
 
-case class UserEventInfo(eventOption: Option[Event], userJoined: Boolean, joinCount: Long)
+case class UserEventInfo(event: Event, userJoined: Boolean, joinCount: Long)
