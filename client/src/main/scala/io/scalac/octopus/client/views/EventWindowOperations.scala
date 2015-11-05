@@ -71,7 +71,8 @@ object EventWindowOperations extends WindowOperations {
         a(
           s"${if (!joined) "Join" else "Joined"} ($joinCount)",
           `class` := "octopus-event-join-link",
-          onclick := {() => joinEvent(joined)}).render
+          onclick := {() => joinEvent(joined)}
+        ).render
 
       api.getUserEventInfo(eventId).call().foreach {
         case Some(info) =>
