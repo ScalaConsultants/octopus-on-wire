@@ -1,16 +1,15 @@
 package scalac.octopusonwire.shared
 
-import scalac.octopusonwire.shared.domain.{UserEventInfo, SimpleEvent, Event}
+import scalac.octopusonwire.shared.domain.{EventId, UserEventInfo, SimpleEvent, Event}
 
 trait Api {
-  def getFutureItems(limit: Int): Array[SimpleEvent]
+  def getFutureItems(limit: Int): Seq[SimpleEvent]
 
-  def getEventsForRange(from: Long, to: Long): Array[Event]
+  def getEventsForRange(from: Long, to: Long): Seq[Event]
 
-  def getUserEventInfo(eventId: Long): Option[UserEventInfo]
+  def getUserEventInfo(eventId: EventId): Option[UserEventInfo]
 
-  //TODO maybe we could get rid of the parentheses here
   def isUserLoggedIn(): Boolean
 
-  def joinEventAndGetJoins(eventId: Long): Long
+  def joinEventAndGetJoins(eventId: EventId): Long
 }

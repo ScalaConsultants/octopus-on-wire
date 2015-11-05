@@ -16,7 +16,7 @@ import scalatags.JsDom.all._
 class CalendarView(window: Div, octopusHome: Div) {
   def apply(current: Date): Div = {
 
-    def calendarTable(events: Array[Event]): Div = CalendarTable(
+    def calendarTable(events: Seq[Event]): Div = CalendarTable(
       current,
       marker = calendarDay =>
         events.exists(_ takesPlaceOn calendarDay),
@@ -33,7 +33,7 @@ class CalendarView(window: Div, octopusHome: Div) {
                     `class` := "octopus-preview-element",
                     onclick := { () =>
                       CalendarWindowOperations.closeWindow(octopusHome)
-                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event.id)(octopusHome))
+                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event.id, octopusHome))
                     }
                   )
                 }
@@ -62,10 +62,13 @@ class CalendarView(window: Div, octopusHome: Div) {
     val view = div(
       `class` := "octopus-table-wrapper",
       monthSelector,
-      calendarTable(Array())
+      calendarTable(Array.empty[Event])
     ).render
 
-    AutowireClient[Api].getEventsForRange(getMonthStart(current).valueOf().toLong, getMonthEnd(current).valueOf().toLong).call().foreach{monthEvents =>
+    val monthStart: Long = getMonthStart(current).valueOf().toLong
+    val monthEnd: Long = getMonthEnd(current).valueOf().toLong
+
+    AutowireClient[Api].getEventsForRange(monthStart, monthEnd).call().foreach{ monthEvents =>
       view.replaceChild(calendarTable(monthEvents), view.lastChild)
     }
 

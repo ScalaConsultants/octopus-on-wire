@@ -33,13 +33,13 @@ object CalendarWindowOperations extends WindowOperations {
         val calendarView = new CalendarView(window, octopusHome)
 
         window.replaceChild(calendarView(now), window.firstChild)
-        openWindow(window)(octopusHome)
+        openWindow(window, octopusHome)
         Option(window)
     }
 
   def closeWindow(octopusHome: Div): Unit = calendarWindow = calendarWindow match {
     case Some(openedWindow) =>
-      removeWindow(openedWindow)(octopusHome)
+      removeWindow(openedWindow, octopusHome)
       None
     case None => None
   }
