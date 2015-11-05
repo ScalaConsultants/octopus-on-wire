@@ -2,19 +2,52 @@ package controllers
 
 import java.nio.ByteBuffer
 
+import akka.util.Helpers.Requiring
 import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github
 import config.Github._
+import domain.UserId
+import play.api.Play.current
+import play.api.http.HeaderNames._
 import play.api.libs.ws.WS
 import play.api.mvc._
-import services.{EventSource, ApiService}
-import scala.concurrent.Await
+import services.{ApiService, EventSource, InMemoryEventSource}
+
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
-import play.api.Play.current
 import scalac.octopusonwire.shared.Api
+import scalac.octopusonwire.shared.domain.EventId
+
+object UserCache {
+
+  //temporary cache
+  val cache = TrieMap[String, UserId]()
+
+  def getUserId(tokenOption: Option[String]): Option[UserId] =
+    tokenOption match{
+      case Some(token) =>
+        cache.get(token) match{
+          case Some(uid) => Option(uid)
+          case _ =>
+            val result = Await.result(
+              awaitable = WS.url(UserUrl)
+                .withRequestTimeout(ApiRequestTimeout)
+                .withQueryString(AccessToken -> token)
+                .execute("GET"),
+              atMost = Duration.Inf
+            )
+            val uid = (result.json \ "id").toOption.map(id => UserId(id.toString.toInt))
+            uid.foreach(cache(token) = _)
+
+            uid
+        }
+      case _ => None
+    }
+}
 
 object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
   override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
@@ -23,34 +56,39 @@ object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
 }
 
 object Application extends Controller {
+  val eventSource: EventSource = InMemoryEventSource
+
   def index = Action {
     Ok(views.html.index())
   }
 
-  def getGithubToken(code: String): String = {
+  def getGithubToken(code: String): Option[String] = {
     val result = Await.result(
-      awaitable = WS url AccessTokenUrl
-        withRequestTimeout 5000
-        withHeaders ACCEPT -> "application/xml"
-        withQueryString("client_id" -> ClientId, "client_secret" -> ClientSecret, "code" -> code)
-        execute "POST", atMost = Duration.Inf)
+      awaitable = WS.url(AccessTokenUrl)
+        .withRequestTimeout(ApiRequestTimeout)
+        .withHeaders(ACCEPT -> "application/xml")
+        .withQueryString("client_id" -> ClientId, "client_secret" -> ClientSecret, "code" -> code)
+        .execute("POST"),
+      atMost = Duration.Inf)
 
-    (result.xml \ AccessToken).text
+    Option((result.xml \ AccessToken).text)
   }
 
-  def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action { request =>
-    val token = getGithubToken(code)
+  def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
+    Future {
+      val token = getGithubToken(code)
 
-    EventSource.joinEvent(Option(token), joinEvent)
+      new ApiService(UserCache.getUserId(token)).joinEventAndGetJoins(EventId(joinEvent))
 
-    Redirect(sourceUrl).withCookies(Cookie(
-      name = AccessToken,
-      value = token,
-      maxAge = Option(14 * 3600 * 24),
-      domain = Some(".octowire.com"),
-      secure = false, //we don't have HTTPS yet
-      httpOnly = true
-    ))
+      Redirect(sourceUrl).withCookies(Cookie(
+        name = AccessToken,
+        value = token.getOrElse(""),
+        maxAge = token.map(_ => 14 * 3600 * 24),
+        domain = Some(".octowire.com"),
+        secure = false, //we don't have HTTPS yet
+        httpOnly = true
+      ))
+    }
   }
 
 
@@ -65,7 +103,7 @@ object Application extends Controller {
 
     val tokenCookie: Option[String] = request.cookies.get(Github.AccessToken).map(_.value)
 
-    val apiService = new ApiService(tokenCookie)
+    val apiService = new ApiService(UserCache.getUserId(tokenCookie))
 
     val router = Router.route[Api](apiService)
 
