@@ -1,15 +1,14 @@
 package io.scalac.octopus.client.views
 
 import autowire._
-import io.scalac.octopus.client.config.AutowireClient
-import io.scalac.octopus.client.config.ClientConfig.ClientApi
+import boopickle.Default._
+import io.scalac.octopus.client.config.ClientConfig.octoApi
 import io.scalac.octopus.client.tools.EventDateOps._
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.domain.{EventId, UserEventInfo}
+import scalac.octopusonwire.shared.domain.{EventId, UserEventInfo, UserId}
 import scalatags.JsDom.all._
 
 /**
@@ -17,11 +16,11 @@ import scalatags.JsDom.all._
   */
 object EventWindowOperations extends WindowOperations {
   type EventWindowOption = Option[(EventId, Div)]
-  implicit val api: ClientApi = AutowireClient[Api]
 
+  var userId: Option[UserId] = None
+  octoApi.getUserId().call().foreach(userId = _)
 
   protected var eventWindow: EventWindowOption = None
-  var userLoggedIn: Boolean = false
 
   def openEventWindow(eventId: EventId, octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
@@ -43,7 +42,6 @@ object EventWindowOperations extends WindowOperations {
 
     /*The window is not opened. Open it.*/
     case _ =>
-      api.isUserLoggedIn().call().foreach(userLoggedIn = _)
 
       val bottomArrow = div(`class` := "octopus-window-bottom-arrow arrow-center")
       val window = div(
@@ -52,7 +50,7 @@ object EventWindowOperations extends WindowOperations {
         bottomArrow
       ).render
 
-      api.getUserEventInfo(eventId).call().foreach {
+      octoApi.getUserEventInfo(eventId).call().foreach {
         case Some(info) =>
 
           //clear window
@@ -67,7 +65,7 @@ object EventWindowOperations extends WindowOperations {
                 p(event.location, `class` := "octopus-event-location"),
                 div(
                   `class` := "octopus-event-bottom",
-                  new JoinButton(window, userLoggedIn, eventId).getButton(joined, joinCount),
+                  new JoinButton(window, eventId).getButton(joined, joinCount),
                   a(href := event.url, `class` := "octopus-event-link", target := "_blank")
                 ),
                 bottomArrow

@@ -2,7 +2,6 @@ package services
 
 import config.Github
 import config.Github._
-import domain.UserId
 import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WS
@@ -12,6 +11,7 @@ import tools.JsLookupResultOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scalac.octopusonwire.shared.domain.UserId
 
 object GithubApi {
   private def buildCall(url: String, token: String) = WS.url(url)

@@ -1,11 +1,11 @@
 package services
 
-import domain.UserId
 import tools.JsLookupResultOps._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scalac.octopusonwire.shared.domain.UserId
 
 object UserCache {
 

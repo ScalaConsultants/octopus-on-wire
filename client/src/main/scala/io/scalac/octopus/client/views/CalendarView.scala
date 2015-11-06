@@ -1,15 +1,14 @@
 package io.scalac.octopus.client.views
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import autowire._
-import io.scalac.octopus.client.config.{AutowireClient, ClientConfig}
+import boopickle.Default._
+import io.scalac.octopus.client.config.ClientConfig
+import io.scalac.octopus.client.config.ClientConfig.octoApi
 import io.scalac.octopus.client.tools.DateOps._
 import io.scalac.octopus.client.tools.EventDateOps._
 import org.scalajs.dom.html.Div
-import boopickle.Default._
-
+import concurrent.ExecutionContext.Implicits.global
+import autowire._
 import scala.scalajs.js.{Date, timers}
-import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.Event
 import scalatags.JsDom.all._
 
@@ -68,7 +67,7 @@ class CalendarView(window: Div, octopusHome: Div) {
     val monthStart: Long = getMonthStart(current).valueOf().toLong
     val monthEnd: Long = getMonthEnd(current).valueOf().toLong
 
-    AutowireClient[Api].getEventsForRange(monthStart, monthEnd).call().foreach{ monthEvents =>
+    octoApi.getEventsForRange(monthStart, monthEnd).call().foreach{ monthEvents =>
       view.replaceChild(calendarTable(monthEvents), view.lastChild)
     }
 

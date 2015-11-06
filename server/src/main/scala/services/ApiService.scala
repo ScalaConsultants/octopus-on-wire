@@ -1,13 +1,12 @@
 package services
 
 import config.ServerConfig
-import domain.UserId
 import services.ApiService._
 
 import scala.collection.concurrent.TrieMap
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.domain.{Event, EventId, SimpleEvent, UserEventInfo}
+import scalac.octopusonwire.shared.domain._
 
 trait EventSource {
   def getEvents: Seq[Event]
@@ -65,6 +64,8 @@ class ApiService(userId: Option[UserId]) extends Api {
         ))
       case None => None
     }
+
+  override def getUserId(): Option[UserId] = userId
 
   override def getFutureItems(limit: Int): Seq[SimpleEvent] = {
     val now = System.currentTimeMillis()

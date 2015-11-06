@@ -1,6 +1,6 @@
 package scalac.octopusonwire.shared
 
-import scalac.octopusonwire.shared.domain.{EventId, UserEventInfo, SimpleEvent, Event}
+import scalac.octopusonwire.shared.domain._
 
 trait Api {
   def getFutureItems(limit: Int): Seq[SimpleEvent]
@@ -8,6 +8,8 @@ trait Api {
   def getEventsForRange(from: Long, to: Long): Seq[Event]
 
   def getUserEventInfo(eventId: EventId): Option[UserEventInfo]
+
+  def getUserId(): Option[UserId]
 
   def isUserLoggedIn(): Boolean
 

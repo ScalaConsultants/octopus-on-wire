@@ -144,18 +144,6 @@ body {
   justify-content: space-between;
 }
 
-.octopus-event-join-link {
-  cursor: pointer;
-  transition: .1s;
-  padding: 3px 10px;
-  color: @blue-dark;
-  background: white;
-  &:hover {
-    text-decoration: none;
-    color: white;
-    background: transparent;
-  }
-}
 
 .octopus-window-bottom-arrow {
   position: absolute;
@@ -192,6 +180,31 @@ body {
   font-size: 1em;
   font-family: sans-serif;
   color: white;
+}
+
+.octopus-user-avatar-wrapper{
+  display: flex;
+  height: 30px;
+
+  .octopus-user-avatar{
+    max-height: 100%;
+    width: auto;
+    overflow: hidden;
+    display: block;
+  }
+}
+
+.octopus-event-join-link {
+  cursor: pointer;
+  transition: .1s;
+  padding: 3px 10px;
+  color: @blue-dark;
+  background: white;
+  &:hover {
+    text-decoration: none;
+    color: white;
+    background: transparent;
+  }
 }
 
 .octopus-event-link {
