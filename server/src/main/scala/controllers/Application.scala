@@ -2,14 +2,12 @@ package controllers
 
 import java.nio.ByteBuffer
 
-import akka.util.Helpers.Requiring
 import boopickle.Default._
 import com.google.common.net.MediaType
-import config.{ServerConfig, Github}
 import config.Github._
+import config.{Github, ServerConfig}
 import domain.UserId
 import play.api.Play.current
-import play.api.http.HeaderNames._
 import play.api.libs.ws.WS
 import play.api.mvc._
 import services.{ApiService, EventSource, InMemoryEventSource}
@@ -69,9 +67,12 @@ object Application extends Controller {
     result.map(r => Option((r.xml \ AccessToken).text) )
   }
 
+  private def getUserId(tokenOption: Option[String]): Option[UserId] =
+    tokenOption.flatMap(token => UserCache.getOrFetchUserId(token))
+
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
     getGithubToken(code).map(token => {
-      val userOpt = token.flatMap(t => UserCache.getOrFetchUserId(t))
+      val userOpt = getUserId(token)
       new ApiService(userOpt)
         .joinEventAndGetJoins(EventId(joinEvent))
       
@@ -79,7 +80,7 @@ object Application extends Controller {
         name = AccessToken,
         value = token.getOrElse(""),
         maxAge = token.map(_ => 14 * 3600 * 24),
-        domain = Some(ServerConfig.domain),
+        domain = Some(ServerConfig.Domain),
         secure = false, //we don't have HTTPS yet
         httpOnly = true
       ))
@@ -97,7 +98,7 @@ object Application extends Controller {
     println(s"Request path: $path")
 
     val tokenCookie: Option[String] = request.cookies.get(Github.AccessToken).map(_.value)
-    val userOpt = tokenCookie.flatMap(t => UserCache.getOrFetchUserId(t))
+    val userOpt = getUserId(tokenCookie)
 
     val apiService = new ApiService(userOpt)
 
