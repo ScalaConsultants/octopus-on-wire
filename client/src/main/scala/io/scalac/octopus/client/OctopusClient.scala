@@ -1,18 +1,16 @@
 package io.scalac.octopus.client
 
 import autowire._
-import io.scalac.octopus.client.views.SliderViewOperations
-import SliderViewOperations._
-import io.scalac.octopus.client.config.{ClientConfig, AutowireClient}
-import io.scalac.octopus.client.views.{EventWindowOperations, CalendarWindowOperations}
-import org.scalajs.dom.html.{Div, UList}
-
 import boopickle.Default._
+import io.scalac.octopus.client.config.ClientConfig
+import io.scalac.octopus.client.config.ClientConfig._
+import io.scalac.octopus.client.views.SliderViewOperations._
+import io.scalac.octopus.client.views.{CalendarWindowOperations, EventWindowOperations, SliderViewOperations}
+import org.scalajs.dom.html.{Div, UList}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
-import scalac.octopusonwire.shared.Api
 import scalatags.JsDom.all._
 
 @JSExport("OctopusClient")
@@ -30,7 +28,7 @@ object OctopusClient extends js.JSApp {
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
 
-    AutowireClient[Api].getFutureItems(ClientConfig.ItemsToFetch).call().map { items =>
+    octoApi.getFutureItems(ClientConfig.ItemsToFetch).call().map { items =>
       items foreach {
         item => list.appendChild(
           li(div(`class` := "item",

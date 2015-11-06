@@ -16,4 +16,5 @@ object ClientConfig {
   val WeeksToDisplay = 6
   val ApiUrl = "http://octowire.com:9000"
   type ClientApi = ClientProxy[Api, ByteBuffer, Default.Pickler, Default.Pickler]
+  val octoApi: ClientApi = AutowireClient[Api]
 }
