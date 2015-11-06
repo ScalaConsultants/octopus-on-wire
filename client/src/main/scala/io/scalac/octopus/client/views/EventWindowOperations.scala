@@ -1,11 +1,10 @@
 package io.scalac.octopus.client.views
 
 import autowire._
-import boopickle.Default._
-import io.scalac.octopus.client.config.{AutowireClient, Github}
+import io.scalac.octopus.client.config.AutowireClient
+import io.scalac.octopus.client.config.ClientConfig.ClientApi
 import io.scalac.octopus.client.tools.EventDateOps._
-import org.scalajs.dom
-import org.scalajs.dom.html.{Anchor, Div}
+import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -18,7 +17,7 @@ import scalatags.JsDom.all._
   */
 object EventWindowOperations extends WindowOperations {
   type EventWindowOption = Option[(EventId, Div)]
-  val api = AutowireClient[Api]
+  implicit val api: ClientApi = AutowireClient[Api]
 
 
   protected var eventWindow: EventWindowOption = None
@@ -31,7 +30,7 @@ object EventWindowOperations extends WindowOperations {
 
   protected def switchEventWindow(eventId: EventId, octopusHome: Div): EventWindowOption = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
-      Do nothing (return the same thing we matched)*/
+      Close the window.*/
     case Some((storedEventId, window)) if storedEventId == eventId =>
       closeWindow(octopusHome)
       None
@@ -53,27 +52,6 @@ object EventWindowOperations extends WindowOperations {
         bottomArrow
       ).render
 
-      def joinEvent(joined: Boolean) =
-        if (userLoggedIn) {
-          if (!joined) api.joinEventAndGetJoins(eventId).call().foreach {
-            eventJoinCount => {
-              val bottom = window.childNodes(window.childElementCount - 2)
-              bottom.replaceChild(joinButton(joined = true, eventJoinCount), bottom.childNodes(0))
-            }
-          }
-        } else dom.window.location assign Github.LoginWithJoinUrl(dom.window.location.href, eventId)
-
-      /** If there's no token found, redirect to login page
-        * If there's a token, just join the event
-        *
-        * If the event has already been joined, do nothing */
-      def joinButton(joined: Boolean, joinCount: Long): Anchor =
-        a(
-          s"${if (!joined) "Join" else "Joined"} ($joinCount)",
-          `class` := "octopus-event-join-link",
-          onclick := {() => joinEvent(joined)}
-        ).render
-
       api.getUserEventInfo(eventId).call().foreach {
         case Some(info) =>
 
@@ -89,7 +67,7 @@ object EventWindowOperations extends WindowOperations {
                 p(event.location, `class` := "octopus-event-location"),
                 div(
                   `class` := "octopus-event-bottom",
-                  joinButton(joined, joinCount),
+                  new JoinButton(window, userLoggedIn, eventId).getButton(joined, joinCount),
                   a(href := event.url, `class` := "octopus-event-link", target := "_blank")
                 ),
                 bottomArrow
