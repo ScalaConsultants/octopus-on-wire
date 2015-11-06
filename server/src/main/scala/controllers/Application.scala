@@ -2,14 +2,12 @@ package controllers
 
 import java.nio.ByteBuffer
 
-import akka.util.Helpers.Requiring
 import boopickle.Default._
 import com.google.common.net.MediaType
-import config.Github
 import config.Github._
+import config.{Github, ServerConfig}
 import domain.UserId
 import play.api.Play.current
-import play.api.http.HeaderNames._
 import play.api.libs.ws.WS
 import play.api.mvc._
 import services.{ApiService, EventSource, InMemoryEventSource}
@@ -27,26 +25,23 @@ object UserCache {
   //temporary cache
   val cache = TrieMap[String, UserId]()
 
-  def getUserId(tokenOption: Option[String]): Option[UserId] =
-    tokenOption match{
-      case Some(token) =>
-        cache.get(token) match{
-          case Some(uid) => Option(uid)
-          case _ =>
-            val result = Await.result(
-              awaitable = WS.url(UserUrl)
-                .withRequestTimeout(ApiRequestTimeout)
-                .withQueryString(AccessToken -> token)
-                .execute("GET"),
-              atMost = Duration.Inf
-            )
-            val uid = (result.json \ "id").toOption.map(id => UserId(id.toString.toInt))
-            uid.foreach(cache(token) = _)
+  def getOrFetchUserId(token: String): Option[UserId] = cache.get(token).orElse(fetchUserId(token))
 
-            uid
-        }
-      case _ => None
-    }
+  private def fetchUserId(token: String): Option[UserId] = {
+    val result = Await.result(
+      awaitable = WS.url(UserUrl)
+        .withRequestTimeout(ApiRequestTimeout)
+        .withQueryString(AccessToken -> token)
+        .execute("GET"),
+      atMost = Duration.Inf
+    )
+    val uid = (result.json \ "id").toOption.map(id => UserId(id.toString.toInt))
+
+    //update cache
+    uid.foreach(cache(token) = _)
+
+    uid
+  }
 }
 
 object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
@@ -62,33 +57,34 @@ object Application extends Controller {
     Ok(views.html.index())
   }
 
-  def getGithubToken(code: String): Option[String] = {
-    val result = Await.result(
-      awaitable = WS.url(AccessTokenUrl)
+  def getGithubToken(code: String): Future[Option[String]] = {
+    val result = WS.url(AccessTokenUrl)
         .withRequestTimeout(ApiRequestTimeout)
         .withHeaders(ACCEPT -> "application/xml")
         .withQueryString("client_id" -> ClientId, "client_secret" -> ClientSecret, "code" -> code)
-        .execute("POST"),
-      atMost = Duration.Inf)
+        .execute("POST")
 
-    Option((result.xml \ AccessToken).text)
+    result.map(r => Option((r.xml \ AccessToken).text) )
   }
 
+  private def getUserId(tokenOption: Option[String]): Option[UserId] =
+    tokenOption.flatMap(token => UserCache.getOrFetchUserId(token))
+
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
-    Future {
-      val token = getGithubToken(code)
-
-      new ApiService(UserCache.getUserId(token)).joinEventAndGetJoins(EventId(joinEvent))
-
+    getGithubToken(code).map(token => {
+      val userOpt = getUserId(token)
+      new ApiService(userOpt)
+        .joinEventAndGetJoins(EventId(joinEvent))
+      
       Redirect(sourceUrl).withCookies(Cookie(
         name = AccessToken,
         value = token.getOrElse(""),
         maxAge = token.map(_ => 14 * 3600 * 24),
-        domain = Some(".octowire.com"),
+        domain = Some(ServerConfig.Domain),
         secure = false, //we don't have HTTPS yet
         httpOnly = true
       ))
-    }
+    })
   }
 
 
@@ -102,8 +98,9 @@ object Application extends Controller {
     println(s"Request path: $path")
 
     val tokenCookie: Option[String] = request.cookies.get(Github.AccessToken).map(_.value)
+    val userOpt = getUserId(tokenCookie)
 
-    val apiService = new ApiService(UserCache.getUserId(tokenCookie))
+    val apiService = new ApiService(userOpt)
 
     val router = Router.route[Api](apiService)
 
