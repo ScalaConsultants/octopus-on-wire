@@ -1,6 +1,8 @@
 package tools
 
-import play.api.libs.json.{JsNumber, JsString, JsDefined, JsLookupResult}
+import play.api.libs.json.{JsDefined, JsLookupResult, JsNumber, JsString}
+
+import scala.language.implicitConversions
 
 class JsLookupResultOps(jsLookupResult: JsLookupResult) {
   def toOptionString: Option[String] = jsLookupResult match {
@@ -10,6 +12,7 @@ class JsLookupResultOps(jsLookupResult: JsLookupResult) {
 
   def toOptionLong: Option[Long] = jsLookupResult match {
     case JsDefined(JsNumber(num)) => Option(num.toLong)
+    case _ => None
   }
 }
 
