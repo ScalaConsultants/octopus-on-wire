@@ -37,7 +37,7 @@ class JoinButton(window: Div, eventId: EventId) {
       wrapper.appendChild(
         img(
           `class` := "octopus-user-avatar",
-          src := Github.getUserAvatarUrl(id, 100)
+          src := Github.buildUserAvatarUrl(id, 100)
         ).render
       )
     )

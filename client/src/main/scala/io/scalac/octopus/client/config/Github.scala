@@ -7,5 +7,5 @@ object Github {
   val ClientId = "23d0d2f1f1cad53fd5f8"
   def LoginWithJoinUrl(currentUrl: String, eventId: EventId): String =
     s"${Github.AuthorizeUrl}?client_id=${Github.ClientId}&redirect_uri=${ClientConfig.ApiUrl}/github/withJoin/${eventId.value}?source_url=$currentUrl"
-  def getUserAvatarUrl(userId: UserId, size: Int) = s"https://avatars.githubusercontent.com/u/${userId.value}?v=3&s=$size"
+  def buildUserAvatarUrl(userId: UserId, size: Int) = s"https://avatars.githubusercontent.com/u/${userId.value}?v=3&s=$size"
 }
