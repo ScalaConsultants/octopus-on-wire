@@ -26,8 +26,7 @@ object CalendarTable {
       case _ => "other-month"
     }
 
-
-    val monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    val monthStart = getMonthStart(now)
     val calendarStart = monthStart - (((monthStart.getDay() + 6) % 7) days)
 
     val weeks: Seq[Seq[Date]] =

@@ -12,7 +12,7 @@ import scalatags.JsDom.all._
 trait WindowOperations {
   protected var outsideListener: Div = _
 
-  protected def openWindow(window: Div)(octopusHome: Div) = {
+  protected def openWindow(window: Div, octopusHome: Div) = {
     octopusHome.appendChild(window)
     outsideListener = getOutsideListener(octopusHome)
     octopusHome.appendChild(outsideListener)
@@ -24,7 +24,7 @@ trait WindowOperations {
       onclick := { () => closeWindow(octopusHome) }
     ).render
 
-  protected def removeWindow(window: Div)(octopusHome: Div): Unit = {
+  protected def removeWindow(window: Div, octopusHome: Div): Unit = {
     octopusHome.removeChild(outsideListener)
     window.classList.add("closed")
     timers.setTimeout(ClientConfig.WindowLoadTime)(octopusHome.removeChild(window))
