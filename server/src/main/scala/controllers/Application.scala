@@ -4,29 +4,54 @@ import java.nio.ByteBuffer
 
 import boopickle.Default._
 import com.google.common.net.MediaType
+import config.Github._
+import config.{Github, Router, ServerConfig}
 import play.api.mvc._
-import services.ApiService
+import services._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
-
-object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
-  override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
-
-  override def write[R: Pickler](r: R) = Pickle.intoBytes(r)
-}
+import scalac.octopusonwire.shared.domain.EventId
 
 object Application extends Controller {
-  val apiService = new ApiService()
+  val eventSource: EventSource = InMemoryEventSource
 
-  def index = Action {
-    Ok(views.html.index())
+  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
+    result.withHeaders(
+      ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
+      ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
+      ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true",
+      CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
+
+  def index = Action(Ok(views.html.index()))
+
+  def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
+    GithubApi.getGithubToken(code).map(token => {
+      val userOpt = GithubApi.getUserId(token)
+      new ApiService(userOpt)
+        .joinEventAndGetJoins(EventId(joinEvent))
+
+      Redirect(sourceUrl).withCookies(Cookie(
+        name = AccessTokenKey,
+        value = token.getOrElse(""),
+        maxAge = token.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
+        domain = Some(ServerConfig.Domain),
+        secure = false, //we don't have HTTPS yet
+        httpOnly = true
+      ))
+    })
   }
-
-  val router = Router.route[Api](apiService)
 
   def autowireApi(path: String) = Action.async(parse.raw) { implicit request =>
     println(s"Request path: $path")
+
+    val tokenCookie: Option[String] = request.cookies.get(Github.AccessTokenKey).map(_.value)
+    val userOpt = GithubApi.getUserId(tokenCookie)
+
+    val apiService = new ApiService(userOpt)
+
+    val router = Router.route[Api](apiService)
 
     // get the request body as Array[Byte]
     val b = request.body.asBytes(parse.UNLIMITED).get
@@ -36,15 +61,10 @@ object Application extends Controller {
     router(req).map(buffer => {
       val data = Array.ofDim[Byte](buffer.remaining())
       buffer.get(data)
-      Ok(data)
+      CorsEnabled(Ok(data))
     })
   }
 
   /*Enables CORS*/
-  def options(path: String) = Action { request =>
-    NoContent.withHeaders(
-      ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
-      ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
-      CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
-  }
+  def options(path: String) = Action { implicit request => CorsEnabled(NoContent) }
 }
