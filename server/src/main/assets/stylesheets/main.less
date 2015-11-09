@@ -142,8 +142,8 @@ body {
   width: 100%;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: center;
 }
-
 
 .octopus-window-bottom-arrow {
   position: absolute;
@@ -185,13 +185,69 @@ body {
 .octopus-user-avatar-wrapper{
   display: flex;
   height: 30px;
+}
 
-  .octopus-user-avatar{
+.octopus-user-avatar {
+  height: 100%;
+  position: relative;
+
+  img{
     max-height: 100%;
     width: auto;
     overflow: hidden;
     display: block;
   }
+
+  &:not(:hover) .octopus-user-nickname{
+    opacity: 0;
+  }
+}
+
+.octopus-user-nickname {
+  font-size: .75em;
+  padding: 5px 5px 8px;
+  color: white;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+
+  &:hover{
+    text-decoration: none;
+  }
+
+  &:before{
+    z-index: -1;
+    display: block;
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 5px;
+    background: @gray-background;
+  }
+
+  &:after{
+    display: block;
+    content: '';
+    position: absolute;
+    width: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    border-bottom: none;
+    border-top: 5px solid @gray-background;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+  }
+
+  transition: .1s;
 }
 
 .octopus-event-join-link {
@@ -302,15 +358,13 @@ body {
     border-bottom: 5px solid transparent;
   }
   @media screen and (max-width: 480px) {
-    & {
-      left: -100px;
-      right: -100px;
-      margin: auto;
-      top: auto;
-      bottom: 100%;
-      padding-left: 0;
-      padding-bottom: 6px;
-    }
+    left: -100px;
+    right: -100px;
+    margin: auto;
+    top: auto;
+    bottom: 100%;
+    padding-left: 0;
+    padding-bottom: 6px;
 
     &:before {
       left: 50%;

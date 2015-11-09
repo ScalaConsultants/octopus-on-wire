@@ -5,7 +5,7 @@ import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig._
 import io.scalac.octopus.client.views.SliderViewOperations._
-import io.scalac.octopus.client.views.{CalendarWindowOperations, EventWindowOperations, SliderViewOperations}
+import io.scalac.octopus.client.views.{CalendarWindowOperations, EventWindowOperations}
 import org.scalajs.dom.html.{Div, UList}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow

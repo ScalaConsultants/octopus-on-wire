@@ -9,9 +9,11 @@ trait Api {
 
   def getUserEventInfo(eventId: EventId): Option[UserEventInfo]
 
-  def getUserId(): Option[UserId]
+  def getUserInfo(): Option[UserInfo]
 
   def isUserLoggedIn(): Boolean
 
   def joinEventAndGetJoins(eventId: EventId): Long
+
+  def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo]
 }
