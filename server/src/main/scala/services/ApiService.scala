@@ -4,6 +4,9 @@ import config.ServerConfig
 import services.ApiService._
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain._
@@ -11,11 +14,15 @@ import scalac.octopusonwire.shared.domain._
 trait EventSource {
   def getEvents: Seq[Event]
 
+  def getEventsWhere(filter: Event => Boolean): Seq[Event]
+
   def joinEvent(userId: UserId, eventId: EventId): Unit
 
   def eventById(id: EventId): Option[Event]
 
   def countJoins(eventId: EventId): Long
+
+  def getJoins(eventId: EventId): Set[UserId]
 
   def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean
 }
@@ -33,9 +40,14 @@ object InMemoryEventSource extends EventSource {
     Event(EventId(8), "Best Scala event", now + days(28), now + days(28) + hours(8), "Some nice place", "https://scalac.io")
   )
 
-  var eventJoins = TrieMap[EventId, Set[UserId]]()
+  val eventJoins = TrieMap[EventId, Set[UserId]](
+    EventId(1) -> Set(1136843, 1548278, 10749622, 192549, 13625545, 1097302, 82964, 345056, 390629, 4959786, 5664242).map(UserId(_)),
+    EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
+  )
 
   override def getEvents: Seq[Event] = events
+
+  override def getEventsWhere(filter: (Event) => Boolean): Seq[Event] = events.filter(filter)
 
   override def joinEvent(userId: UserId, eventId: EventId): Unit =
     eventById(eventId).foreach(event => {
@@ -45,6 +57,8 @@ object InMemoryEventSource extends EventSource {
   override def eventById(id: EventId): Option[Event] = events find (_.id == id)
 
   override def countJoins(eventId: EventId): Long = eventJoins.getOrElse(eventId, Nil).size
+
+  override def getJoins(eventId: EventId): Set[UserId] = eventJoins.getOrElse(eventId, Set.empty[UserId])
 
   override def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean =
     eventJoins.get(event).exists(_.contains(userId))
@@ -65,17 +79,23 @@ class ApiService(userId: Option[UserId]) extends Api {
       case None => None
     }
 
-  override def getUserId(): Option[UserId] = userId
+  override def getUserInfo(): Option[UserInfo] =
+    userId.flatMap { id =>
+      Await.result(
+        awaitable = UserCache.getOrFetchUserInfo(id),
+        atMost = Duration.Inf
+      )
+    }
 
   override def getFutureItems(limit: Int): Seq[SimpleEvent] = {
     val now = System.currentTimeMillis()
-    eventSource.getEvents.filter { event =>
-      event.startDate > now || event.endDate > now
+    eventSource.getEventsWhere { event =>
+      event.startDate >= now || event.endDate >= now
     } sortBy (_.startDate) take limit map (_.toSimple)
   }
 
   override def getEventsForRange(from: Long, to: Long): Seq[Event] =
-    eventSource.getEvents.filter { event =>
+    eventSource.getEventsWhere { event =>
       (event.startDate >= from && event.startDate <= to) ||
         (event.endDate >= from && event.endDate <= to)
     } take ServerConfig.MaxEventsInMonth
@@ -91,6 +111,17 @@ class ApiService(userId: Option[UserId]) extends Api {
     }
     eventSource.countJoins(eventId)
   }
+
+  override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
+    Await.result(
+      awaitable =
+        Future.sequence(
+          eventSource.getJoins(eventId)
+            .filterNot(userId.contains) take limit map UserCache.getOrFetchUserInfo
+        ).map(_.flatten),
+      atMost = Duration.Inf
+    )
+
 }
 
 object ApiService {
