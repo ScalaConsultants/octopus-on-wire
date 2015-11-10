@@ -104,8 +104,8 @@ class ApiService(userId: Option[UserId]) extends Api {
 
   override def joinEventAndGetJoins(eventId: EventId): Long = {
     userId match {
-      case Some(token) =>
-        eventSource.joinEvent(token, eventId)
+      case Some(id) =>
+        eventSource.joinEvent(id, eventId)
       case None =>
         println("User not found")
     }
