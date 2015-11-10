@@ -9,5 +9,6 @@ object Github {
   val AccessTokenUrl = "https://github.com/login/oauth/access_token"
   val AccessTokenKey = "access_token"
   val UserUrl = ApiBaseUrl + "/user"
+  val UserFollowingUrl = UserUrl + "/following"
   val ApiRequestTimeout = 5000
 }
