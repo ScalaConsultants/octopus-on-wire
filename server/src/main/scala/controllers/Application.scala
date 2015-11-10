@@ -28,16 +28,16 @@ object Application extends Controller {
   def index = Action(Ok(views.html.index()))
 
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
-    GithubApi.getGithubToken(code).flatMap{ token =>
-      UserCache.getOrFetchUserId(token)
+    GithubApi.getGithubToken(code).flatMap{ tokenOpt =>
+      UserCache.getOrFetchUserId(tokenOpt)
         .map{ userOpt =>
-        new ApiService(userOpt)
+        new ApiService(tokenOpt, userOpt)
           .joinEventAndGetJoins(EventId(joinEvent))
 
         Redirect(sourceUrl).withCookies(Cookie(
           name = AccessTokenKey,
-          value = token.getOrElse(""),
-          maxAge = token.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
+          value = tokenOpt.getOrElse(""),
+          maxAge = tokenOpt.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
           domain = Some(ServerConfig.Domain),
           secure = false, //we don't have HTTPS yet
           httpOnly = true
@@ -58,7 +58,7 @@ object Application extends Controller {
     val req = autowire.Core.Request(path.split("/"), Unpickle[Map[String, ByteBuffer]].fromBytes(ByteBuffer.wrap(b)))
 
     userFuture.flatMap { userOpt =>
-      val apiService = new ApiService(userOpt)
+      val apiService = new ApiService(tokenCookie, userOpt)
       val router = Router.route[Api](apiService)
 
       // call Autowire route

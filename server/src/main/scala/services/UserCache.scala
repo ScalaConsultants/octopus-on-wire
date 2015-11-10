@@ -12,9 +12,9 @@ object UserCache {
   private val tokenCache = TrieMap[String, UserId]()
   private val userCache = TrieMap[UserId, UserInfo]()
 
-  def getOrFetchUserInfo(id: UserId): Future[Option[UserInfo]] =
+  def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] =
     userCache.get(id) match {
-      case None => fetchUserInfo(id)
+      case None => fetchUserInfo(id, tokenOpt)
       case someInfo => Future.successful(someInfo)
     }
 
@@ -26,8 +26,8 @@ object UserCache {
       }
     }.getOrElse(Future(None))
 
-  private def fetchUserInfo(id: UserId): Future[Option[UserInfo]] = {
-    GithubApi.getUserInfo(id).map { result =>
+  private def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] = {
+    GithubApi.getUserInfo(id, tokenOpt).map { result =>
       val loginOpt = (result \ "login").toOptionString
       val userOpt = loginOpt.map(name => UserInfo(id, name))
 
