@@ -5,11 +5,18 @@ import org.scalajs.dom.html.UList
 
 import scala.scalajs.js.timers
 import scala.scalajs.js.timers.SetIntervalHandle
+import scalatags.JsDom.all._
 
 object SliderViewOperations {
   var slideIntervalHandle: Option[SetIntervalHandle] = None
 
   var currentIndex = ClientConfig.InitialSlideIndex
+
+  val list: UList = ul(
+    `class` := "octopus-shuffle-list",
+    onmouseover := { () => stopSlideInterval() },
+    onmouseout := { () => startSlideInterval(list) }
+  ).render
 
   /**
    * Returns the next possible index.
@@ -49,12 +56,12 @@ object SliderViewOperations {
     updateClasses(list)
   }
 
-  def startSlideInterval(list: UList) = slideIntervalHandle match {
+  def startSlideInterval(list: UList) = slideIntervalHandle = slideIntervalHandle match {
     case Some(interval) => slideIntervalHandle
     case None => Some(timers.setInterval(ClientConfig.ItemChangeInterval)(moveToNextItem(list)))
   }
 
-  def stopSlideInterval() = slideIntervalHandle match {
+  def stopSlideInterval() = slideIntervalHandle = slideIntervalHandle match {
     case Some(interval) =>
       timers.clearInterval(interval)
       None

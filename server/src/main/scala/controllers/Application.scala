@@ -6,6 +6,7 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
+import data.{InMemoryEventSource, EventSource}
 import play.api.mvc._
 import services._
 
