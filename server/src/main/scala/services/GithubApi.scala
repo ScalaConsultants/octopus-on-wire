@@ -20,11 +20,17 @@ object GithubApi {
   private def buildUserCall(url: String, token: String): WSRequest =
     buildCall(url).withQueryString(AccessTokenKey -> token)
 
+  private def buildOptionalUserCall(url: String, tokenOpt: Option[String]) =
+    tokenOpt.map(buildUserCall(url, _)).getOrElse(buildCall(url))
+
   def getCurrentUserInfo(token: String): Future[JsValue] =
     buildUserCall(UserUrl, token).get().map(_.json)
 
-  def getUserInfo(userId: UserId): Future[JsValue] =
-    buildCall(s"$UserUrl/${userId.value}").get().map(_.json)
+  def getUserInfo(userId: UserId, tokenOpt: Option[String]): Future[JsValue] =
+    buildOptionalUserCall(s"$UserUrl/${userId.value}", tokenOpt).get().map(_.json)
+
+  def getCurrentUserFollowing(token: String): Future[JsValue] =
+    buildUserCall(UserFollowingUrl, token).get().map(_.json)
 
   def getGithubToken(code: String): Future[Option[String]] = {
     val result = WS.url(Github.AccessTokenUrl)
