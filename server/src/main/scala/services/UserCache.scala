@@ -1,12 +1,11 @@
 package services
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import tools.JsLookupResultOps._
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.{Future, Await}
-import scala.concurrent.duration.Duration
-import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 object UserCache {
 
@@ -14,19 +13,18 @@ object UserCache {
   private val userCache = TrieMap[UserId, UserInfo]()
 
   def getOrFetchUserInfo(id: UserId): Future[Option[UserInfo]] =
-    userCache.get(id) match{
+    userCache.get(id) match {
       case None => fetchUserInfo(id)
-      case res => Future.successful(res)
+      case someInfo => Future.successful(someInfo)
     }
 
-  def getOrFetchUserId(token: String): Option[UserId] = {
-    val cached = tokenCache.get(token)
-
-    //we need to update user login anyways
-    if (cached.isDefined) Future(fetchUserId(token).map(info => fetchUserInfo(info)))
-
-    cached.orElse(fetchUserId(token))
-  }
+  def getOrFetchUserId(tokenOpt: Option[String]): Future[Option[UserId]] =
+    tokenOpt.map { token =>
+      tokenCache.get(token) match {
+        case None => fetchAndSaveUserId(token)
+        case someId => Future.successful(someId)
+      }
+    }.getOrElse(Future(None))
 
   private def fetchUserInfo(id: UserId): Future[Option[UserInfo]] = {
     GithubApi.getUserInfo(id).map { result =>
@@ -40,23 +38,21 @@ object UserCache {
     }
   }
 
-  private def fetchUserId(token: String): Option[UserId] = {
-    val result = Await.result(
-      awaitable = GithubApi.getCurrentUserInfo(token),
-      atMost = Duration.Inf
-    )
+  private def fetchAndSaveUserId(token: String): Future[Option[UserId]] = {
+    GithubApi.getCurrentUserInfo(token)
+      .map { result =>
+        val uid = (result \ "id").toOptionLong.map(UserId)
+        val ulogin = (result \ "login").toOptionString
 
-    val uid = (result \ "id").toOptionLong.map(UserId)
-    val ulogin = (result \ "login").toOptionString
+        val userOption = (uid, ulogin).zipped.map((id, name) => UserInfo(id, name)).headOption
 
-    val userOption = (uid, ulogin).zipped.map((id, name) => UserInfo(id, name)).headOption
+        //update caches
+        userOption.foreach(user => {
+          userCache(user.userId) = user
+          tokenCache(token) = user.userId
+        })
 
-    //update caches
-    userOption.foreach(user => {
-      userCache(user.userId) = user
-      tokenCache(token) = user.userId
-    })
-
-    uid
+        uid
+      }
   }
 }

@@ -26,9 +26,6 @@ object GithubApi {
   def getUserInfo(userId: UserId): Future[JsValue] =
     buildCall(s"$UserUrl/${userId.value}").get().map(_.json)
 
-  def getUserId(tokenOption: Option[String]): Option[UserId] =
-    tokenOption.flatMap(token => UserCache.getOrFetchUserId(token))
-
   def getGithubToken(code: String): Future[Option[String]] = {
     val result = WS.url(Github.AccessTokenUrl)
       .withRequestTimeout(ApiRequestTimeout)
