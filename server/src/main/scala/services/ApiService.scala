@@ -61,22 +61,17 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
     eventSource.countJoins(eventId)
   }
 
-  override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] = {
+  override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
     Await.result(
       awaitable =
-        tokenOpt.map(GithubApi.getCurrentUserFollowing).getOrElse(Future(JsArray()))
-          .flatMap { json =>
-            val friends = json.result.toOptionSeq.toList.flatten
-              .flatMap(friend => (friend \ "id").toOptionLong).map(UserId)
+        UserCache.getOrFetchUserFriends(tokenOpt).flatMap { friends =>
+          val (joinedFriends, otherJoins) = eventSource.getJoins(eventId)
+            .filterNot(userId contains).partition(friends contains)
 
-            val (joinedFriends, otherJoins) = eventSource.getJoins(eventId)
-              .filterNot(userId contains).partition(friends contains)
+          val othersLimited = otherJoins take (limit - joinedFriends.size)
 
-            val othersLimited = otherJoins take (limit - joinedFriends.size)
-
-            Future.sequence((joinedFriends ++ othersLimited).map(UserCache.getOrFetchUserInfo(_, tokenOpt)))
-          },
+          Future.sequence((joinedFriends ++ othersLimited).map(UserCache.getOrFetchUserInfo(_, tokenOpt)))
+        },
       atMost = Duration.Inf
     ).flatten
-  }
 }
