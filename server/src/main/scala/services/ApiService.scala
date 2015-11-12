@@ -2,6 +2,9 @@ package services
 
 import config.ServerConfig
 import data.{EventSource, InMemoryEventSource}
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsValue.jsValueToJsLookup
+import tools.JsLookupResultOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -10,7 +13,7 @@ import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain._
 
-class ApiService(userId: Option[UserId]) extends Api {
+class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
 
   val eventSource: EventSource = InMemoryEventSource
 
@@ -28,7 +31,7 @@ class ApiService(userId: Option[UserId]) extends Api {
   override def getUserInfo(): Option[UserInfo] =
     userId.flatMap { id =>
       Await.result(
-        awaitable = UserCache.getOrFetchUserInfo(id),
+        awaitable = UserCache.getOrFetchUserInfo(id, tokenOpt),
         atMost = Duration.Inf
       )
     }
@@ -61,10 +64,14 @@ class ApiService(userId: Option[UserId]) extends Api {
   override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
     Await.result(
       awaitable =
-        Future.sequence(
-          eventSource.getJoins(eventId)
-            .filterNot(userId.contains) take limit map UserCache.getOrFetchUserInfo
-        ).map(_.flatten),
+        UserCache.getOrFetchUserFriends(tokenOpt).flatMap { friends =>
+          val (joinedFriends, otherJoins) = eventSource.getJoins(eventId)
+            .filterNot(userId contains).partition(friends contains)
+
+          val othersLimited = otherJoins take (limit - joinedFriends.size)
+
+          Future.sequence((joinedFriends ++ othersLimited).map(UserCache.getOrFetchUserInfo(_, tokenOpt)))
+        },
       atMost = Duration.Inf
-    )
+    ).flatten
 }
