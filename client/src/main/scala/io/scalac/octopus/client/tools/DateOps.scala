@@ -1,9 +1,9 @@
 package io.scalac.octopus.client.tools
 
-import io.scalac.octopus.client.tools.TimeUnit.MillisecondsInMinute
+import io.scalac.octopus.client.tools.TimeUnit._
 
+import scala.language.{implicitConversions, postfixOps}
 import scala.scalajs.js.Date
-import scala.language.implicitConversions
 
 object DateOps {
   implicit def date2DateOps(d: Date): DateOps = new DateOps(d)
@@ -14,7 +14,7 @@ object DateOps {
 
   def getMonthStart(now: Date): Date = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  def getMonthEnd(now: Date): Date = getNextMonth(getMonthStart(now))
+  def getMonthEnd(now: Date): Date = getNextMonth(getMonthStart(now)) - (1 seconds)
 
   def getNextMonth(currentMonth: Date): Date = {
     val willPassYear = currentMonth.getMonth() == 11
@@ -39,10 +39,10 @@ object DateOps {
 
 class DateOps(date: Date) {
   def +(another: Date) =
-    new Date(date.valueOf() - date.getTimezoneOffset() * MillisecondsInMinute + another.valueOf() - another.getTimezoneOffset() * MillisecondsInMinute)
+    new Date(date.valueOf() + another.valueOf())
 
   def -(another: Date) =
-    new Date(date.valueOf() - date.getTimezoneOffset() * MillisecondsInMinute - another.valueOf() + another.getTimezoneOffset() * MillisecondsInMinute)
+    new Date(date.valueOf() - another.valueOf())
 
   def isSameYear(another: Date) =
     date.getFullYear() == another.getFullYear()
