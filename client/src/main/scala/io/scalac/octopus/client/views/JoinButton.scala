@@ -2,14 +2,14 @@ package io.scalac.octopus.client.views
 
 import autowire._
 import boopickle.Default._
-import io.scalac.octopus.client.config.ClientConfig.octoApi
-import io.scalac.octopus.client.config.Github
-import io.scalac.octopus.client.views.EventWindowOperations.userId
+import io.scalac.octopus.client.config.ClientConfig.{UserThumbSize, octoApi}
+import io.scalac.octopus.client.config.{ClientConfig, Github}
+import io.scalac.octopus.client.views.EventWindowOperations.userInfo
 import org.scalajs.dom
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.html.{Anchor, Div}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scalac.octopusonwire.shared.domain.EventId
+import scalac.octopusonwire.shared.domain.{EventId, UserInfo}
 import scalatags.JsDom.all._
 
 class JoinButton(window: Div, eventId: EventId) {
@@ -19,7 +19,7 @@ class JoinButton(window: Div, eventId: EventId) {
     *
     * If the event has already been joined, do nothing */
   def joinEvent(joined: Boolean) =
-    if (userId.isDefined) {
+    if (userInfo.isDefined) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
         eventJoinCount => {
           val bottom = window.childNodes(window.childElementCount - 2)
@@ -28,26 +28,38 @@ class JoinButton(window: Div, eventId: EventId) {
       }
     } else dom.window.location assign Github.LoginWithJoinUrl(dom.window.location.href, eventId)
 
+  def userAvatar(user: UserInfo): Anchor = a(
+    `class` := "octopus-user-avatar",
+    href := Github.buildUserPageUrl(user.login),
+    target := "_blank",
+    img(src := Github.buildUserAvatarUrl(user.userId, UserThumbSize)),
+    span(
+      `class` := "octopus-user-nickname",
+      user.login
+    )
+  ).render
+
   def getButton(joined: Boolean, joinCount: Long): Div = {
     val wrapper = div(
       `class` := "octopus-user-avatar-wrapper"
     ).render
 
-    userId.foreach(id =>
-      wrapper.appendChild(
-        img(
-          `class` := "octopus-user-avatar",
-          src := Github.buildUserAvatarUrl(id, 100)
-        ).render
-      )
+    userInfo.foreach(user =>
+      wrapper.appendChild(userAvatar(user))
     )
+
     wrapper.appendChild(
       a(
-        s"${if (!joined) "Join" else "Joined"} ($joinCount)",
+        s"${if (!joined) "+=1" else "\u2713"} ($joinCount)",
         `class` := "octopus-event-join-link",
         onclick := { () => joinEvent(joined) }
       ).render
     )
+
+    octoApi.getUsersJoined(eventId, ClientConfig.UsersToDisplay).call().foreach(_.foreach { person =>
+      wrapper.appendChild(userAvatar(person))
+    })
+
     wrapper
   }
 }

@@ -8,6 +8,8 @@ import boopickle.Default
 import scalac.octopusonwire.shared.Api
 
 object ClientConfig {
+  val UsersToDisplay = 10
+  val UserThumbSize = 100
   val ItemsToFetch = 5
   val ItemChangeInterval = 5000
   val InitialSlideIndex = 0
