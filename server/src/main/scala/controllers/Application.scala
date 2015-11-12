@@ -6,6 +6,7 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
+import data.{InMemoryEventSource, EventSource}
 import play.api.mvc._
 import services._
 
@@ -27,42 +28,46 @@ object Application extends Controller {
   def index = Action(Ok(views.html.index()))
 
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
-    GithubApi.getGithubToken(code).map(token => {
-      val userOpt = GithubApi.getUserId(token)
-      new ApiService(userOpt)
-        .joinEventAndGetJoins(EventId(joinEvent))
+    GithubApi.getGithubToken(code).flatMap{ token =>
+      UserCache.getOrFetchUserId(token)
+        .map{ userOpt =>
+        new ApiService(userOpt)
+          .joinEventAndGetJoins(EventId(joinEvent))
 
-      Redirect(sourceUrl).withCookies(Cookie(
-        name = AccessTokenKey,
-        value = token.getOrElse(""),
-        maxAge = token.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
-        domain = Some(ServerConfig.Domain),
-        secure = false, //we don't have HTTPS yet
-        httpOnly = true
-      ))
-    })
+        Redirect(sourceUrl).withCookies(Cookie(
+          name = AccessTokenKey,
+          value = token.getOrElse(""),
+          maxAge = token.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
+          domain = Some(ServerConfig.Domain),
+          secure = false, //we don't have HTTPS yet
+          httpOnly = true
+        ))
+      }
+    }
   }
 
   def autowireApi(path: String) = Action.async(parse.raw) { implicit request =>
     println(s"Request path: $path")
 
     val tokenCookie: Option[String] = request.cookies.get(Github.AccessTokenKey).map(_.value)
-    val userOpt = GithubApi.getUserId(tokenCookie)
 
-    val apiService = new ApiService(userOpt)
-
-    val router = Router.route[Api](apiService)
+    val userFuture = UserCache.getOrFetchUserId(tokenCookie)
 
     // get the request body as Array[Byte]
     val b = request.body.asBytes(parse.UNLIMITED).get
     val req = autowire.Core.Request(path.split("/"), Unpickle[Map[String, ByteBuffer]].fromBytes(ByteBuffer.wrap(b)))
 
-    // call Autowire route
-    router(req).map(buffer => {
-      val data = Array.ofDim[Byte](buffer.remaining())
-      buffer.get(data)
-      CorsEnabled(Ok(data))
-    })
+    userFuture.flatMap { userOpt =>
+      val apiService = new ApiService(userOpt)
+      val router = Router.route[Api](apiService)
+
+      // call Autowire route
+      router(req).map(buffer => {
+        val data = Array.ofDim[Byte](buffer.remaining())
+        buffer.get(data)
+        CorsEnabled(Ok(data))
+      })
+    }
   }
 
   /*Enables CORS*/

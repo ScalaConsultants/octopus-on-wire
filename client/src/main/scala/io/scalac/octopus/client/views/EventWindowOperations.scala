@@ -8,7 +8,7 @@ import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalac.octopusonwire.shared.domain.{EventId, UserEventInfo, UserId}
+import scalac.octopusonwire.shared.domain.{UserInfo, EventId, UserEventInfo}
 import scalatags.JsDom.all._
 
 /**
@@ -17,8 +17,8 @@ import scalatags.JsDom.all._
 object EventWindowOperations extends WindowOperations {
   type EventWindowOption = Option[(EventId, Div)]
 
-  var userId: Option[UserId] = None
-  octoApi.getUserId().call().foreach(userId = _)
+  var userInfo: Option[UserInfo] = None
+  octoApi.getUserInfo().call().foreach(userInfo = _)
 
   protected var eventWindow: EventWindowOption = None
 
