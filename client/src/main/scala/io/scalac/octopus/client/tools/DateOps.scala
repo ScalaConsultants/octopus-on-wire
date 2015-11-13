@@ -1,5 +1,6 @@
 package io.scalac.octopus.client.tools
 
+import io.scalac.octopus.client.tools.DateOps.getOffsetDifference
 import io.scalac.octopus.client.tools.TimeUnit._
 
 import scala.language.{implicitConversions, postfixOps}
@@ -14,9 +15,9 @@ object DateOps {
 
   def getMonthStart(now: Date): Date = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  def getMonthEnd(now: Date): Date = getNextMonth(getMonthStart(now)) - (1 seconds)
+  def getMonthEnd(now: Date): Date = getNextMonthStart(getMonthStart(now)) - (1 seconds)
 
-  def getNextMonth(currentMonth: Date): Date = {
+  def getNextMonthStart(currentMonth: Date): Date = {
     val willPassYear = currentMonth.getMonth() == 11
     val currentYear = currentMonth.getFullYear()
     new Date(
@@ -26,7 +27,7 @@ object DateOps {
     )
   }
 
-  def getPreviousMonth(currentMonth: Date): Date = {
+  def getPreviousMonthStart(currentMonth: Date): Date = {
     val willPassYear = currentMonth.getMonth() == 0
     val currentYear = currentMonth.getFullYear()
     new Date(
@@ -35,14 +36,20 @@ object DateOps {
       date = 1
     )
   }
+
+  def getOffsetDifference(first: Date, second: Date) = (first.getTimezoneOffset() - second.getTimezoneOffset()) * MillisecondsInMinute
 }
 
 class DateOps(date: Date) {
-  def +(another: Date) =
-    new Date(date.valueOf() + another.valueOf())
+  def +(another: Date) = {
+    val temp = new Date(date.valueOf() + another.valueOf())
+    new Date(temp.valueOf() - getOffsetDifference(date, another))
+  }
 
-  def -(another: Date) =
-    new Date(date.valueOf() - another.valueOf())
+  def -(another: Date) = {
+    val temp = new Date(date.valueOf() - another.valueOf())
+    new Date(temp.valueOf() - getOffsetDifference(date, another))
+  }
 
   def isSameYear(another: Date) =
     date.getFullYear() == another.getFullYear()
