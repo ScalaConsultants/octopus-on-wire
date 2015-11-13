@@ -52,13 +52,13 @@ object DateOpsTests extends TestSuite {
 
       val willPassYear = now.getMonth() == 11
 
-      "month greater by 1 or equal to zero" - {
+      "appropriate month (greater by 1 or equal to zero)" - {
         if (willPassYear)
           assert(nextMonth.getMonth() == 0)
         else assert(nextMonth.getMonth() == now.getMonth() + 1)
       }
 
-      "same year or next one" - {
+      "appropriate year (same or next one)" - {
         if (willPassYear)
           assert(nextMonth.getFullYear() == now.getFullYear() + 1)
         else assert(nextMonth.getFullYear() == now.getFullYear())
@@ -73,13 +73,13 @@ object DateOpsTests extends TestSuite {
 
       val willPassYear = now.getMonth() == 0
 
-      "month smaller by 1 or equal to 11" - {
+      "appropriate month (smaller by 1 or equal to 11)" - {
         if (willPassYear)
           assert(previousMonth.getMonth() == 11)
         else assert(previousMonth.getMonth() == now.getMonth() - 1)
       }
 
-      "same year or previous one" - {
+      "appropriate year (same or previous one)" - {
         if (willPassYear)
           assert(previousMonth.getFullYear() == now.getFullYear() - 1)
         else assert(previousMonth.getFullYear() == now.getFullYear())
@@ -92,7 +92,7 @@ object DateOpsTests extends TestSuite {
       "be able to add some days" - {
         (1 to 100).foreach { i =>
           val added = now + (i days)
-          val diff = (added - now).valueOf() / 1000
+          val diff = (added.valueOf() - now.valueOf()) / 1000
           assert(diff == 3600 * 24 * i)
         }
       }
@@ -100,7 +100,7 @@ object DateOpsTests extends TestSuite {
       "be able to substract some days" - {
         (1 to 100).foreach { i =>
           val substracted = now - (i days)
-          val diff = (now - substracted).valueOf() / 1000
+          val diff = (now.valueOf() - substracted.valueOf()) / 1000
           assert(diff == 3600 * 24 * i)
         }
       }
