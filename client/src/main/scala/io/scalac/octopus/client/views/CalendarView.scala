@@ -47,13 +47,13 @@ class CalendarView(window: Div, octopusHome: Div) {
       div(
         `class` := "octopus-calendar-arrow-wrapper",
         span(`class` := "octopus-calendar-arrow arrow-left", onclick := { () =>
-          window.replaceChild(apply(getPreviousMonth(current)), window.firstChild)
+          window.replaceChild(apply(getPreviousMonthStart(current)), window.firstChild)
         }),
         span(Months(current.getMonth()) + " '" + yearString.substring(yearString.length - 2),
           `class` := "octopus-calendar-month"
         ),
         span(`class` := "octopus-calendar-arrow arrow-right", onclick := { () =>
-          window.replaceChild(apply(getNextMonth(current)), window.firstChild)
+          window.replaceChild(apply(getNextMonthStart(current)), window.firstChild)
         })
       ).render
     }
