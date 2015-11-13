@@ -2,9 +2,6 @@ package services
 
 import config.ServerConfig
 import data.{EventSource, InMemoryEventSource}
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsValue.jsValueToJsLookup
-import tools.JsLookupResultOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
