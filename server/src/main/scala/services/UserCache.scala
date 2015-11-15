@@ -1,6 +1,6 @@
 package services
 
-import tools.JsLookupResultOps._
+import play.api.libs.json.JsValue
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,8 +35,8 @@ object UserCache {
 
   def fetchUserFriends(token: String): Future[Seq[UserId]] =
     GithubApi.getCurrentUserFollowing(token).map { json =>
-      val friends = json.result.toOptionSeq.toList.flatten
-        .flatMap(friend => (friend \ "id").toOptionLong).map(UserId)
+      val friends = json.result.asOpt[Seq[JsValue]].toList.flatten
+        .flatMap(friend => (friend \ "id").asOpt[Long]).map(UserId)
 
       //update cache
       tokenCache.get(token).foreach(userFriends(_) = friends)
@@ -46,7 +46,7 @@ object UserCache {
 
   private def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] = {
     GithubApi.getUserInfo(id, tokenOpt).map { result =>
-      val loginOpt = (result \ "login").toOptionString
+      val loginOpt = (result \ "login").asOpt[String]
       val userOpt = loginOpt.map(name => UserInfo(id, name))
 
       //update cache
@@ -59,8 +59,8 @@ object UserCache {
   private def fetchAndSaveUserId(token: String): Future[Option[UserId]] = {
     GithubApi.getCurrentUserInfo(token)
       .map { result =>
-        val uid = (result \ "id").toOptionLong.map(UserId)
-        val ulogin = (result \ "login").toOptionString
+        val uid = (result \ "id").asOpt[Long].map(UserId)
+        val ulogin = (result \ "login").asOpt[String]
 
         val userOption = (uid, ulogin).zipped.map((id, name) => UserInfo(id, name)).headOption
 
