@@ -4,10 +4,9 @@ import config.Github
 import config.Github._
 import play.api.Play.current
 import play.api.libs.json.JsValue
-import play.api.libs.ws.{WSRequest, WS}
+import play.api.libs.ws.{WS, WSRequest}
 import play.api.mvc.Results.EmptyContent
 import play.mvc.Http.HeaderNames
-import tools.JsLookupResultOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -39,6 +38,6 @@ object GithubApi {
       .withQueryString("client_id" -> ClientId, "client_secret" -> ClientSecret, "code" -> code)
       .post(EmptyContent())
 
-    result.map(r => (r.json \ AccessTokenKey).toOptionString)
+    result.map(r => (r.json \ AccessTokenKey).asOpt[String])
   }
 }
