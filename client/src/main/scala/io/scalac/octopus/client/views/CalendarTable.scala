@@ -47,17 +47,17 @@ object CalendarTable {
     div(
       `class` := "table",
       div(
-        `class` := "row",
-        dayNames.map(div(_, `class` := "cell"))
+        `class` := "trow",
+        dayNames.map(div(_, `class` := "tcell"))
       ),
 
       weeks.map(week =>
         div(
-          `class` := "row",
+          `class` := "trow",
           week.map(day =>
             div(
               modifier(day),
-              `class` := "cell " + classFor(day)
+              `class` := "tcell " + classFor(day)
             ).render)
         )
       )

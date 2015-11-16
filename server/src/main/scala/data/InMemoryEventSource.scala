@@ -40,4 +40,12 @@ object InMemoryEventSource extends EventSource {
 
   override def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean =
     eventJoins.get(event).exists(_.contains(userId))
+
+  private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
+
+  override def addEvent(event: Event): Event = {
+    val copiedEvent = event.copy(id = getNextEventId)
+    events.synchronized(events :+ copiedEvent)
+    event
+  }
 }

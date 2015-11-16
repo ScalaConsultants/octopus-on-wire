@@ -16,4 +16,6 @@ trait Api {
   def joinEventAndGetJoins(eventId: EventId): Long
 
   def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo]
+
+  def addEvent(event: Event): Event
 }

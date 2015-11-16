@@ -15,6 +15,8 @@ object CalendarWindowOperations extends WindowOperations {
     calendarWindow = switchCalendarWindow(octopusHome)
   }
 
+  def openEventCreationWindow() = ???
+
   def switchCalendarWindow(octopusHome: Div): CalendarWindowOption =
     calendarWindow match {
       case Some(window) =>
@@ -24,9 +26,16 @@ object CalendarWindowOperations extends WindowOperations {
 
         val now = new Date(Date.now())
 
+        val addEventButton: Div = div(
+          `class` := "octopus-calendar-create-event",
+          "Add your own ", i(`class` := "fa fa-plus"),
+          onclick := { () => openEventCreationWindow() }
+        ).render
+
         val window: Div = div(
           div(),
           `class` := "octopus-window octopus-calendar closed",
+          addEventButton,
           div(`class` := "octopus-window-bottom-arrow arrow-left")
         ).render
 
