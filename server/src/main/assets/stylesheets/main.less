@@ -286,34 +286,50 @@ body {
     &:first-of-type {
       border-bottom: 1px solid white;
     }
-    .tcell {
-      flex: 14%;
-      font-size: 1em;
-      padding: 6px;
-      color: white;
-      position: relative;
-      text-align: center;
-      transition: .2s;
-      box-sizing: border-box;
-      &.current-day {
-        border: 1px solid white;
-      }
-      &.marked {
-        background: white;
-        cursor: pointer;
-        border: 1px solid white;
-        color: @blue-light;
-      }
-      &.other-month {
-        color: rgba(254, 253, 255, 0.5);
-      }
-      &:not(:hover) {
-        .octopus-preview {
-          visibility: hidden;
-          opacity: 0;
-        }
+  }
+  .tcell {
+    flex: 14%;
+    font-size: 1em;
+    padding: 6px;
+    color: white;
+    position: relative;
+    text-align: center;
+    transition: .2s;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    &.current-day {
+      border: 1px solid white;
+    }
+    &.marked {
+      background: white;
+      cursor: pointer;
+      border: 1px solid white;
+      color: @blue-light;
+    }
+    &.other-month {
+      color: rgba(254, 253, 255, 0.5);
+    }
+    &:not(:hover) {
+      .octopus-preview {
+        visibility: hidden;
+        opacity: 0;
       }
     }
+  }
+  .select-date-prompt {
+    color: white;
+    align-self: center;
+  }
+}
+
+.octopus-selectable-day {
+  cursor: pointer;
+  transition: .2s;
+  &:hover {
+    background: white;
+    cursor: pointer;
+    border: 1px solid white;
+    color: @blue-light;
   }
 }
 
@@ -426,5 +442,16 @@ body {
   }
   &:not(:last-of-type) {
     padding: 5px 5px 0;
+  }
+}
+
+.octopus-event-creation {
+  [contenteditable] {
+    position: relative;
+    &:empty:before {
+      content: attr(placeholder);
+      color: rgba(255, 255, 255, .8);
+      display: block;
+    }
   }
 }

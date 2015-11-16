@@ -8,7 +8,7 @@ import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalac.octopusonwire.shared.domain.{UserInfo, EventId, UserEventInfo}
+import scalac.octopusonwire.shared.domain.{EventId, UserEventInfo, UserInfo}
 import scalatags.JsDom.all._
 
 /**
@@ -24,6 +24,7 @@ object EventWindowOperations extends WindowOperations {
 
   def openEventWindow(eventId: EventId, octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
+    EventCreateWindowOperations.closeWindow(octopusHome)
     eventWindow = switchEventWindow(eventId, octopusHome)
   }
 

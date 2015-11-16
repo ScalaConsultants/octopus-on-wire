@@ -7,16 +7,19 @@ import scala.scalajs.js.timers
 import scalatags.JsDom.all._
 
 /**
- * Defines basic operations on windows.
- **/
+  * Defines basic operations on windows.
+  **/
 trait WindowOperations {
   protected var outsideListener: Div = _
 
-  protected def openWindow(window: Div, octopusHome: Div) = {
+  protected def openWindow(window: Div, octopusHome: Div, onOpen: => Unit = ()) = {
     octopusHome.appendChild(window)
     outsideListener = getOutsideListener(octopusHome)
     octopusHome.appendChild(outsideListener)
-    timers.setTimeout(ClientConfig.WindowOpenDelay)(window.classList.remove("closed"))
+    timers.setTimeout(ClientConfig.WindowOpenDelay) {
+      window.classList.remove("closed")
+      onOpen
+    }
   }
 
   protected def getOutsideListener(octopusHome: Div): Div =
