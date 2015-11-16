@@ -67,7 +67,7 @@ class CalendarView(window: Div, octopusHome: Div) {
     val monthStart: Long = getMonthStart(current).valueOf().toLong
     val monthEnd: Long = getMonthEnd(current).valueOf().toLong
 
-    octoApi.getEventsForRange(monthStart, monthEnd).call().foreach{ monthEvents =>
+    octoApi.getEventsForRange(monthStart, monthEnd).call().foreach { monthEvents =>
       view.replaceChild(calendarTable(monthEvents), view.lastChild)
     }
 

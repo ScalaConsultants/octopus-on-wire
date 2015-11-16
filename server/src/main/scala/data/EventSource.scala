@@ -16,4 +16,6 @@ trait EventSource {
   def getJoins(eventId: EventId): Set[UserId]
 
   def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean
+
+  def addEvent(event: Event): Event
 }
