@@ -5,13 +5,14 @@ import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig._
 import io.scalac.octopus.client.views.SliderViewOperations.{list, startSlideInterval, updateClasses}
-import io.scalac.octopus.client.views.{CalendarWindowOperations, EventWindowOperations, SliderViewOperations}
+import io.scalac.octopus.client.views.{EventCreateWindowOperations, CalendarWindowOperations, EventWindowOperations, SliderViewOperations}
 import org.scalajs.dom.html.Div
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
+import scala.scalajs.js.Date
 import scala.scalajs.js.annotation.JSExport
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.{list => _, _}
 
 @JSExport("OctopusClient")
 object OctopusClient extends js.JSApp {
@@ -38,6 +39,10 @@ object OctopusClient extends js.JSApp {
 
       updateClasses(list)
       startSlideInterval(list)
+
+      /*TODO remove this after we're done here*/
+      val now = new Date(Date.now())
+      EventCreateWindowOperations.openCreationWindow(now, now, octopusHome)
     }
   }
 
