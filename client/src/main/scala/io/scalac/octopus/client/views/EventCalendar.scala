@@ -27,31 +27,38 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
     view
   }
 
-  override def calendarTable(current: Date, events: Seq[Event]): Div = new CalendarTable(
-    now = current,
-    marker = calendarDay =>
-      events.exists(_ takesPlaceOn calendarDay),
-    modifier = {
-      case date if events.exists(_ takesPlaceOn date) =>
-        Array(span(date.getDate()),
-          div(
-            `class` := "octopus-preview",
-            div(
-              `class` := "octopus-preview-elements",
-              events.filter(_ takesPlaceOn date).map { event =>
-                div(
-                  event.name,
-                  `class` := "octopus-preview-element",
-                  onclick := { () =>
-                    CalendarWindowOperations.closeWindow(octopusHome)
-                    timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event.id, octopusHome))
-                  }
-                )
-              }
-            )
-          ))
-      case date => CalendarTable.defaultModifier(date)
-    }
-  )
+  override def calendarTable(current: Date, events: Seq[Event]): Div = {
+    EventCalendar.current = Option(current)
 
+    new CalendarTable(
+      now = current,
+      marker = calendarDay =>
+        events.exists(_ takesPlaceOn calendarDay),
+      modifier = {
+        case date if events.exists(_ takesPlaceOn date) =>
+          Array(span(date.getDate()),
+            div(
+              `class` := "octopus-preview",
+              div(
+                `class` := "octopus-preview-elements",
+                events.filter(_ takesPlaceOn date).map { event =>
+                  div(
+                    event.name,
+                    `class` := "octopus-preview-element",
+                    onclick := { () =>
+                      CalendarWindowOperations.closeWindow(octopusHome)
+                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event.id, octopusHome))
+                    }
+                  )
+                }
+              )
+            ))
+        case date => CalendarTable.defaultModifier(date)
+      }
+    )
+  }
+}
+
+object EventCalendar {
+  var current: Option[Date] = None
 }

@@ -1,5 +1,6 @@
 package scalac.octopusonwire.shared
 
+import scala.util.Try
 import scalac.octopusonwire.shared.domain._
 
 trait Api {
@@ -17,5 +18,5 @@ trait Api {
 
   def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo]
 
-  def addEvent(event: Event): Event
+  def addEvent(event: Event): Message
 }

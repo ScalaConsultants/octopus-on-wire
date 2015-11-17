@@ -446,6 +446,7 @@ body {
 }
 
 .octopus-event-creation {
+
   [contenteditable] {
     position: relative;
     &:empty:before {
@@ -454,12 +455,35 @@ body {
       display: block;
     }
   }
-  p{
+  p {
     font-size: 1em;
     font-family: sans-serif;
     color: white;
   }
-  span{
+  span {
     display: inline-block;
+  }
+  .octopus-event-url{
+    margin-bottom: 20px;
+  }
+  .octopus-message{
+    .hidden{
+      display: none;
+    }
+  }
+  .octopus-event-submit-button {
+    color: @blue-dark;
+    background: white;
+    padding: 5px 20px;
+    font-size: 1em;
+    transition: .2s;
+    cursor: pointer;
+    &:hover {
+      background: transparent;
+      color: white;
+    }
+    .hidden{
+      visibility: hidden;
+    }
   }
 }
