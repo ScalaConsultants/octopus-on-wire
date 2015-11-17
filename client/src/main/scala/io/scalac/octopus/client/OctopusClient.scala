@@ -42,7 +42,7 @@ object OctopusClient extends js.JSApp {
 
       /*TODO remove this after we're done here*/
       val now = new Date(Date.now())
-      EventCreateWindowOperations.openCreationWindow(now, now, octopusHome)
+      EventCreateWindowOperations.openCreationWindow(now, octopusHome)
     }
   }
 
