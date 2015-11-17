@@ -1,6 +1,5 @@
 package io.scalac.octopus.client.views
 
-import boopickle.Default._
 import io.scalac.octopus.client.tools.DateOps._
 import org.scalajs.dom.html.Div
 

@@ -41,7 +41,7 @@ object CalendarWindowOperations extends WindowOperations {
           "Add your own ", i(`class` := "fa fa-plus"),
           onclick := { () =>
             isUserSelectingDate = true
-            window.replaceChild(new DateSelector(window, octopusHome).apply(now), window.firstChild)
+            window.replaceChild(new DateSelector(window, octopusHome).apply(EventCalendar.current.getOrElse(now)), window.firstChild)
             window.replaceChild(span(`class` := "select-date-prompt", "When is the event?").render, window.childNodes(1))
           }
         ).render
