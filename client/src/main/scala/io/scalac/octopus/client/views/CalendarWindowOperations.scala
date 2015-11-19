@@ -11,20 +11,18 @@ object CalendarWindowOperations extends WindowOperations {
   protected var calendarWindow: CalendarWindowOption = None
   private var isUserSelectingDate = false
 
-  def openCalendarWindow(octopusHome: Div): Unit = {
+  def openCalendarWindow(octopusHome: Div, monthDay: Date): Unit = {
     EventWindowOperations.closeWindow(octopusHome)
     EventCreateWindowOperations.closeWindow(octopusHome)
-    calendarWindow = switchCalendarWindow(octopusHome)
+    calendarWindow = switchCalendarWindow(octopusHome, monthDay)
   }
 
-  def switchCalendarWindow(octopusHome: Div): CalendarWindowOption =
+  def switchCalendarWindow(octopusHome: Div, current: Date): CalendarWindowOption =
     calendarWindow match {
       case Some(window) =>
         closeWindow(octopusHome)
         None
       case None =>
-        val now = new Date(Date.now())
-
         val window: Div = div(
           div(),
           `class` := "octopus-window octopus-calendar closed",
@@ -34,14 +32,14 @@ object CalendarWindowOperations extends WindowOperations {
 
         val calendarView = new EventCalendar(window, octopusHome)
 
-        window.replaceChild(calendarView(now), window.firstChild)
+        window.replaceChild(calendarView(current), window.firstChild)
 
         val addEventButton: Div = div(
           `class` := "octopus-calendar-create-event",
           "Add your own ", i(`class` := "fa fa-plus"),
           onclick := { () =>
             isUserSelectingDate = true
-            window.replaceChild(new DateSelector(window, octopusHome).apply(EventCalendar.current.getOrElse(now)), window.firstChild)
+            window.replaceChild(new DateSelector(window, octopusHome).apply(EventCalendar.current.getOrElse(current)), window.firstChild)
             window.replaceChild(span(`class` := "select-date-prompt", "When is the event?").render, window.childNodes(1))
           }
         ).render

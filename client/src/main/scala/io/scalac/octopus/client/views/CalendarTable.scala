@@ -19,15 +19,13 @@ class CalendarTable(now: Date, marker: Marker = defaultMarker, modifier: CellMod
     val monthStart = getMonthStart(now)
     val calendarStart = monthStart - (((monthStart.getDay() + 6) % 7) days)
 
-    val weeks: Seq[Seq[Date]] =
+    val weeks: Seq[Date] =
       for {
         wI <- 0 until ClientConfig.WeeksToDisplay
         w = wI * 7
-        week = for {
-          i <- w until w + 7
-          day = calendarStart + (i days)
-        } yield day
-      } yield week
+        i <- w until w + 7
+        day = getDayStart(calendarStart + (i days))
+      } yield day
 
     val dayNames = for {
       i <- 0 until 7
@@ -41,7 +39,7 @@ class CalendarTable(now: Date, marker: Marker = defaultMarker, modifier: CellMod
         dayNames.map(div(_, `class` := "tcell"))
       ),
 
-      weeks.map(week =>
+      weeks.grouped(7).map(week =>
         div(
           `class` := "trow",
           week.map(
@@ -54,7 +52,7 @@ class CalendarTable(now: Date, marker: Marker = defaultMarker, modifier: CellMod
             }
           )
         )
-      )
+      ).toList
     ).render
   }
 
