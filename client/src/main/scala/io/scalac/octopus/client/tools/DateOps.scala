@@ -36,7 +36,7 @@ object DateOps {
     )
   }
 
-  def beginningOfDay(day: Date) = new Date(day.getFullYear(), day.getMonth(), day.getDate())
+  def getDayStart(day: Date) = new Date(day.getFullYear(), day.getMonth(), day.getDate())
 
   def dateAndTimeToString(d: Date) = "%s %d, %d %02d:%02d".format(MonthsShort(d.getMonth()), d.getDate(), d.getFullYear(), d.getHours(), d.getMinutes())
   def dateToString(d: Date) = "%s %d, %d".format(MonthsShort(d.getMonth()), d.getDate(), d.getFullYear())
