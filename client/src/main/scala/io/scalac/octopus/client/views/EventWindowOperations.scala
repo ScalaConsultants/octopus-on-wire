@@ -2,13 +2,13 @@ package io.scalac.octopus.client.views
 
 import autowire._
 import boopickle.Default._
-import io.scalac.octopus.client.config.ClientConfig.octoApi
+import io.scalac.octopus.client.config.ClientConfig.{TwitterSharingText, octoApi}
 import io.scalac.octopus.client.tools.EventDateOps._
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.html.{Anchor, Div}
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalac.octopusonwire.shared.domain.{UserInfo, EventId, UserEventInfo}
+import scalac.octopusonwire.shared.domain.{Event, UserInfo, EventId, UserEventInfo}
 import scalatags.JsDom.all._
 
 /**
@@ -45,7 +45,7 @@ object EventWindowOperations extends WindowOperations {
 
       val bottomArrow = div(`class` := "octopus-window-bottom-arrow arrow-center")
       val window = div(
-        `class` := "octopus-window closed",
+        `class` := "octopus-window octopus-event-view closed",
         span("Loading...", `class` := "octopus-loading-text"),
         bottomArrow
       ).render
@@ -60,13 +60,16 @@ object EventWindowOperations extends WindowOperations {
           def elemArrayFromUserEventInfo(info: UserEventInfo): Array[HTMLElement] = info match {
             case UserEventInfo(event, joined, joinCount) =>
               Array(
-                h1(event.name, `class` := "octopus-event-name"),
-                p(event.datesToString, `class` := "octopus-event-date"),
-                p(event.location, `class` := "octopus-event-location"),
                 div(
-                  `class` := "octopus-event-bottom",
-                  new JoinButton(window, eventId).getButton(joined, joinCount),
-                  a(href := event.url, `class` := "octopus-event-link", target := "_blank")
+                  `class` := "octopus-event view-left",
+                  h1(event.name, `class` := "octopus-event-name"),
+                  p(event.datesToString, `class` := "octopus-event-date"),
+                  p(event.location, `class` := "octopus-event-location"),
+                  new JoinButton(window, eventId).getButton(joined, joinCount)
+                ),
+                div(`class` := "octopus-event view-right",
+                  twitterLink(event),
+                  a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank")
                 ),
                 bottomArrow
               ).map(_.render)
@@ -79,6 +82,13 @@ object EventWindowOperations extends WindowOperations {
 
       openWindow(window, octopusHome)
       Option((eventId, window))
+  }
+
+  def twitterLink(event: Event): Anchor = {
+    a(
+      href := s"https://twitter.com/intent/tweet?text=${TwitterSharingText.format(event.name)}&url=${event.url}",
+      `class` := "octopus-link octopus-twitter-link", target := "_blank"
+    ).render
   }
 
   override def closeWindow(octopusHome: Div): Unit = eventWindow = eventWindow match {

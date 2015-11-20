@@ -133,16 +133,32 @@ body {
   }
 }
 
-.octopus-loading-text {
-  color: white;
+.octopus-event-view {
+  flex-direction: row;
 }
 
-.octopus-event-bottom {
+.octopus-event {
   display: flex;
-  width: 100%;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+}
+
+.octopus-link {
+  width: 22px;
+  height: 22px;
+  display: block;
+  margin: 10px;
+}
+
+.octopus-event-link {
+  background: url("../images/link-arrow.png") no-repeat center / contain;
+}
+
+.octopus-twitter-link {
+  background: url("../images/twitter-logo.svg") no-repeat center / contain;
+}
+
+.octopus-loading-text {
+  color: white;
 }
 
 .octopus-window-bottom-arrow {
@@ -182,7 +198,7 @@ body {
   color: white;
 }
 
-.octopus-user-avatar-wrapper{
+.octopus-user-avatar-wrapper {
   display: flex;
   height: 30px;
 }
@@ -191,14 +207,14 @@ body {
   height: 100%;
   position: relative;
 
-  img{
+  img {
     max-height: 100%;
     width: auto;
     overflow: hidden;
     display: block;
   }
 
-  &:not(:hover) .octopus-user-nickname{
+  &:not(:hover) .octopus-user-nickname {
     opacity: 0;
   }
 }
@@ -217,11 +233,11 @@ body {
   transform: translateX(-50%);
   z-index: 2;
 
-  &:hover{
+  &:hover {
     text-decoration: none;
   }
 
-  &:before{
+  &:before {
     z-index: -1;
     display: block;
     content: '';
@@ -233,7 +249,7 @@ body {
     background: @gray-background;
   }
 
-  &:after{
+  &:after {
     display: block;
     content: '';
     position: absolute;
@@ -261,13 +277,6 @@ body {
     color: white;
     background: transparent;
   }
-}
-
-.octopus-event-link {
-  background: url("../images/link-arrow.png") no-repeat center / contain;
-  display: block;
-  width: 22px;
-  height: 22px;
 }
 
 .octopus-calendar {
