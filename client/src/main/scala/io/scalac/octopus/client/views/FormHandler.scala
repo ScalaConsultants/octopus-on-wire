@@ -26,16 +26,10 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     `class` := "octopus-event-name", contenteditable := "true"
   ).render
 
-  val startDateField = p(DateOps.dateToString(startDay), `class` := "octopus-event-date").render
-
   val startHourField = getNewTimeField("H", 0, 23)
   val startMinuteField = getNewTimeField("MM", 0, 59)
   val endHourField = getNewTimeField("H", 0, 23)
   val endMinuteField = getNewTimeField("MM", 0, 59)
-
-  val dateFieldWrapper = p(
-    "From ", startHourField, ":", startMinuteField, " to ", endHourField, ":", endMinuteField
-  ).render
 
   val eventLocationField = p(placeholder := "Event location", contenteditable := "true").render
 
@@ -47,14 +41,12 @@ class FormHandler(startDay: Date, octopusHome: Div) {
 
   val messageField = p(`class` := "octopus-message hidden").render
 
-  val submitButton: Button = button("Submit", `class` := "octopus-event-submit-button").render
-
-  submitButton.onclick = submit _
+  val submitButton: Button = button("Submit", `class` := "octopus-event-submit-button", onclick := submit _).render
 
   def view: List[HTMLElement] = List(
     eventNameField,
-    startDateField,
-    dateFieldWrapper,
+    p(DateOps.dateToString(startDay), `class` := "octopus-event-date").render,
+    p("From ", startHourField, ":", startMinuteField, " to ", endHourField, ":", endMinuteField).render,
     eventLocationField,
     eventUrlField,
     messageField,
@@ -96,11 +88,11 @@ class FormHandler(startDay: Date, octopusHome: Div) {
 
       case Invalid(arg) =>
         showMessage(s"Invalid $arg")
-        hide(submitButton)
+        show(submitButton)
 
       case _ =>
         println("Unknown message received")
-        hide(submitButton)
+        show(submitButton)
     }
   }
 
