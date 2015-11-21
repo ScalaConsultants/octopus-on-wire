@@ -33,7 +33,7 @@ class CalendarTable(now: Date, marker: Marker = defaultMarker, modifier: CellMod
     } yield Days(day.getDay())
 
     div(
-      `class` := "table",
+      `class` := "ttable",
       div(
         `class` := "trow",
         dayNames.map(div(_, `class` := "tcell"))

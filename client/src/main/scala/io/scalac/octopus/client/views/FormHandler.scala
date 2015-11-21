@@ -2,22 +2,22 @@ package io.scalac.octopus.client.views
 
 import autowire._
 import boopickle.Default._
-import io.scalac.octopus.client.config.ClientConfig.{KeyCheckDelay, WindowOpenDelay, MoveToCalendarDelay, octoApi}
-import scalac.octopusonwire.shared.tools.IntRangeOps.int2IntRangeOps
-import io.scalac.octopus.client.tools.DateOps
+import io.scalac.octopus.client.config.ClientConfig.{KeyCheckDelay, MoveToCalendarDelay, WindowOpenDelay, octoApi}
+import io.scalac.octopus.client.tools.{FindSuffixInMessage, SuffixFound, DateOps}
 import io.scalac.octopus.client.tools.DateOps._
 import io.scalac.octopus.client.tools.TimeUnit._
 import io.scalac.octopus.client.views.FormHandler.getNewTimeField
 import org.scalajs.dom.html.{Button, Div}
 import org.scalajs.dom.raw.{HTMLElement, MouseEvent}
-import org.scalajs.dom.{Event, KeyboardEvent}
+import org.scalajs.dom.{Event => DomEvent, KeyboardEvent}
 
 import scala.language.postfixOps
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.{Date, timers}
-import scala.util.{Failure, Try}
-import scalac.octopusonwire.shared.domain
-import scalac.octopusonwire.shared.domain.{EventId, Invalid, Success}
+import scala.util.{Failure, Success, Try}
+import scalac.octopusonwire.shared.domain.Event.{InvalidDatesMessage, InvalidLocationMessage, InvalidNameMessage, InvalidURLMessage}
+import scalac.octopusonwire.shared.domain.{Event, EventId, Invalid, Success => SuccessMessage}
+import scalac.octopusonwire.shared.tools.IntRangeOps.int2IntRangeOps
 import scalatags.JsDom.all._
 
 class FormHandler(startDay: Date, octopusHome: Div) {
@@ -32,6 +32,10 @@ class FormHandler(startDay: Date, octopusHome: Div) {
   val startMinuteField = getNewTimeField("MM", 0, 59)
   val endHourField = getNewTimeField("H", 0, 23)
   val endMinuteField = getNewTimeField("MM", 0, 59)
+
+  val dateFieldWrapper = p(
+    "From ", startHourField, ":", startMinuteField, " to ", endHourField, ":", endMinuteField
+  ).render
 
   val eventLocationField = p(placeholder := "Event location", contenteditable := "true").render
 
@@ -50,45 +54,40 @@ class FormHandler(startDay: Date, octopusHome: Div) {
   def view: List[HTMLElement] = List(
     eventNameField,
     startDateField,
-    p("From ", startHourField, ":", startMinuteField, " to ", endHourField, ":", endMinuteField).render,
+    dateFieldWrapper,
     eventLocationField,
     eventUrlField,
     messageField,
     submitButton
   )
 
+  def getMillisFrom(hourField: HTMLElement, minuteField: HTMLElement) = {
+    val h = hourField.textContent.toInt
+    val m = minuteField.textContent.toInt
+    require(h inRange(0, 23))
+    require(m inRange(0, 59))
+    (startDay + (h hours) + (m minutes)).valueOf.toLong
+  }
+
   def buildEvent = {
-    val (sH, sM, eH, eM) = (startHourField.textContent.toInt, startMinuteField.textContent.toInt,
-      endHourField.textContent.toInt, endMinuteField.textContent.toInt)
+    val startDateMillis = getMillisFrom(startHourField, startMinuteField)
+    val endDateMillis = getMillisFrom(endHourField, endMinuteField)
 
-    require(sH inRange(0, 23))
-    require(eH inRange(0, 23))
-    require(sM inRange(0, 59))
-    require(sM inRange(0, 59))
-
-    val startMillis = (startDay
-      + (sH hours)
-      + (sM minutes)).valueOf.toLong
-
-    val endMillis = (startDay
-      + (eH hours)
-      + (eM minutes)).valueOf.toLong
-
-    new domain.Event(
+    new Event(
       id = EventId(-1),
       name = eventNameField.textContent,
-      startDate = startMillis,
-      endDate = endMillis,
+      startDate = startDateMillis,
+      endDate = endDateMillis,
       location = eventLocationField.textContent,
       url = eventUrlField.textContent
     )
   }
 
-  def sendEvent(event: domain.Event) = {
+  def sendEvent(event: Event) = {
     showMessage("Submitting event, please wait...")
 
     octoApi.addEvent(event).call().foreach {
-      case Success() =>
+      case SuccessMessage() =>
         showMessage("Successfully added event.")
         timers.setTimeout(MoveToCalendarDelay)(EventCreateWindowOperations.closeWindow(octopusHome))
         timers.setTimeout(MoveToCalendarDelay + WindowOpenDelay) {
@@ -106,14 +105,23 @@ class FormHandler(startDay: Date, octopusHome: Div) {
   }
 
   def submit(me: MouseEvent) =
-    Try(buildEvent)
-      .map(sendEvent)
-      .getOrElse(showMessage("Please fill in all required fields properly."))
-
+    Try(buildEvent) match {
+      case Success(event) => sendEvent(event)
+      case Failure(thr) => showError(thr.toString)
+    }
 
   def showMessage(text: String) = {
     messageField.textContent = text
     show(messageField)
+  }
+
+  def showError(message: String) = {
+    val suffixes: List[String] = List(InvalidDatesMessage, InvalidNameMessage, InvalidLocationMessage, InvalidURLMessage)
+    FindSuffixInMessage(message, suffixes) match {
+      case SuffixFound(suffix) => showMessage(suffix)
+      case _ if message.startsWith(classOf[NumberFormatException].getName) =>
+        showMessage("We need to know when the event starts and ends!")
+    }
   }
 
   def show(element: HTMLElement) = element.classList.remove("hidden")
@@ -122,16 +130,22 @@ class FormHandler(startDay: Date, octopusHome: Div) {
 }
 
 object FormHandler {
-  def getNewTimeField(hint: String, min: Int, max: Int) = span(placeholder := hint, contenteditable := "true", onkeypress := intOnlyKeyHandler(2, (min, max)) _).render
+  def getNewTimeField(hint: String, min: Int, max: Int) =
+    span(
+      placeholder := hint,
+      onkeypress := intOnlyKeyHandler(2, min, max) _,
+      contenteditable := "true"
+    ).render
 
-  def intOnlyKeyHandler(maxLength: Int, range: (Int, Int))(event: Event): Unit = event match {
+  def intOnlyKeyHandler(maxLength: Int, min: Int, max: Int)(event: DomEvent): Unit = event match {
     case e: KeyboardEvent =>
       val oldContent = e.srcElement.textContent
       Try(e.charCode.toChar.toString.toInt) match {
         case f: Failure[_] =>
           event.preventDefault()
         case _ => timers.setTimeout(KeyCheckDelay) {
-          if (e.srcElement.textContent.length > maxLength || !(e.srcElement.textContent.toInt inRange(range._1, range._2)))
+          if (e.srcElement.textContent.length > maxLength
+            || !(e.srcElement.textContent.toInt inRange(min, max)))
             e.srcElement.textContent = oldContent
         }
       }
