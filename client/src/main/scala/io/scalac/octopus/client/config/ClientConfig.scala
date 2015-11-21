@@ -8,6 +8,8 @@ import boopickle.Default
 import scalac.octopusonwire.shared.Api
 
 object ClientConfig {
+  val EmptyListPlaceholderText = "There are no events for you right now :("
+
   val TwitterSharingText: String = "I just found about %s - join me there!"
 
   val UsersToDisplay = 10

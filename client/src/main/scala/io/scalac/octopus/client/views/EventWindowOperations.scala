@@ -2,14 +2,17 @@ package io.scalac.octopus.client.views
 
 import autowire._
 import boopickle.Default._
+import io.scalac.octopus.client.OctopusClient
+import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig.{TwitterSharingText, octoApi}
-import io.scalac.octopus.client.tools.EventDateOps._
 import io.scalac.octopus.client.tools.EncodableString.string2Encodable
+import io.scalac.octopus.client.tools.EventDateOps._
 import org.scalajs.dom.html.{Anchor, Div}
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalac.octopusonwire.shared.domain.{Event, UserInfo, EventId, UserEventInfo}
+import scala.scalajs.js.timers
+import scalac.octopusonwire.shared.domain.{Event, EventId, UserEventInfo, UserInfo}
 import scalatags.JsDom.all._
 
 /**
@@ -43,6 +46,7 @@ object EventWindowOperations extends WindowOperations {
 
     /*The window is not opened. Open it.*/
     case _ =>
+      var flagging = false
 
       val bottomArrow = div(`class` := "octopus-window-bottom-arrow arrow-center")
       val window = div(
@@ -50,6 +54,34 @@ object EventWindowOperations extends WindowOperations {
         span("Loading...", `class` := "octopus-loading-text"),
         bottomArrow
       ).render
+
+      def flagEvent() = {
+        flagging = true
+        octoApi.flagEvent(eventId).call().foreach { _ =>
+          closeWindow(octopusHome)
+          timers.setTimeout(ClientConfig.WindowLoadTime) {
+            OctopusClient.refreshEvents(SliderViewOperations.list, octopusHome)
+          }
+        }
+      }
+
+      def flagView: Anchor = {
+        val canClick = userInfo.isDefined && !flagging
+        a(
+          `class` := "octopus-link octopus-event-flag" +
+            (if (canClick) " clickable" else ""),
+          onclick := { () =>
+            if (canClick) flagEvent()
+            else ()
+          },
+          title := (canClick match {
+            case true => "Click to report and hide the event"
+            case _ if flagging => "Flagging event..."
+            //TODO maybe make the click redirect to login in this case:
+            case _ => "Please login to flag event"
+          })
+        ).render
+      }
 
       octoApi.getUserEventInfo(eventId).call().foreach {
         case Some(info) =>
@@ -70,7 +102,8 @@ object EventWindowOperations extends WindowOperations {
                 ),
                 div(`class` := "octopus-event view-right",
                   twitterLink(event),
-                  a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank")
+                  a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank"),
+                  flagView
                 ),
                 bottomArrow
               ).map(_.render)
