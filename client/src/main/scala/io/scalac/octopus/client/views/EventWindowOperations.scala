@@ -4,6 +4,7 @@ import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig.{TwitterSharingText, octoApi}
 import io.scalac.octopus.client.tools.EventDateOps._
+import io.scalac.octopus.client.tools.EncodableString.string2Encodable
 import org.scalajs.dom.html.{Anchor, Div}
 import org.scalajs.dom.raw.HTMLElement
 
@@ -86,7 +87,7 @@ object EventWindowOperations extends WindowOperations {
 
   def twitterLink(event: Event): Anchor = {
     a(
-      href := s"https://twitter.com/intent/tweet?text=${TwitterSharingText.format(event.name)}&url=${event.url}",
+      href := s"https://twitter.com/intent/tweet?text=${TwitterSharingText.format(event.name).encode}&url=${event.url.encode}",
       `class` := "octopus-link octopus-twitter-link", target := "_blank"
     ).render
   }
