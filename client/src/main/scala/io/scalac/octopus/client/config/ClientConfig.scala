@@ -8,7 +8,7 @@ import boopickle.Default
 import scalac.octopusonwire.shared.Api
 
 object ClientConfig {
-  val TwitterSharingText: String = "I just found about about %s - join me there!"
+  val TwitterSharingText: String = "I just found about %s - join me there!"
 
   val UsersToDisplay = 10
   val UserThumbSize = 100
