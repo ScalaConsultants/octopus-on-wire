@@ -2,6 +2,7 @@ package io.scalac.octopus.client.views
 
 import autowire._
 import boopickle.Default._
+import io.scalac.octopus.client.OctopusClient
 import io.scalac.octopus.client.config.ClientConfig.{KeyCheckDelay, MoveToCalendarDelay, WindowOpenDelay, octoApi}
 import io.scalac.octopus.client.tools.{FindSuffixInMessage, SuffixFound, DateOps}
 import io.scalac.octopus.client.tools.DateOps._
@@ -81,6 +82,7 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     octoApi.addEvent(event).call().foreach {
       case SuccessMessage() =>
         showMessage("Successfully added event.")
+        //TODO refresh event list in calendar here
         timers.setTimeout(MoveToCalendarDelay)(EventCreateWindowOperations.closeWindow(octopusHome))
         timers.setTimeout(MoveToCalendarDelay + WindowOpenDelay) {
           CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(event.startDate))
@@ -122,23 +124,29 @@ class FormHandler(startDay: Date, octopusHome: Div) {
 }
 
 object FormHandler {
-  def getNewTimeField(hint: String, min: Int, max: Int) =
-    span(
+  def getNewTimeField(hint: String, min: Int, max: Int) = {
+    val field = span(
       placeholder := hint,
-      onkeypress := intOnlyKeyHandler(2, min, max) _,
       contenteditable := "true"
     ).render
+    field.onkeypress = new IntOnlyKeyHandler(2, min, max, field).handleEvent _
+    field
+  }
+}
 
-  def intOnlyKeyHandler(maxLength: Int, min: Int, max: Int)(event: DomEvent): Unit = event match {
+class IntOnlyKeyHandler(maxLength: Int, min: Int, max: Int, view: HTMLElement) {
+  var lastValidValue = view.textContent
+
+  def handleEvent(event: DomEvent) = event match {
     case e: KeyboardEvent =>
-      val oldContent = e.srcElement.textContent
       Try(e.charCode.toChar.toString.toInt) match {
         case f: Failure[_] =>
           event.preventDefault()
         case _ => timers.setTimeout(KeyCheckDelay) {
-          if (e.srcElement.textContent.length > maxLength
-            || !(e.srcElement.textContent.toInt inRange(min, max)))
-            e.srcElement.textContent = oldContent
+          if (view.textContent.length > maxLength || !(view.textContent.toInt inRange(min, max)))
+            view.textContent = lastValidValue
+          else
+            lastValidValue = view.textContent
         }
       }
   }
