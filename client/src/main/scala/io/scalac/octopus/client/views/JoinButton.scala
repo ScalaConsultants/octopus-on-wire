@@ -11,6 +11,7 @@ import org.scalajs.dom.html.{Anchor, Div}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalac.octopusonwire.shared.domain.{EventId, UserInfo}
 import scalatags.JsDom.all._
+import dom.location
 
 class JoinButton(window: Div, eventId: EventId) {
 
@@ -26,7 +27,7 @@ class JoinButton(window: Div, eventId: EventId) {
           left.replaceChild(getButton(joined = true, eventJoinCount), left.lastChild)
         }
       }
-    } else dom.window.location assign Github.LoginWithJoinUrl(dom.window.location.href, eventId)
+    } else location assign Github.loginWithJoinUrl(dom.window.location.href, eventId)
 
   def userAvatar(user: UserInfo): Anchor = a(
     `class` := "octopus-user-avatar",

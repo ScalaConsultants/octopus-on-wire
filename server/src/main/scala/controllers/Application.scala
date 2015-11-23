@@ -27,22 +27,36 @@ object Application extends Controller {
 
   def index = Action(Ok(views.html.index()))
 
-  def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
-    GithubApi.getGithubToken(code).flatMap{ tokenOpt =>
-      UserCache.getOrFetchUserId(tokenOpt)
-        .map{ userOpt =>
-        new ApiService(tokenOpt, userOpt)
-          .joinEventAndGetJoins(EventId(joinEvent))
+  def RedirectTo(url: String, withToken: Option[String]) = Redirect(url).withCookies(Cookie(
+    name = AccessTokenKey,
+    value = withToken.getOrElse(""),
+    maxAge = withToken.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
+    domain = Some(ServerConfig.Domain),
+    secure = false, //we don't have HTTPS yet
+    httpOnly = true
+  ))
 
-        Redirect(sourceUrl).withCookies(Cookie(
-          name = AccessTokenKey,
-          value = tokenOpt.getOrElse(""),
-          maxAge = tokenOpt.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
-          domain = Some(ServerConfig.Domain),
-          secure = false, //we don't have HTTPS yet
-          httpOnly = true
-        ))
-      }
+  def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
+    GithubApi.getGithubToken(code).flatMap { tokenOpt =>
+      UserCache.getOrFetchUserId(tokenOpt)
+        .map { userOpt =>
+          new ApiService(tokenOpt, userOpt)
+            .joinEventAndGetJoins(EventId(joinEvent))
+
+          RedirectTo(sourceUrl, withToken = tokenOpt)
+        }
+    }
+  }
+
+  def flagEventWithGithub(flagEventById: Long, code: String, sourceUrl: String) = Action.async { request =>
+    GithubApi.getGithubToken(code).flatMap { tokenOpt =>
+      UserCache.getOrFetchUserId(tokenOpt)
+        .map { userOpt =>
+          new ApiService(tokenOpt, userOpt)
+            .flagEvent(EventId(flagEventById))
+
+          RedirectTo(sourceUrl, withToken = tokenOpt)
+        }
     }
   }
 

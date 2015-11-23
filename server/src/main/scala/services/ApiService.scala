@@ -33,7 +33,6 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
       )
     }
 
-  //todo change these two methods so that they use isBetween
   override def getFutureItems(limit: Int): Seq[SimpleEvent] = {
     val now = System.currentTimeMillis()
     eventSource.getEventsWhere { event =>
