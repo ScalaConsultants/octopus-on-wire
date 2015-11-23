@@ -8,6 +8,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
+import scalac.octopusonwire.shared.domain.FailedToAdd.{`Event starts in the past`, `User not logged in`}
 import scalac.octopusonwire.shared.domain._
 
 class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
@@ -72,5 +73,9 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
       atMost = Duration.Inf
     ).flatten
 
-  override def addEvent(event: Event): EventAddition = eventSource.addEvent(event)
+  override def addEvent(event: Event): EventAddition = userId match {
+    case Some(_) if event.endDate > System.currentTimeMillis() => eventSource.addEvent(event)
+    case Some(_) => FailedToAdd(`Event starts in the past`)
+    case _ => FailedToAdd(`User not logged in`)
+  }
 }
