@@ -112,7 +112,7 @@ class FormHandler(startDay: Date, octopusHome: Div) {
   def showError(message: String) = {
     val suffixes: List[String] = List(InvalidDatesMessage, InvalidNameMessage, InvalidLocationMessage, InvalidURLMessage)
     FindSuffixInMessage(message, suffixes) match {
-      case SuffixFound(suffix) => showMessage(suffix)
+      case Some(suffix) => showMessage(suffix)
       case _ if message.startsWith(classOf[NumberFormatException].getName) =>
         showMessage("We need to know when the event starts and ends!")
     }
