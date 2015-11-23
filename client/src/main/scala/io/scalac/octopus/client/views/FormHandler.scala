@@ -2,9 +2,8 @@ package io.scalac.octopus.client.views
 
 import autowire._
 import boopickle.Default._
-import io.scalac.octopus.client.OctopusClient
 import io.scalac.octopus.client.config.ClientConfig.{KeyCheckDelay, MoveToCalendarDelay, WindowOpenDelay, octoApi}
-import io.scalac.octopus.client.tools.{FindSuffixInMessage, SuffixFound, DateOps}
+import io.scalac.octopus.client.tools.{FindSuffixInMessage, DateOps}
 import io.scalac.octopus.client.tools.DateOps._
 import io.scalac.octopus.client.tools.TimeUnit._
 import io.scalac.octopus.client.views.FormHandler.getNewTimeField
@@ -17,7 +16,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.{Date, timers}
 import scala.util.{Failure, Success, Try}
 import scalac.octopusonwire.shared.domain.Event.{InvalidDatesMessage, InvalidLocationMessage, InvalidNameMessage, InvalidURLMessage}
-import scalac.octopusonwire.shared.domain.{Event, EventId, Invalid, Success => SuccessMessage}
+import scalac.octopusonwire.shared.domain.{Added, Event, EventId, FailedToAdd}
 import scalac.octopusonwire.shared.tools.IntRangeOps.int2IntRangeOps
 import scalatags.JsDom.all._
 
@@ -80,15 +79,15 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     showMessage("Submitting event, please wait...")
 
     octoApi.addEvent(event).call().foreach {
-      case SuccessMessage() =>
-        showMessage("Successfully added event.")
+      case Added() =>
+        showMessage(s"Your Event ${event.name} has been created.")
         //TODO refresh event list in calendar here
         timers.setTimeout(MoveToCalendarDelay)(EventCreateWindowOperations.closeWindow(octopusHome))
         timers.setTimeout(MoveToCalendarDelay + WindowOpenDelay) {
           CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(event.startDate))
         }
 
-      case Invalid(arg) =>
+      case FailedToAdd(arg) =>
         showMessage(s"Invalid $arg")
         show(submitButton)
 

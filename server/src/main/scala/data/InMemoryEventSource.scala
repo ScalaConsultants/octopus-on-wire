@@ -43,9 +43,9 @@ object InMemoryEventSource extends EventSource {
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
 
-  override def addEvent(event: Event): Message = {
+  override def addEvent(event: Event): EventAddition = {
     val copiedEvent = event.copy(id = getNextEventId)
     events.synchronized(events ::= copiedEvent)
-    Success()
+    Added()
   }
 }
