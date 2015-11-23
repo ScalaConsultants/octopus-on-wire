@@ -1,6 +1,6 @@
 package data
 
-import scalac.octopusonwire.shared.domain.{Event, EventId, UserId}
+import scalac.octopusonwire.shared.domain.{Event, EventId, EventAddition, UserId}
 
 trait EventSource {
   def getEvents: Seq[Event]
@@ -16,4 +16,6 @@ trait EventSource {
   def getJoins(eventId: EventId): Set[UserId]
 
   def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean
+
+  def addEvent(event: Event): EventAddition
 }

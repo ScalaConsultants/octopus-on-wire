@@ -71,4 +71,6 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
         },
       atMost = Duration.Inf
     ).flatten
+
+  override def addEvent(event: Event): EventAddition = eventSource.addEvent(event)
 }

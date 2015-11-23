@@ -10,8 +10,9 @@ import org.scalajs.dom.html.Div
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
+import scala.scalajs.js.Date
 import scala.scalajs.js.annotation.JSExport
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.{list => _, _}
 
 @JSExport("OctopusClient")
 object OctopusClient extends js.JSApp {
@@ -29,9 +30,19 @@ object OctopusClient extends js.JSApp {
       items foreach {
         item => list.appendChild(
           li(div(`class` := "item",
-            span(`class` := "calendar-icon", title := "All events", onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome) }),
-            span(`class` := "item-name", item.name, onclick := { () => EventWindowOperations.openEventWindow(item.id, octopusHome) }),
-            div(`class` := "next", title := "Next", onclick := { () => SliderViewOperations.moveToNextItem(list) })
+
+            //calendar icon
+            span(`class` := "calendar-icon", title := "All events",
+              onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(Date.now())) }),
+
+            //event preview
+            span(`class` := "item-name", item.name,
+              onclick := { () => EventWindowOperations.openEventWindow(item.id, octopusHome) }),
+
+            //next icon
+            div(`class` := "next", title := "Next",
+              onclick := { () => SliderViewOperations.moveToNextItem(list) })
+
           )).render
         )
       }

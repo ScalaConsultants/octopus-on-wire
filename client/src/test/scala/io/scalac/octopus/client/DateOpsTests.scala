@@ -3,7 +3,6 @@ package io.scalac.octopus.client
 import io.scalac.octopus.client.tools.DateOps._
 import utest._
 import io.scalac.octopus.client.tools.TimeUnit._
-import scala.concurrent.duration.DurationConversions
 import scala.language.postfixOps
 import scala.scalajs.js.Date
 
