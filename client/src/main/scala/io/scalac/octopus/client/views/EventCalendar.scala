@@ -55,10 +55,38 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
             ))
         case date => CalendarTable.defaultModifier(date)
       }
-    )
+    ).render
+
+    val monthSelector: Div = {
+      val yearString = current.getFullYear().toString
+      div(
+        `class` := "octopus-calendar-arrow-wrapper",
+        span(`class` := "octopus-calendar-arrow arrow-left", onclick := { () =>
+          window.replaceChild(apply(getPreviousMonthStart(current)), window.firstChild)
+        }),
+        span(Months(current.getMonth()) + " '" + yearString.substring(yearString.length - 2),
+          `class` := "octopus-calendar-month"
+        ),
+        span(`class` := "octopus-calendar-arrow arrow-right", onclick := { () =>
+          window.replaceChild(apply(getNextMonthStart(current)), window.firstChild)
+        })
+      ).render
+    }
+
+    val view = div(
+      `class` := "octopus-table-wrapper",
+      monthSelector,
+      calendarTable(current, Array.empty[Event])
+    ).render
+
+    val monthStart: Long = getMonthStart(current).valueOf().toLong
+    val monthEnd: Long = getMonthEnd(current).valueOf().toLong
+
+    octoApi.getEventsForRange(monthStart, monthEnd).call().foreach { monthEvents =>
+      view.replaceChild(calendarTable(current, monthEvents), view.lastChild)
+    }
   }
 }
-
 object EventCalendar {
   var current: Option[Date] = None
 }
