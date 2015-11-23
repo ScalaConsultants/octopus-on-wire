@@ -22,8 +22,8 @@ class JoinButton(window: Div, eventId: EventId) {
     if (userInfo.isDefined) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
         eventJoinCount => {
-          val bottom = window.childNodes(window.childElementCount - 2)
-          bottom.replaceChild(getButton(joined = true, eventJoinCount), bottom.childNodes(0))
+          val left = window.firstChild
+          left.replaceChild(getButton(joined = true, eventJoinCount), left.lastChild)
         }
       }
     } else dom.window.location assign Github.LoginWithJoinUrl(dom.window.location.href, eventId)
