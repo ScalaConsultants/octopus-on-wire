@@ -17,7 +17,11 @@ import scalatags.JsDom.all.{list => _, _}
 object OctopusClient extends js.JSApp {
   val octopusHome: Div = div(id := "octopus-home", list).render
 
-  val calendarIcon = span(`class` := "calendar-icon", title := "All events", onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome) })
+  val calendarIcon = span(
+    `class` := "calendar-icon",
+    title := "All events",
+    onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome) }
+  )
 
   val itemPlaceholder = li(
     div(

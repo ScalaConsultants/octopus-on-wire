@@ -3,11 +3,12 @@ package io.scalac.octopus.client.views
 import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.OctopusClient
-import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig.{TwitterSharingText, octoApi}
+import io.scalac.octopus.client.config.{ClientConfig, Github}
 import io.scalac.octopus.client.tools.EncodableString.string2Encodable
 import io.scalac.octopus.client.tools.EventDateOps._
 import org.scalajs.dom.html.{Anchor, Div}
+import org.scalajs.dom.location
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -66,18 +67,19 @@ object EventWindowOperations extends WindowOperations {
       }
 
       def flagView: Anchor = {
-        val canClick = userInfo.isDefined && !flagging
+        val canFlag = userInfo.isDefined && !flagging
         a(
-          `class` := "octopus-link octopus-event-flag" +
-            (if (canClick) " clickable" else ""),
-          onclick := { () =>
-            if (canClick) flagEvent()
-            else ()
+          `class` := "octopus-link octopus-event-flag",
+            onclick := {
+            () => canFlag match {
+              case true => flagEvent()
+              case _ if userInfo.isEmpty =>
+                location assign Github.loginWithFlagUrl(location.href, eventId)
+            }
           },
-          title := (canClick match {
+          title := (canFlag match {
             case true => "Click to report and hide the event"
             case _ if flagging => "Flagging event..."
-            //TODO maybe make the click redirect to login in this case:
             case _ => "Please login to flag event"
           })
         ).render
