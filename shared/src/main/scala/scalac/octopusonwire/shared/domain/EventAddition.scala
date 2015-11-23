@@ -15,4 +15,7 @@ case object FailedToAdd {
     if(mess.text.startsWith(prefix))
       Some(mess.text.drop(prefix.length))
     else None
+
+  val `User not logged in` = "User not logged in"
+  val `Event starts in the past` = "Event starts in the past"
 }
