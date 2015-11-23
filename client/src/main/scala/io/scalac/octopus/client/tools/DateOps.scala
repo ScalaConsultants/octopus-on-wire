@@ -5,6 +5,7 @@ import io.scalac.octopus.client.tools.TimeUnit._
 
 import scala.language.{implicitConversions, postfixOps}
 import scala.scalajs.js.Date
+import scala.language.implicitConversions
 
 object DateOps {
   implicit def date2DateOps(d: Date): DateOps = new DateOps(d)
@@ -38,6 +39,11 @@ object DateOps {
   }
 
   def getOffsetDifference(first: Date, second: Date) = (first.getTimezoneOffset() - second.getTimezoneOffset()) * MillisecondsInMinute
+
+  def getDayStart(day: Date) = new Date(day.getFullYear(), day.getMonth(), day.getDate())
+
+  def dateAndTimeToString(d: Date) = "%s %d, %d %02d:%02d".format(MonthsShort(d.getMonth()), d.getDate(), d.getFullYear(), d.getHours(), d.getMinutes())
+  def dateToString(d: Date) = "%s %d, %d".format(MonthsShort(d.getMonth()), d.getDate(), d.getFullYear())
 }
 
 class DateOps(date: Date) {
