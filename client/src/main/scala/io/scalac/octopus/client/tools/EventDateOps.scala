@@ -8,8 +8,8 @@ import scalac.octopusonwire.shared.domain.Event
 import DateOps._
 
 class EventDateOps(event: Event) {
-  def startDateFull = EventDateOps.dateToString(new Date(event.startDate))
-  def endDateFull = EventDateOps.dateToString(new Date(event.endDate))
+  def startDateFull = DateOps.dateAndTimeToString(new Date(event.startDate))
+  def endDateFull = DateOps.dateAndTimeToString(new Date(event.endDate))
 
   def endDateHour = {
     val date = new Date(event.endDate)
@@ -26,10 +26,5 @@ class EventDateOps(event: Event) {
 }
 
 object EventDateOps {
-
   implicit def event2EventOps(e: Event): EventDateOps = new EventDateOps(e)
-
-  def beginningOfDay(day: Date) = new Date(day.getFullYear(), day.getMonth(), day.getDate())
-
-  def dateToString(d: Date) = "%s %d, %d %02d:%02d".format(MonthsShort(d.getMonth()), d.getDate(), d.getFullYear(), d.getHours(), d.getMinutes())
 }

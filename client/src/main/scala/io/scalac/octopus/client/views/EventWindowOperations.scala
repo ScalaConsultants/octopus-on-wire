@@ -29,6 +29,7 @@ object EventWindowOperations extends WindowOperations {
 
   def openEventWindow(eventId: EventId, octopusHome: Div): Unit = {
     CalendarWindowOperations.closeWindow(octopusHome)
+    EventCreateWindowOperations.closeWindow(octopusHome)
     eventWindow = switchEventWindow(eventId, octopusHome)
   }
 

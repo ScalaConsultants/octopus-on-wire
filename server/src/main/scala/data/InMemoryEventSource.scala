@@ -3,11 +3,11 @@ package data
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
-import scalac.octopusonwire.shared.domain.{Event, EventId, UserId}
+import scalac.octopusonwire.shared.domain._
 
 object InMemoryEventSource extends EventSource {
 
-  private val events: Array[Event] = Array(
+  private var events: List[Event] = List(
     Event(EventId(1), "Warsaw Scala FortyFives - Scala Application Development #scala45pl", now + days(1), now + days(1) + hours(4), "Politechnika Warszawska Wydział Matematyki i Nauk Informacyjnych, Koszykowa 75, Warsaw", "http://www.meetup.com/WarszawScaLa/events/225320171/"),
     Event(EventId(2), "Spark: Wprowadzenie - Poland CodiLime Tech Talk (Warsaw) - Meetup", now + days(3) + hours(4), now + days(3) + hours(12), "Wydział MIMUW, Banacha 2, Warsaw", "http://www.meetup.com/Poland-CodiLime-Tech-Talk/events/226054818/"),
     Event(EventId(3), "Let's Scala few Apache Spark apps together - part 4! - Warsaw Scala Enthusiasts (Warsaw) - Meetup", now + days(6), now + days(6) + hours(8), "Javeo, Stadion Narodowy, Warsaw", "http://www.meetup.com/WarszawScaLa/events/226075320/"),
@@ -51,4 +51,12 @@ object InMemoryEventSource extends EventSource {
     eventById(eventId).foreach { event =>
       flags(eventId) = getFlaggers(eventId) + by
     }
+
+  private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
+
+  override def addEvent(event: Event): EventAddition = {
+    val copiedEvent = event.copy(id = getNextEventId)
+    events.synchronized(events ::= copiedEvent)
+    Added()
+  }
 }

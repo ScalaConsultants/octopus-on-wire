@@ -2,9 +2,9 @@ import sbt._
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 /**
- * Application settings. Configure the build for your application here.
- * You normally don't have to touch the actual build definition after this.
- */
+  * Application settings. Configure the build for your application here.
+  * You normally don't have to touch the actual build definition after this.
+  */
 object Settings {
   /** The name of your application */
   val name = "scalajs-spa"
@@ -40,27 +40,27 @@ object Settings {
   }
 
   /**
-   * These dependencies are shared between JS and JVM projects
-   * the special %%% function selects the correct version for each project
-   */
+    * These dependencies are shared between JS and JVM projects
+    * the special %%% function selects the correct version for each project
+    */
   val sharedDependencies = Def.setting(Seq(
     "com.lihaoyi" %%% "autowire" % versions.autowire,
-    "me.chrons" %%% "boopickle" % versions.booPickle,
-    "com.lihaoyi" %%% "utest" % versions.uTest,
-    "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
+    "me.chrons" %%% "boopickle" % versions.booPickle
   ))
 
   /** Dependencies only used by the JVM project */
   val jvmDependencies = Def.setting(Seq(
     "com.vmunier" %% "play-scalajs-scripts" % versions.playScripts,
     "org.webjars" % "font-awesome" % "4.3.0-1" % Provided,
-    "org.webjars" % "bootstrap" % versions.bootstrap % Provided
+    "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
+    "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
   ))
 
   /** Dependencies only used by the JS project (note the use of %%% instead of %%) */
   val scalajsDependencies = Def.setting(Seq(
-   "org.scala-js" %%% "scalajs-dom" % versions.scalaDom,
+    "org.scala-js" %%% "scalajs-dom" % versions.scalaDom,
     "com.lihaoyi" %%% "scalarx" % versions.scalaRx,
-    "com.lihaoyi" %%% "scalatags" % "0.4.6"
+    "com.lihaoyi" %%% "scalatags" % "0.4.6",
+    "com.lihaoyi" %%% "utest" % versions.uTest
   ))
 }

@@ -1,6 +1,6 @@
 package data
 
-import scalac.octopusonwire.shared.domain.{Event, EventId, UserId}
+import scalac.octopusonwire.shared.domain.{Event, EventId, EventAddition, UserId}
 
 trait EventSource {
   def getEvents: Seq[Event]
@@ -22,4 +22,6 @@ trait EventSource {
   def getFlaggers(eventId: EventId): Set[UserId]
 
   def addFlag(eventId: EventId, by: UserId): Unit
+
+  def addEvent(event: Event): EventAddition
 }

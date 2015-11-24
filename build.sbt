@@ -33,8 +33,8 @@ lazy val client: Project = (project in file("client"))
     // yes, we want to package JS dependencies
     skip in packageJSDependencies := false,
     // use Scala.js provided launcher code to start the client app
-//    persistLauncher := true,
-//    persistLauncher in Test := false,
+    //    persistLauncher := true,
+    //    persistLauncher in Test := false,
     // use uTest framework for tests
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
@@ -74,7 +74,7 @@ lazy val server = (project in file("server"))
     // connect to the client project
     scalaJSProjects := clients,
     pipelineStages := Seq(scalaJSProd),
-    // compress CSS
+//     compress CSS
     LessKeys.compress in Assets := true
   )
   .enablePlugins(PlayScala)
@@ -82,7 +82,7 @@ lazy val server = (project in file("server"))
   .aggregate(clients.map(projectToRef): _*)
   .dependsOn(sharedJVM)
 
- lazy val root = (project in file(".")).aggregate(client, server)
+lazy val root = (project in file(".")).aggregate(client, server)
 
 // loads the Play server project at sbt startup
 onLoad in Global := (Command.process("project server", _: State)) compose (onLoad in Global).value

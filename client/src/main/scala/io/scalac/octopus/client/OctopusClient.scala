@@ -10,6 +10,7 @@ import org.scalajs.dom.html.{Div, UList}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
+import scala.scalajs.js.Date
 import scala.scalajs.js.annotation.JSExport
 import scalatags.JsDom.all.{list => _, _}
 
@@ -49,13 +50,20 @@ object OctopusClient extends js.JSApp {
       items foreach {
         item => list.appendChild(
           li(div(`class` := "item",
-            calendarIcon,
-            span(`class` := "item-name", item.name, onclick := { () => EventWindowOperations.openEventWindow(item.id, octopusHome) }),
 
-            //Don't show the "next" arrow if there is nothing to slide to
-            if (items.length > 1)
+            //calendar icon
+            span(`class` := "calendar-icon", title := "All events",
+              onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(Date.now())) }),
+
+            //event preview
+            span(`class` := "item-name", item.name,
+              onclick := { () => EventWindowOperations.openEventWindow(item.id, octopusHome) }),
+
+            //next icon. Don't show it if there is nothing to slide to
+            if(items.length > 1)
               div(`class` := "next", title := "Next", onclick := { () => SliderViewOperations.moveToNextItem(list) })
             else ""
+
           )).render
         )
       }

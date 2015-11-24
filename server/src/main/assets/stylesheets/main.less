@@ -192,6 +192,7 @@ body {
 }
 
 .octopus-event-name {
+  margin-top: 0;
   font-size: 1.5em;
   font-family: sans-serif;
   color: white;
@@ -226,6 +227,7 @@ body {
   }
 
   &:not(:hover) .octopus-user-nickname {
+    visibility: hidden;
     opacity: 0;
   }
 }
@@ -291,46 +293,63 @@ body {
 }
 
 .octopus-calendar {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: column;
   right: auto;
-  .table {
+  .ttable {
     display: inline-block;
   }
-  .row {
+  .trow {
     display: flex;
     flex-wrap: nowrap;
     &:first-of-type {
       border-bottom: 1px solid white;
     }
-    .cell {
-      flex: 1 0;
-      font-size: 1em;
-      padding: 8px 0;
-      min-width: 40px;
-      color: white;
-      position: relative;
-      text-align: center;
-      transition: .2s;
-      box-sizing: border-box;
-      &.current-day {
-        border: 1px solid white;
-      }
-      &.marked {
-        background: white;
-        cursor: pointer;
-        border: 1px solid white;
-        color: @blue-light;
-      }
-      &.other-month {
-        color: rgba(254, 253, 255, 0.5);
-      }
-      &:not(:hover) {
-        .octopus-preview {
-          visibility: hidden;
-          opacity: 0;
-        }
+  }
+  .tcell {
+    flex: 14%;
+    font-size: 1em;
+    padding: 6px;
+    color: white;
+    position: relative;
+    text-align: center;
+    transition: .2s;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    &.current-day {
+      border: 1px solid white;
+    }
+    &.marked {
+      background: white;
+      cursor: pointer;
+      border: 1px solid white;
+      color: @blue-light;
+    }
+    &.other-month {
+      color: rgba(254, 253, 255, 0.5);
+    }
+    &:not(:hover) {
+      .octopus-preview {
+        visibility: hidden;
+        opacity: 0;
       }
     }
+  }
+  .select-date-prompt {
+    margin-top: 10px;
+    color: white;
+    align-self: center;
+  }
+}
+
+.octopus-selectable-day {
+  cursor: pointer;
+  transition: .2s;
+  &:hover {
+    background: white;
+    cursor: pointer;
+    border: 1px solid white;
+    color: @blue-light;
   }
 }
 
@@ -358,6 +377,24 @@ body {
 .octopus-calendar-month {
   color: white;
   text-transform: uppercase;
+}
+
+.octopus-calendar-create-event {
+  background: white;
+  color: @blue-dark;
+  transition: .2s;
+  margin-top: 10px;
+  padding: 10px 15px;
+  align-self: center;
+  cursor: pointer;
+  .fa {
+    position: relative;
+    top: 1px;
+  }
+  &:hover {
+    background: @blue-dark;
+    color: white;
+  }
 }
 
 .octopus-preview {
@@ -426,5 +463,47 @@ body {
   }
   &:not(:last-of-type) {
     padding: 5px 5px 0;
+  }
+}
+
+.octopus-event-creation {
+  [contenteditable] {
+    position: relative;
+    &:empty:before {
+      content: attr(placeholder);
+      color: rgba(255, 255, 255, .5);
+      display: block;
+    }
+  }
+  p {
+    font-size: 1em;
+    font-family: sans-serif;
+    color: white;
+  }
+  span {
+    display: inline-block;
+  }
+  .octopus-event-url {
+    margin-bottom: 20px;
+  }
+  .octopus-message {
+    .hidden {
+      display: none;
+    }
+  }
+  .octopus-event-submit-button {
+    color: @blue-dark;
+    border: none;
+    background: white;
+    padding: 5px 20px;
+    font-size: 1em;
+    transition: .2s;
+    &:hover {
+      background: transparent;
+      color: white;
+    }
+    .hidden {
+      visibility: hidden;
+    }
   }
 }
