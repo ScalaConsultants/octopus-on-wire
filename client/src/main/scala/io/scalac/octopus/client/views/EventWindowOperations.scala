@@ -88,7 +88,6 @@ object EventWindowOperations extends WindowOperations {
 
       octoApi.getUserEventInfo(eventId).call().foreach {
         case Some(info) =>
-          val now = new Date(Date.now)
 
           //clear window
           while (window.childElementCount > 0)
