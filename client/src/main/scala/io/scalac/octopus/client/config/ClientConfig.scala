@@ -16,6 +16,8 @@ object ClientConfig {
   val UserThumbSize = 100
   val ItemsToFetch = 5
   val ItemChangeInterval = 5000
+  val MoveToCalendarDelay = 2000
+  val KeyCheckDelay = 50
   val InitialSlideIndex = 0
   val WindowLoadTime = 300
   val WindowOpenDelay = 50

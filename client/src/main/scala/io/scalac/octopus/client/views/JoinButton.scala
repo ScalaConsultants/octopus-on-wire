@@ -8,7 +8,7 @@ import io.scalac.octopus.client.views.EventWindowOperations.userInfo
 import org.scalajs.dom
 import org.scalajs.dom.html.{Anchor, Div}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalac.octopusonwire.shared.domain.{EventId, UserInfo}
 import scalatags.JsDom.all._
 import dom.location

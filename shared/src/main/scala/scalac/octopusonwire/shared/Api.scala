@@ -17,5 +17,7 @@ trait Api {
 
   def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo]
 
+  def addEvent(event: Event): EventAddition
+
   def flagEvent(eventId: EventId): Unit
 }
