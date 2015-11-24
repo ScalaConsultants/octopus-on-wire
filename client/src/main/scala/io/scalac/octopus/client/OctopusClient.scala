@@ -21,7 +21,7 @@ object OctopusClient extends js.JSApp {
   val calendarIcon = span(
     `class` := "calendar-icon",
     title := "All events",
-    onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome) }
+    onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(Date.now)) }
   )
 
   val itemPlaceholder = li(
