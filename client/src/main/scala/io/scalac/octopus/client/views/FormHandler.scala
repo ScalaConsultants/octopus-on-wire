@@ -27,10 +27,18 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     `class` := "octopus-event-name", contenteditable := "true"
   ).render
 
-  val startHourField = getNewTimeField("H", 0, 23)
-  val startMinuteField = getNewTimeField("MM", 0, 59)
-  val endHourField = getNewTimeField("H", 0, 23)
-  val endMinuteField = getNewTimeField("MM", 0, 59)
+  val startHourField = getNewTimeField("H", 0, 23, maxLength = 2)
+  val startMinuteField = getNewTimeField("MM", 0, 59, maxLength = 2)
+  val endHourField = getNewTimeField("H", 0, 23, maxLength = 2)
+  val endMinuteField = getNewTimeField("MM", 0, 59, maxLength = 2)
+  val timezoneHourField = getNewTimeField("H", -14, 14, maxLength = 3)
+  val timezoneMinuteField = getNewTimeField("MM", 0, 59, maxLength = 2)
+
+  //set initial timezone value based on the user's location
+  val tz = new Date(Date.now).getTimezoneOffset
+  val sign = if (tz >= 0) '-' else '+'
+  timezoneHourField.textContent = sign + "%02d".format((tz / 60).abs)
+  timezoneMinuteField.textContent = "%02d".format((-tz % 60).abs)
 
   val eventLocationField = p(placeholder := "Event location", contenteditable := "true").render
 
@@ -47,7 +55,13 @@ class FormHandler(startDay: Date, octopusHome: Div) {
   def view: List[HTMLElement] = List(
     eventNameField,
     p(DateOps.dateToString(startDay), `class` := "octopus-event-date").render,
-    p("From ", startHourField, ":", startMinuteField, " to ", endHourField, ":", endMinuteField).render,
+    p(
+      "From ",
+      startHourField, ":",
+      startMinuteField, " to ",
+      endHourField, ":", endMinuteField,
+      " Timezone: UTC ", timezoneHourField, ":", timezoneMinuteField
+    ).render,
     eventLocationField,
     eventUrlField,
     messageField,
@@ -66,13 +80,18 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     val startDateMillis = getMillisFrom(startHourField, startMinuteField)
     val endDateMillis = getMillisFrom(endHourField, endMinuteField)
 
+    val tzOffset = ((timezoneHourField.textContent.toInt hours)
+      + (timezoneMinuteField.textContent.toInt minutes))
+      .valueOf().toLong
+
     new Event(
       id = EventId(-1),
       name = eventNameField.textContent,
       startDate = startDateMillis,
       endDate = endDateMillis,
-      location = eventLocationField.textContent,
-      url = eventUrlField.textContent
+      offset = tzOffset,
+      url = eventUrlField.textContent,
+      location = eventLocationField.textContent
     )
   }
 
@@ -90,7 +109,7 @@ class FormHandler(startDay: Date, octopusHome: Div) {
         }
 
       case FailedToAdd(arg) =>
-        showMessage(s"Invalid $arg")
+        showMessage(arg)
         show(submitButton)
 
       case _ =>
@@ -125,12 +144,12 @@ class FormHandler(startDay: Date, octopusHome: Div) {
 }
 
 object FormHandler {
-  def getNewTimeField(hint: String, min: Int, max: Int) = {
+  def getNewTimeField(hint: String, min: Int, max: Int, maxLength: Int) = {
     val field = span(
       placeholder := hint,
       contenteditable := "true"
     ).render
-    field.onkeypress = new IntOnlyKeyHandler(2, min, max, field).handleEvent _
+    field.onkeypress = new IntOnlyKeyHandler(maxLength, min, max, field).handleEvent _
     field
   }
 }
@@ -138,17 +157,21 @@ object FormHandler {
 class IntOnlyKeyHandler(maxLength: Int, min: Int, max: Int, view: HTMLElement) {
   var lastValidValue = view.textContent
 
+  def handleValidKey(ch: Char): Unit =
+    timers.setTimeout(KeyCheckDelay) {
+      if (view.textContent.length > maxLength || !(view.textContent.toInt inRange(min, max)))
+        view.textContent = lastValidValue
+      else
+        lastValidValue = view.textContent
+    }
+
   def handleEvent(event: DomEvent) = event match {
     case e: KeyboardEvent =>
-      Try(e.charCode.toChar.toString.toInt) match {
-        case f: Failure[_] =>
-          event.preventDefault()
-        case _ => timers.setTimeout(KeyCheckDelay) {
-          if (view.textContent.length > maxLength || !(view.textContent.toInt inRange(min, max)))
-            view.textContent = lastValidValue
-          else
-            lastValidValue = view.textContent
-        }
+      val ch = e.charCode.toChar
+      Try(ch.toString.toInt) match {
+        case Success(_) => handleValidKey(ch)
+        case Failure(_) if List('-', '+') contains ch => handleValidKey(ch)
+        case _ => event.preventDefault()
       }
   }
 }

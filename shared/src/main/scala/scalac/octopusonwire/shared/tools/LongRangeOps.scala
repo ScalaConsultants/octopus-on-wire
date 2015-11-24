@@ -1,5 +1,5 @@
 package scalac.octopusonwire.shared.tools
-import scala.languageFeature.implicitConversions
+import scala.language.implicitConversions
 
 class LongRangeOps(i: Long){
   def inRange(a: Long, b: Long) = i >= a && i <= b

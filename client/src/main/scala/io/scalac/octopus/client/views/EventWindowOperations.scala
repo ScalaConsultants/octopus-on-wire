@@ -95,7 +95,7 @@ object EventWindowOperations extends WindowOperations {
             window.removeChild(window.firstChild)
 
           def elemArrayFromUserEventInfo(info: UserEventInfo): Array[HTMLElement] = info match {
-            case UserEventInfo(event, joined, joinCount) =>
+            case UserEventInfo(event, joined, joinCount, eventActive) =>
               Array(
                 div(
                   `class` := "octopus-event view-left",
@@ -103,7 +103,7 @@ object EventWindowOperations extends WindowOperations {
                   p(event.datesToString, `class` := "octopus-event-date"),
                   p(event.location, `class` := "octopus-event-location"),
                   new JoinButton(window, eventId)
-                    .getButton(joined, joinCount, active = event.endDate > now.valueOf)
+                    .getButton(joined, joinCount, eventActive)
                 ),
                 div(`class` := "octopus-event view-right",
                   twitterLink(event),

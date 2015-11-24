@@ -6,7 +6,6 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
-import data.{InMemoryEventSource, EventSource}
 import play.api.mvc._
 import services._
 
@@ -16,8 +15,6 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
 
 object Application extends Controller {
-  val eventSource: EventSource = InMemoryEventSource
-
   def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
     result.withHeaders(
       ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
