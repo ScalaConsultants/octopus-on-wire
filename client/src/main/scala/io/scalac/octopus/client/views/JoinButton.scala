@@ -10,7 +10,7 @@ import org.scalajs.dom.html.{Anchor, Div}
 import org.scalajs.dom.location
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalac.octopusonwire.shared.domain.{EventId, UserInfo}
+import scalac.octopusonwire.shared.domain.{EventJoin, EventId, UserInfo}
 import scalatags.JsDom.all._
 
 class JoinButton(window: Div, eventId: EventId) {
@@ -22,10 +22,9 @@ class JoinButton(window: Div, eventId: EventId) {
   def joinEvent(joined: Boolean) =
     if (userInfo.isDefined) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
-        eventJoinCount => {
+        case EventJoin(eventJoinCount, _) =>
           val left = window.firstChild
           left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
-        }
       }
     } else location assign Github.loginWithJoinUrl(dom.window.location.href, eventId)
 
