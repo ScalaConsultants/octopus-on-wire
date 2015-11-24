@@ -37,14 +37,16 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
   override def getFutureItems(limit: Int): Seq[SimpleEvent] = {
     val now = System.currentTimeMillis()
     eventSource.getEventsWhere { event =>
-      event.startDate >= now || event.endDate >= now
+      !hasUserFlagged(event) &&
+        (event.startDate >= now || event.endDate >= now)
     } sortBy (_.startDate) take limit map (_.toSimple)
   }
 
   override def getEventsForRange(from: Long, to: Long): Seq[Event] =
     eventSource.getEventsWhere { event =>
-      (event.startDate >= from && event.startDate <= to) ||
-        (event.endDate >= from && event.endDate <= to)
+      !hasUserFlagged(event) &&
+        ((event.startDate >= from && event.startDate <= to) ||
+          (event.endDate >= from && event.endDate <= to))
     } take ServerConfig.MaxEventsInMonth
 
   override def isUserLoggedIn() = userId.isDefined
@@ -78,4 +80,10 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
     case Some(_) => FailedToAdd(`Event starts in the past`)
     case _ => FailedToAdd(`User not logged in`)
   }
+
+  override def flagEvent(eventId: EventId): Unit =
+    userId.foreach(eventSource.addFlag(eventId, _))
+
+  private def hasUserFlagged(event: Event) =
+    userId.exists(eventSource.getFlaggers(event.id) contains)
 }

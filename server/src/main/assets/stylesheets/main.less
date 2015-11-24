@@ -59,7 +59,9 @@ body {
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        cursor: pointer;
+        &:not(.placeholder) {
+          cursor: pointer;
+        }
         &.item-name {
           flex: 1;
         }
@@ -135,11 +137,15 @@ body {
 
 .octopus-event-view {
   flex-direction: row;
+  justify-content: space-between;
 }
 
 .octopus-event {
   display: flex;
   flex-direction: column;
+  &.view-right {
+    flex: 42px 0 0;
+  }
 }
 
 .octopus-link {
@@ -157,17 +163,13 @@ body {
   background: url("../images/twitter-logo.svg") no-repeat center / contain;
 }
 
-.octopus-loading-text {
-  color: white;
+.octopus-event-flag {
+  background: url("../images/flag-icon.svg") no-repeat center / contain;
+  cursor: pointer;
 }
 
-.octopus-event-bottom {
-  display: flex;
-  width: 100%;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
+.octopus-loading-text {
+  color: white;
 }
 
 .octopus-window-bottom-arrow {
@@ -299,7 +301,7 @@ body {
   }
   .trow {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     &:first-of-type {
       border-bottom: 1px solid white;
     }

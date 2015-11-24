@@ -17,5 +17,11 @@ trait EventSource {
 
   def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean
 
+  def countFlags(eventId: EventId): Long
+
+  def getFlaggers(eventId: EventId): Set[UserId]
+
+  def addFlag(eventId: EventId, by: UserId): Unit
+
   def addEvent(event: Event): EventAddition
 }

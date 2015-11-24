@@ -4,9 +4,9 @@ import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig._
-import io.scalac.octopus.client.views.SliderViewOperations.{list, startSlideInterval, updateClasses}
+import io.scalac.octopus.client.views.SliderViewOperations._
 import io.scalac.octopus.client.views.{CalendarWindowOperations, EventWindowOperations, SliderViewOperations}
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.html.{Div, UList}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
@@ -16,16 +16,36 @@ import scalatags.JsDom.all.{list => _, _}
 
 @JSExport("OctopusClient")
 object OctopusClient extends js.JSApp {
+  val octopusHome: Div = div(id := "octopus-home", list).render
+
+  val calendarIcon = span(
+    `class` := "calendar-icon",
+    title := "All events",
+    onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(Date.now)) }
+  )
+
+  val itemPlaceholder = li(
+    div(
+      `class` := "item",
+      calendarIcon,
+      span(`class` := "item-name placeholder", ClientConfig.EmptyListPlaceholderText)
+    )
+  ).render
 
   @JSExport
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
 
-    val octopusHome: Div = div(id := "octopus-home").render
     root.appendChild(octopusHome)
+    refreshEvents(list, octopusHome)
+  }
+
+  def refreshEvents(list: UList, octopusHome: Div): Unit = {
 
     octoApi.getFutureItems(ClientConfig.ItemsToFetch).call().map { items =>
-      octopusHome.appendChild(list)
+
+      while (list.hasChildNodes) list.removeChild(list.firstChild)
+      stopSlideInterval()
 
       items foreach {
         item => list.appendChild(
@@ -39,16 +59,21 @@ object OctopusClient extends js.JSApp {
             span(`class` := "item-name", item.name,
               onclick := { () => EventWindowOperations.openEventWindow(item.id, octopusHome) }),
 
-            //next icon
-            div(`class` := "next", title := "Next",
-              onclick := { () => SliderViewOperations.moveToNextItem(list) })
+            //next icon. Don't show it if there is nothing to slide to
+            if(items.length > 1)
+              div(`class` := "next", title := "Next", onclick := { () => SliderViewOperations.moveToNextItem(list) })
+            else ""
 
           )).render
         )
       }
 
-      updateClasses(list)
-      startSlideInterval(list)
+      if (items.isEmpty) list.appendChild(itemPlaceholder)
+      else {
+        SliderViewOperations.currentIndex = ClientConfig.InitialSlideIndex
+        updateClasses(list)
+        startSlideInterval(list)
+      }
     }
   }
 
