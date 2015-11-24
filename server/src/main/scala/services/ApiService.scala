@@ -8,7 +8,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.domain.FailedToAdd.9{`Event starts in the past`, `User not logged in`}
+import scalac.octopusonwire.shared.domain.FailedToAdd.{`Event starts in the past`, `User not logged in`}
 import scalac.octopusonwire.shared.domain._
 
 class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
