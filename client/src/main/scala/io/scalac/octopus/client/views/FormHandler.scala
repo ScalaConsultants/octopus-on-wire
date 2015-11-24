@@ -2,6 +2,7 @@ package io.scalac.octopus.client.views
 
 import autowire._
 import boopickle.Default._
+import io.scalac.octopus.client.OctopusClient
 import io.scalac.octopus.client.config.ClientConfig.{KeyCheckDelay, MoveToCalendarDelay, WindowOpenDelay, octoApi}
 import io.scalac.octopus.client.tools.{FindSuffixInMessage, DateOps}
 import io.scalac.octopus.client.tools.DateOps._
@@ -17,7 +18,7 @@ import scala.scalajs.js.{Date, timers}
 import scala.util.{Failure, Success, Try}
 import scalac.octopusonwire.shared.domain.Event.{InvalidDatesMessage, InvalidLocationMessage, InvalidNameMessage, InvalidURLMessage}
 import scalac.octopusonwire.shared.domain.{Added, Event, EventId, FailedToAdd}
-import scalac.octopusonwire.shared.tools.IntRangeOps.int2IntRangeOps
+import scalac.octopusonwire.shared.tools.LongRangeOps.int2IntRangeOps
 import scalatags.JsDom.all._
 
 class FormHandler(startDay: Date, octopusHome: Div) {
@@ -81,7 +82,8 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     octoApi.addEvent(event).call().foreach {
       case Added() =>
         showMessage(s"Your Event ${event.name} has been created.")
-        //TODO refresh event list in calendar here
+
+        OctopusClient.refreshEvents(SliderViewOperations.list, octopusHome)
         timers.setTimeout(MoveToCalendarDelay)(EventCreateWindowOperations.closeWindow(octopusHome))
         timers.setTimeout(MoveToCalendarDelay + WindowOpenDelay) {
           CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(event.startDate))

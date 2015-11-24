@@ -7,11 +7,11 @@ import io.scalac.octopus.client.config.{ClientConfig, Github}
 import io.scalac.octopus.client.views.EventWindowOperations.userInfo
 import org.scalajs.dom
 import org.scalajs.dom.html.{Anchor, Div}
+import org.scalajs.dom.location
 
-import scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalac.octopusonwire.shared.domain.{EventId, UserInfo}
 import scalatags.JsDom.all._
-import dom.location
 
 class JoinButton(window: Div, eventId: EventId) {
 
@@ -24,7 +24,7 @@ class JoinButton(window: Div, eventId: EventId) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
         eventJoinCount => {
           val left = window.firstChild
-          left.replaceChild(getButton(joined = true, eventJoinCount), left.lastChild)
+          left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
         }
       }
     } else location assign Github.loginWithJoinUrl(dom.window.location.href, eventId)
@@ -40,22 +40,23 @@ class JoinButton(window: Div, eventId: EventId) {
     )
   ).render
 
-  def getButton(joined: Boolean, joinCount: Long): Div = {
-    val wrapper = div(
-      `class` := "octopus-user-avatar-wrapper"
+  def getButton(joined: Boolean, joinCount: Long, active: Boolean): Div = {
+    val buttonView = a(
+      s"${if (!joined) "+=1" else "\u2713"} ($joinCount)",
+      `class` := "octopus-event-join-link",
+      onclick := { () => joinEvent(joined) }
     ).render
 
-    userInfo.foreach(user =>
-      wrapper.appendChild(userAvatar(user))
-    )
+    val infoView = p(s"$joinCount joined", `class` := "octopus-event-join-count").render
 
-    wrapper.appendChild(
-      a(
-        s"${if (!joined) "+=1" else "\u2713"} ($joinCount)",
-        `class` := "octopus-event-join-link",
-        onclick := { () => joinEvent(joined) }
-      ).render
-    )
+    val wrapper = div(
+      `class` := "octopus-user-avatar-wrapper",
+      userInfo.collect {
+        case user if active || joined => userAvatar(user)
+        case _ => "".render
+      },
+      if (active) buttonView else infoView
+    ).render
 
     octoApi.getUsersJoined(eventId, ClientConfig.UsersToDisplay).call().foreach(_.foreach { person =>
       wrapper.appendChild(userAvatar(person))

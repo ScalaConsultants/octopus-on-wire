@@ -2,7 +2,7 @@ package services
 
 import config.ServerConfig
 import data.{EventSource, InMemoryEventSource}
-
+import scalac.octopusonwire.shared.tools.LongRangeOps._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -45,8 +45,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
   override def getEventsForRange(from: Long, to: Long): Seq[Event] =
     eventSource.getEventsWhere { event =>
       !hasUserFlagged(event) &&
-        ((event.startDate >= from && event.startDate <= to) ||
-          (event.endDate >= from && event.endDate <= to))
+      (event.startDate inRange(from, to)) || (event.endDate inRange(from, to))
     } take ServerConfig.MaxEventsInMonth
 
   override def isUserLoggedIn() = userId.isDefined
