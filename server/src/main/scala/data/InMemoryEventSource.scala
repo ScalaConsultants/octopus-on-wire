@@ -18,10 +18,14 @@ object InMemoryEventSource extends EventSource {
     Event(EventId(8), "Best Scala event", now + days(28), now + days(28) + hours(8), "Some nice place", "https://scalac.io")
   )
 
-  val eventJoins = TrieMap[EventId, Set[UserId]](
+  private val eventJoins = TrieMap[EventId, Set[UserId]](
     EventId(1) -> Set(1136843, 1548278, 10749622, 192549, 13625545, 1097302, 82964, 345056, 390629, 4959786, 5664242).map(UserId(_)),
     EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
   )
+
+  private val flags = TrieMap[EventId, Set[UserId]]()
+
+  override def getFlaggers(eventId: EventId): Set[UserId] = flags.getOrElse(eventId, Set.empty)
 
   override def getEvents: Seq[Event] = events
 
@@ -40,6 +44,13 @@ object InMemoryEventSource extends EventSource {
 
   override def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean =
     eventJoins.get(event).exists(_.contains(userId))
+
+  override def countFlags(eventId: EventId): Long = getFlaggers(eventId).size
+
+  override def addFlag(eventId: EventId, by: UserId): Unit =
+    eventById(eventId).foreach { event =>
+      flags(eventId) = getFlaggers(eventId) + by
+    }
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
 
