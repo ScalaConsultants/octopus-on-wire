@@ -12,7 +12,7 @@ import org.scalajs.dom.location
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scala.scalajs.js.timers
+import scala.scalajs.js.{Date, timers}
 import scalac.octopusonwire.shared.domain.{Event, EventId, UserEventInfo, UserInfo}
 import scalatags.JsDom.all._
 
@@ -71,7 +71,7 @@ object EventWindowOperations extends WindowOperations {
         val canFlag = userInfo.isDefined && !flagging
         a(
           `class` := "octopus-link octopus-event-flag",
-            onclick := {
+          onclick := {
             () => canFlag match {
               case true => flagEvent()
               case _ if userInfo.isEmpty =>
@@ -88,6 +88,7 @@ object EventWindowOperations extends WindowOperations {
 
       octoApi.getUserEventInfo(eventId).call().foreach {
         case Some(info) =>
+          val now = new Date(Date.now)
 
           //clear window
           while (window.childElementCount > 0)
@@ -101,7 +102,8 @@ object EventWindowOperations extends WindowOperations {
                   h1(event.name, `class` := "octopus-event-name"),
                   p(event.datesToString, `class` := "octopus-event-date"),
                   p(event.location, `class` := "octopus-event-location"),
-                  new JoinButton(window, eventId).getButton(joined, joinCount)
+                  new JoinButton(window, eventId)
+                    .getButton(joined, joinCount, active = event.endDate > now.valueOf)
                 ),
                 div(`class` := "octopus-event view-right",
                   twitterLink(event),

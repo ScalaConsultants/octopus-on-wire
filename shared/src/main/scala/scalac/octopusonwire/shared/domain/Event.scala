@@ -1,7 +1,7 @@
 package scalac.octopusonwire.shared.domain
 
 import scalac.octopusonwire.shared.domain.Event._
-import scalac.octopusonwire.shared.tools.IntRangeOps.int2IntRangeOps
+import scalac.octopusonwire.shared.tools.LongRangeOps.int2IntRangeOps
 
 case class Event(id: EventId, name: String, startDate: Long, endDate: Long, location: String, url: String) {
   require(name.length inRange(3, 100), InvalidNameMessage)
