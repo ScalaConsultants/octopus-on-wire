@@ -4,7 +4,7 @@ import java.util.Calendar
 
 import config.ServerConfig
 import data.{EventSource, InMemoryEventSource}
-import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{`Joined`, `Event not found`, `User not found`, `Trying to join past event`}
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{Joined, EventNotFound, UserNotFound, TryingToJoinPastEvent}
 import scalac.octopusonwire.shared.tools.LongRangeOps._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -57,10 +57,10 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
     val message = userId match {
       case Some(id) if event.isDefined && event.exists(isEventInFuture) =>
         eventSource.joinEvent(id, eventId)
-        `Joined`
-      case None => `User not found`
-      case _ if event.isDefined => `Trying to join past event`
-      case _ => `Event not found`
+        Joined
+      case None => UserNotFound
+      case _ if event.isDefined => TryingToJoinPastEvent
+      case _ => EventNotFound
     }
 
     EventJoin(eventSource.countJoins(eventId), EventJoinMessage(message.toString))
