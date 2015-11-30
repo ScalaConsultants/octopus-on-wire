@@ -13,7 +13,7 @@ trait Api {
 
   def isUserLoggedIn(): Boolean
 
-  def joinEventAndGetJoins(eventId: EventId): Long
+  def joinEventAndGetJoins(eventId: EventId): EventJoin
 
   def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo]
 

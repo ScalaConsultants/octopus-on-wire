@@ -1,19 +1,20 @@
 package services
 
+import java.util.Calendar
+
 import config.ServerConfig
 import data.{EventSource, InMemoryEventSource}
-
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{Joined, EventNotFound, UserNotFound, TryingToJoinPastEvent}
+import scalac.octopusonwire.shared.tools.LongRangeOps._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.domain.FailedToAdd.{`Event starts in the past`, `User not logged in`}
+import scalac.octopusonwire.shared.domain.FailedToAdd.{`The event can't end in the past`, `User not logged in`}
 import scalac.octopusonwire.shared.domain._
 
-class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
-
-  val eventSource: EventSource = InMemoryEventSource
+class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: EventSource = InMemoryEventSource) extends Api {
 
   override def getUserEventInfo(eventId: EventId): Option[UserEventInfo] =
     eventSource.eventById(eventId) match {
@@ -21,7 +22,8 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
         Option(UserEventInfo(
           event,
           userId exists (token => eventSource.hasUserJoinedEvent(eventId, token)),
-          eventSource.countJoins(eventId)
+          eventSource.countJoins(eventId),
+          isEventInFuture(event)
         ))
       case None => None
     }
@@ -45,20 +47,23 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
   override def getEventsForRange(from: Long, to: Long): Seq[Event] =
     eventSource.getEventsWhere { event =>
       !hasUserFlagged(event) &&
-        ((event.startDate >= from && event.startDate <= to) ||
-          (event.endDate >= from && event.endDate <= to))
+        (event.startDate inRange(from, to)) || (event.endDate inRange(from, to))
     } take ServerConfig.MaxEventsInMonth
 
   override def isUserLoggedIn() = userId.isDefined
 
-  override def joinEventAndGetJoins(eventId: EventId): Long = {
-    userId match {
-      case Some(id) =>
+  override def joinEventAndGetJoins(eventId: EventId): EventJoin = {
+    val event = eventSource.eventById(eventId)
+    val message = userId match {
+      case Some(id) if event.isDefined && event.exists(isEventInFuture) =>
         eventSource.joinEvent(id, eventId)
-      case None =>
-        println("User not found")
+        Joined
+      case None => UserNotFound
+      case _ if event.isDefined => TryingToJoinPastEvent
+      case _ => EventNotFound
     }
-    eventSource.countJoins(eventId)
+
+    EventJoin(eventSource.countJoins(eventId), EventJoinMessage(message.toString))
   }
 
   override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
@@ -75,9 +80,18 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId]) extends Api {
       atMost = Duration.Inf
     ).flatten
 
+  private def isEventInFuture(event: Event): Boolean = {
+    val serverOffset = Calendar.getInstance.getTimeZone.getRawOffset
+
+    val eventEndUTC = event.endDate - event.offset
+    val currentUTC = System.currentTimeMillis - serverOffset
+
+    eventEndUTC > currentUTC
+  }
+
   override def addEvent(event: Event): EventAddition = userId match {
-    case Some(_) if event.endDate > System.currentTimeMillis() => eventSource.addEvent(event)
-    case Some(_) => FailedToAdd(`Event starts in the past`)
+    case Some(_) if isEventInFuture(event) => eventSource.addEvent(event)
+    case Some(_) => FailedToAdd(`The event can't end in the past`)
     case _ => FailedToAdd(`User not logged in`)
   }
 
