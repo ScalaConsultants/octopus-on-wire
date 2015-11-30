@@ -4,7 +4,7 @@ import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.OctopusClient
 import io.scalac.octopus.client.config.ClientConfig.{KeyCheckDelay, MoveToCalendarDelay, WindowOpenDelay, octoApi}
-import io.scalac.octopus.client.tools.{FindSuffixInMessage, DateOps}
+import io.scalac.octopus.client.tools.DateOps
 import io.scalac.octopus.client.tools.DateOps._
 import io.scalac.octopus.client.tools.TimeUnit._
 import io.scalac.octopus.client.views.FormHandler.getNewTimeField
@@ -15,13 +15,18 @@ import org.scalajs.dom.{Event => DomEvent, KeyboardEvent}
 import scala.language.postfixOps
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.{Date, timers}
-import scala.util.{Failure, Success, Try}
-import scalac.octopusonwire.shared.domain.Event.{InvalidDatesMessage, InvalidLocationMessage, InvalidNameMessage, InvalidURLMessage}
-import scalac.octopusonwire.shared.domain.{Added, Event, EventId, FailedToAdd}
-import scalac.octopusonwire.shared.tools.LongRangeOps.int2IntRangeOps
+import scala.util.{Success, Try}
+import scalac.octopusonwire.shared.domain.Event._
+import scalac.octopusonwire.shared.domain._
+import scalac.octopusonwire.shared.tools.LongRangeOps._
 import scalatags.JsDom.all._
 
 class FormHandler(startDay: Date, octopusHome: Div) {
+  var submitted = false
+  val MalformedDatesMessage = "We need to know when the event starts and ends!"
+
+  //todo map contenteditable fields' onkeypressed to buildEventOrGetErrors
+
   val eventNameField = h1(
     placeholder := "Event name",
     `class` := "octopus-event-name", contenteditable := "true"
@@ -47,6 +52,15 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     contenteditable := "true",
     `class` := "octopus-event-url"
   ).render
+
+  val messagesWithFields: Map[String, HTMLElement] = Map(
+    MalformedDatesMessage -> endMinuteField,
+    InvalidNameMessage -> eventNameField,
+    InvalidDatesMessage -> endMinuteField,
+    InvalidOffsetMessage -> timezoneMinuteField,
+    InvalidLocationMessage -> eventLocationField,
+    InvalidURLMessage -> eventUrlField
+  )
 
   val messageField = p(`class` := "octopus-message hidden").render
 
@@ -76,15 +90,18 @@ class FormHandler(startDay: Date, octopusHome: Div) {
     (startDay + (h hours) + (m minutes)).valueOf.toLong
   }
 
-  def buildEvent = {
-    val startDateMillis = getMillisFrom(startHourField, startMinuteField)
-    val endDateMillis = getMillisFrom(endHourField, endMinuteField)
+  def buildEventOrGetErrors: Either[Event, Map[String, HTMLElement]] = {
+    val millis = Try {
+      getMillisFrom(startHourField, startMinuteField) -> getMillisFrom(endHourField, endMinuteField)
+    }
 
     val tzOffset = ((timezoneHourField.textContent.toInt hours)
       + (timezoneMinuteField.textContent.toInt minutes))
       .valueOf().toLong
 
-    new Event(
+    val (startDateMillis, endDateMillis) = millis.getOrElse((-1L, 0L))
+
+    val baseEvent = new BaseEvent(
       id = EventId(-1),
       name = eventNameField.textContent,
       startDate = startDateMillis,
@@ -93,6 +110,14 @@ class FormHandler(startDay: Date, octopusHome: Div) {
       url = eventUrlField.textContent,
       location = eventLocationField.textContent
     )
+    val timeFormatResult: Map[String, Boolean] = if (millis.isSuccess) Map.empty
+    else Map(MalformedDatesMessage -> false)
+
+    val messagesToShow = (invalidFieldsIn(baseEvent) ++ timeFormatResult)
+      .map { case (message, _) => message -> messagesWithFields(message) }
+
+    if (messagesToShow.isEmpty) Left(from(baseEvent))
+    else Right(messagesToShow)
   }
 
   def sendEvent(event: Event) = {
@@ -119,23 +144,14 @@ class FormHandler(startDay: Date, octopusHome: Div) {
   }
 
   def submit(me: MouseEvent) =
-    Try(buildEvent) match {
-      case Success(event) => sendEvent(event)
-      case Failure(thr) => showError(thr.toString)
+    buildEventOrGetErrors match {
+      case Left(event) => sendEvent(from(event))
+      case Right(errors) => /*todo show errors*/ errors foreach println
     }
 
   def showMessage(text: String) = {
     messageField.textContent = text
     show(messageField)
-  }
-
-  def showError(message: String) = {
-    val suffixes: List[String] = List(InvalidDatesMessage, InvalidNameMessage, InvalidLocationMessage, InvalidURLMessage)
-    FindSuffixInMessage(message, suffixes) match {
-      case Some(suffix) => showMessage(suffix)
-      case _ if message.startsWith(classOf[NumberFormatException].getName) =>
-        showMessage("We need to know when the event starts and ends!")
-    }
   }
 
   def show(element: HTMLElement) = element.classList.remove("hidden")
@@ -170,7 +186,7 @@ class IntOnlyKeyHandler(maxLength: Int, min: Int, max: Int, view: HTMLElement) {
       val ch = e.charCode.toChar
       Try(ch.toString.toInt) match {
         case Success(_) => handleValidKey(ch)
-//        case Failure(_) if List('-', '+') contains ch => handleValidKey(ch)
+        // case Failure(_) if List('-', '+') contains ch => handleValidKey(ch)
         case _ => event.preventDefault()
       }
   }
