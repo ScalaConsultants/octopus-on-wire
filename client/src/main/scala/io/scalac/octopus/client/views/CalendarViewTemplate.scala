@@ -8,7 +8,7 @@ import scalac.octopusonwire.shared.domain.Event
 import scalatags.JsDom.all._
 class CalendarViewTemplate(window: Div, octopusHome: Div) {
 
-  def calendarTable(current: Date, events: Seq[Event]): Div = new CalendarTable(current)
+  def calendarTable(current: Date, events: Seq[Event]): Div = new CalendarTable(current).view
 
   def apply(current: Date): Div = {
     val monthSelector: Div = {

@@ -292,6 +292,15 @@ body {
   }
 }
 
+.octopus-event-join-count{
+  display: flex;
+  height: 100%;
+  align-items: center;
+  color: white;
+  order: -1;
+  margin-right: 20px;
+}
+
 .octopus-calendar {
   display: inline-flex;
   flex-direction: column;
@@ -325,7 +334,7 @@ body {
       border: 1px solid white;
       color: @blue-light;
     }
-    &.other-month {
+    &.inactive-day {
       color: rgba(254, 253, 255, 0.5);
     }
     &:not(:hover) {
