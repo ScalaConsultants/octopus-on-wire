@@ -1,11 +1,10 @@
 package io.scalac.octopus.client.tools
 
-import io.scalac.octopus.client.tools.DateOps.getOffsetDifference
+import io.scalac.octopus.client.tools.DateOps.{date2DateOps, getOffsetDifference}
 import io.scalac.octopus.client.tools.TimeUnit._
 
 import scala.language.{implicitConversions, postfixOps}
 import scala.scalajs.js.Date
-import scala.language.implicitConversions
 
 object DateOps {
   implicit def date2DateOps(d: Date): DateOps = new DateOps(d)
@@ -43,6 +42,7 @@ object DateOps {
   def getDayStart(day: Date) = new Date(day.getFullYear(), day.getMonth(), day.getDate())
 
   def dateAndTimeToString(d: Date) = "%s %d, %d %02d:%02d".format(MonthsShort(d.getMonth()), d.getDate(), d.getFullYear(), d.getHours(), d.getMinutes())
+
   def dateToString(d: Date) = "%s %d, %d".format(MonthsShort(d.getMonth()), d.getDate(), d.getFullYear())
 }
 
@@ -65,6 +65,9 @@ class DateOps(date: Date) {
 
   def isSameDay(another: Date) =
     isSameMonth(another) && date.getDate() == another.getDate()
+
+  def isBeforeOrOnToday = ((this - new Date(Date.now)) + (1 days)).valueOf < 0
+  def isAfterOrOnToday = ((this - new Date(Date.now)) + (1 days)).valueOf > 0
 }
 
 object TimeUnit {
