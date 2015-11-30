@@ -11,6 +11,7 @@ import org.scalajs.dom.html.Div
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.{Date, timers}
 import scalac.octopusonwire.shared.domain.Event
+import scalatags.JsDom.all
 import scalatags.JsDom.all._
 
 class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(window, octopusHome) {
@@ -30,11 +31,10 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
   override def calendarTable(current: Date, events: Seq[Event]): Div = {
     EventCalendar.current = Option(current)
 
-    new CalendarTable(
-      now = current,
-      marker = calendarDay =>
-        events.exists(_ takesPlaceOn calendarDay),
-      modifier = {
+    new CalendarTable(now = current) {
+      override def marker(date: Date): Boolean = events.exists(_ takesPlaceOn date)
+
+      override def modifier(day: Date): Array[Modifier] = day match {
         case date if events.exists(_ takesPlaceOn date) =>
           Array(span(date.getDate()),
             div(
@@ -53,9 +53,9 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
                 }
               )
             ))
-        case date => CalendarTable.defaultModifier(date)
+        case date => super.modifier(date)
       }
-    )
+    }.view
   }
 }
 

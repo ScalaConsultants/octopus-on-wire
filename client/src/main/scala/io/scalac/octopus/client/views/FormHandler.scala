@@ -31,8 +31,8 @@ class FormHandler(startDay: Date, octopusHome: Div) {
   val startMinuteField = getNewTimeField("MM", 0, 59, maxLength = 2)
   val endHourField = getNewTimeField("H", 0, 23, maxLength = 2)
   val endMinuteField = getNewTimeField("MM", 0, 59, maxLength = 2)
-  val timezoneHourField = getNewTimeField("H", -14, 14, maxLength = 3)
-  val timezoneMinuteField = getNewTimeField("MM", 0, 59, maxLength = 2)
+  val timezoneHourField = span("H").render
+  val timezoneMinuteField = span("MM").render
 
   //set initial timezone value based on the user's location
   val tz = new Date(Date.now).getTimezoneOffset
@@ -170,7 +170,7 @@ class IntOnlyKeyHandler(maxLength: Int, min: Int, max: Int, view: HTMLElement) {
       val ch = e.charCode.toChar
       Try(ch.toString.toInt) match {
         case Success(_) => handleValidKey(ch)
-        case Failure(_) if List('-', '+') contains ch => handleValidKey(ch)
+//        case Failure(_) if List('-', '+') contains ch => handleValidKey(ch)
         case _ => event.preventDefault()
       }
   }
