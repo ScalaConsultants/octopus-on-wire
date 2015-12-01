@@ -8,6 +8,8 @@ import scalac.octopusonwire.shared.tools.LongRangeOps._
 //Event sans validation
 class BaseEvent(val id: EventId, val name: String, val startDate: Long, val endDate: Long, val offset: Long, val location: String, val url: String) {
   def toSimple: SimpleEvent = SimpleEvent(id, name)
+
+  override def toString = s"BaseEvent($id, $name, $startDate, $endDate, $offset, $location, $url)"
 }
 
 case class Event(override val id: EventId, override val name: String,
@@ -16,8 +18,7 @@ case class Event(override val id: EventId, override val name: String,
   extends BaseEvent(id, name, startDate, endDate, offset, location, url) {
 
   val invalidFields = invalidFieldsIn(this)
-  require(invalidFields.isEmpty, invalidFields.values mkString)
-
+  require(invalidFields.isEmpty, invalidFields mkString)
 }
 
 object Event {
@@ -29,13 +30,13 @@ object Event {
   val InvalidLocationMessage = "The location should be between 3 and 100 characters in length"
   val InvalidURLMessage = "The URL should be between 3 and 100 characters in length"
 
-  def invalidFieldsIn(event: BaseEvent): Map[String, Boolean] = Map(
+  def invalidFieldsIn(event: BaseEvent): Set[String] = Map(
     InvalidNameMessage -> (event.name.length inRange(3, 100)),
     InvalidDatesMessage -> (event.startDate < event.endDate),
     InvalidOffsetMessage -> (event.offset inRange(-15 * MillisecondsInHour, 15 * MillisecondsInHour)),
     InvalidLocationMessage -> (event.location.length inRange(3, 100)),
     InvalidURLMessage -> (event.url.length inRange(3, 100))
-  ).filter(_._2 == false)
+  ).filter(_._2 == false).keySet
 }
 
 case class EventId(value: Long)
