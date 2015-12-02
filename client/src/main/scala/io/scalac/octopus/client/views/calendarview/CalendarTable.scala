@@ -1,4 +1,4 @@
-package io.scalac.octopus.client.views
+package io.scalac.octopus.client.views.calendarview
 
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.tools.DateOps._

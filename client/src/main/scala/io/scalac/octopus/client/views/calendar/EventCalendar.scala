@@ -1,4 +1,4 @@
-package io.scalac.octopus.client.views
+package io.scalac.octopus.client.views.calendar
 
 import autowire._
 import boopickle.Default._
@@ -6,12 +6,13 @@ import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig.octoApi
 import io.scalac.octopus.client.tools.DateOps._
 import io.scalac.octopus.client.tools.EventDateOps._
+import io.scalac.octopus.client.views.calendarview.{CalendarViewTemplate, CalendarTable}
+import io.scalac.octopus.client.views.detail.EventDetailWindow
 import org.scalajs.dom.html.Div
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.{Date, timers}
 import scalac.octopusonwire.shared.domain.Event
-import scalatags.JsDom.all
 import scalatags.JsDom.all._
 
 class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(window, octopusHome) {
@@ -46,8 +47,8 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
                     event.name,
                     `class` := "octopus-preview-element",
                     onclick := { () =>
-                      CalendarWindowOperations.closeWindow(octopusHome)
-                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventWindowOperations.openEventWindow(event.id, octopusHome))
+                      EventCalendarWindow.closeWindow(octopusHome)
+                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventDetailWindow.open(event.id, octopusHome))
                     }
                   )
                 }

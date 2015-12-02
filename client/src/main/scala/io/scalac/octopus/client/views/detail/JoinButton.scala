@@ -1,16 +1,16 @@
-package io.scalac.octopus.client.views
+package io.scalac.octopus.client.views.detail
 
 import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig.{UserThumbSize, octoApi}
 import io.scalac.octopus.client.config.{ClientConfig, Github}
-import io.scalac.octopus.client.views.EventWindowOperations.userInfo
+import io.scalac.octopus.client.views.detail.EventDetailWindow.userInfo
 import org.scalajs.dom
 import org.scalajs.dom.html.{Anchor, Div}
 import org.scalajs.dom.location
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalac.octopusonwire.shared.domain.{EventJoin, EventId, UserInfo}
+import scalac.octopusonwire.shared.domain.{EventId, EventJoin, UserInfo}
 import scalatags.JsDom.all._
 
 class JoinButton(window: Div, eventId: EventId) {
@@ -50,7 +50,7 @@ class JoinButton(window: Div, eventId: EventId) {
 
     val wrapper = div(
       `class` := "octopus-user-avatar-wrapper",
-      userInfo.collect {
+      userInfo.map {
         case user if active || joined => userAvatar(user)
         case _ => "".render
       },

@@ -1,4 +1,4 @@
-package io.scalac.octopus.client.views
+package io.scalac.octopus.client.views.calendarview
 
 import io.scalac.octopus.client.tools.DateOps._
 import org.scalajs.dom.html.Div
@@ -6,7 +6,7 @@ import org.scalajs.dom.html.Div
 import scala.scalajs.js.Date
 import scalac.octopusonwire.shared.domain.Event
 import scalatags.JsDom.all._
-class CalendarViewTemplate(window: Div, octopusHome: Div) {
+abstract class CalendarViewTemplate(window: Div, octopusHome: Div) {
 
   def calendarTable(current: Date, events: Seq[Event]): Div = new CalendarTable(current).view
 
