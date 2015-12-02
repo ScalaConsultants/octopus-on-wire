@@ -1,4 +1,4 @@
-package io.scalac.octopus.client.views
+package io.scalac.octopus.client.views.detail
 
 import autowire._
 import boopickle.Default._
@@ -7,19 +7,22 @@ import io.scalac.octopus.client.config.ClientConfig.{TwitterSharingText, octoApi
 import io.scalac.octopus.client.config.{ClientConfig, Github}
 import io.scalac.octopus.client.tools.EncodableString.string2Encodable
 import io.scalac.octopus.client.tools.EventDateOps._
+import io.scalac.octopus.client.views.addition.EventCreateWindowOperations
+import io.scalac.octopus.client.views.calendar.EventCalendarWindow
+import io.scalac.octopus.client.views.{SliderViewOperations, WindowOperations}
 import org.scalajs.dom.html.{Anchor, Div}
 import org.scalajs.dom.location
 import org.scalajs.dom.raw.HTMLElement
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scala.scalajs.js.{Date, timers}
+import scala.scalajs.js.timers
 import scalac.octopusonwire.shared.domain.{Event, EventId, UserEventInfo, UserInfo}
 import scalatags.JsDom.all._
 
 /**
   * Manages the event detail window view.
   */
-object EventWindowOperations extends WindowOperations {
+object EventDetailWindow extends WindowOperations {
   type EventWindowOption = Option[(EventId, Div)]
 
   var userInfo: Option[UserInfo] = None
@@ -27,13 +30,13 @@ object EventWindowOperations extends WindowOperations {
 
   protected var eventWindow: EventWindowOption = None
 
-  def openEventWindow(eventId: EventId, octopusHome: Div): Unit = {
-    CalendarWindowOperations.closeWindow(octopusHome)
+  def open(eventId: EventId, octopusHome: Div): Unit = {
+    EventCalendarWindow.closeWindow(octopusHome)
     EventCreateWindowOperations.closeWindow(octopusHome)
-    eventWindow = switchEventWindow(eventId, octopusHome)
+    eventWindow = switchWindow(eventId, octopusHome)
   }
 
-  protected def switchEventWindow(eventId: EventId, octopusHome: Div): EventWindowOption = eventWindow match {
+  protected def switchWindow(eventId: EventId, octopusHome: Div): EventWindowOption = eventWindow match {
     /*The event we want to display is the same as the one already displayed.
       Close the window.*/
     case Some((storedEventId, window)) if storedEventId == eventId =>
@@ -44,7 +47,7 @@ object EventWindowOperations extends WindowOperations {
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
       closeWindow(octopusHome)
-      switchEventWindow(eventId, octopusHome)
+      switchWindow(eventId, octopusHome)
 
     /*The window is not opened. Open it.*/
     case _ =>
