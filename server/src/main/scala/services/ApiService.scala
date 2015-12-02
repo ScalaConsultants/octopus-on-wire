@@ -1,4 +1,5 @@
 package services
+
 import tools.EventServerOps._
 
 import config.ServerConfig
@@ -11,7 +12,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.domain.FailedToAdd.{`The event can't end in the past`, `User not logged in`}
+import scalac.octopusonwire.shared.domain.FailedToAdd.{UserCantAddEventsYet, EventCantEndInThePast, UserNotLoggedIn}
 import scalac.octopusonwire.shared.domain._
 
 class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: EventSource = InMemoryEventSource) extends Api {
@@ -80,10 +81,19 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
       atMost = Duration.Inf
     ).flatten
 
-  override def addEvent(event: Event): EventAddition = userId match {
-    case Some(_) if event isInTheFuture => eventSource.addEvent(event)
-    case Some(_) => FailedToAdd(`The event can't end in the past`)
-    case _ => FailedToAdd(`User not logged in`)
+  override def addEvent(event: Event): EventAddition = {
+    val eventIsInFuture = event.isInTheFuture
+    val canAdd = canUserAddEvents() match{
+      case Left(true) => true
+      case _ => false
+    }
+
+    userId match {
+      case Some(_) if eventIsInFuture && canAdd => eventSource.addEvent(event)
+      case Some(_) if eventIsInFuture => FailedToAdd(UserCantAddEventsYet)
+      case Some(_) => FailedToAdd(EventCantEndInThePast)
+      case _ => FailedToAdd(UserNotLoggedIn)
+    }
   }
 
   override def flagEvent(eventId: EventId): Unit =
@@ -98,7 +108,6 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
       case None => Left(false)
       case Some(joinsLeft) => Right(joinsLeft)
     }
-
 
 
   private def hasUserFlagged(event: Event) =

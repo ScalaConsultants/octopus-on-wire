@@ -23,7 +23,7 @@ class InMemoryEventSource extends EventSource {
     Event(EventId(8), "Best Scala event", now + days(28), now + days(28) + hours(8), 3600000, "Some nice place", "https://scalac.io")
   )
 
-  private val eventJoins = TrieMap[EventId, Set[UserId]](
+  val eventJoins = TrieMap[EventId, Set[UserId]](
     EventId(1) -> Set(1136843, 1548278, 10749622, 192549, 13625545, 1097302, 82964, 345056, 390629, 4959786, 5664242).map(UserId(_)),
     EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
   )
