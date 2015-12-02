@@ -292,7 +292,7 @@ body {
   }
 }
 
-.octopus-event-join-count{
+.octopus-event-join-count {
   display: flex;
   height: 100%;
   align-items: center;
@@ -478,10 +478,21 @@ body {
 .octopus-event-creation {
   [contenteditable] {
     position: relative;
+    display: inline-block;
     &:empty:before {
       content: attr(placeholder);
       color: rgba(255, 255, 255, .5);
       display: block;
+    }
+  }
+  .octopus-validation-parent {
+    display: inline-flex;
+    align-items: center;
+    :first-child {
+      margin: 0;
+    }
+    &.dirty .octopus-validation-message.invalid{
+      display: inline-block;
     }
   }
   p {
@@ -489,10 +500,7 @@ body {
     font-family: sans-serif;
     color: white;
   }
-  span {
-    display: inline-block;
-  }
-  .octopus-event-url {
+  .octopus-event-url-wrapper {
     margin-bottom: 20px;
   }
   .octopus-message {
@@ -515,4 +523,16 @@ body {
       visibility: hidden;
     }
   }
+}
+
+.octopus-validation-message {
+  background: @gray-background;
+  font-size: .75em;
+  display: none;
+  padding: 5px 12px;
+  margin: 0 2px 0 5px;
+  //position: relative;
+  //bottom: 3px;
+  color: white;
+  transition: .2s;
 }

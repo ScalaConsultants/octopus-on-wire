@@ -1,25 +1,42 @@
 package scalac.octopusonwire.shared.domain
 
+import scala.language.postfixOps
 import scalac.octopusonwire.shared.config.SharedConfig.MillisecondsInHour
 import scalac.octopusonwire.shared.domain.Event._
-import scalac.octopusonwire.shared.tools.LongRangeOps.{int2IntRangeOps, long2IntRangeOps}
+import scalac.octopusonwire.shared.tools.LongRangeOps._
 
-case class Event(id: EventId, name: String, startDate: Long, endDate: Long, offset: Long, url: String, location: String) {
-  require(name.length inRange(3, 100), InvalidNameMessage)
-  require(startDate < endDate, InvalidDatesMessage)
-  require(offset inRange(-15 * MillisecondsInHour, 15 * MillisecondsInHour), InvalidOffsetMessage)
-  require(location.length inRange(3, 100), InvalidLocationMessage)
-  require(url.length inRange(3, 100), InvalidURLMessage)
-
+//Event sans validation
+class BaseEvent(val id: EventId, val name: String, val startDate: Long, val endDate: Long, val offset: Long, val location: String, val url: String) {
   def toSimple: SimpleEvent = SimpleEvent(id, name)
+
+  override def toString = s"BaseEvent($id, $name, $startDate, $endDate, $offset, $location, $url)"
 }
 
-object Event{
+case class Event(override val id: EventId, override val name: String,
+                 override val startDate: Long, override val endDate: Long, override val offset: Long,
+                 override val location: String, override val url: String)
+  extends BaseEvent(id, name, startDate, endDate, offset, location, url) {
+
+  val invalidFields = invalidFieldsIn(this)
+  require(invalidFields.isEmpty, invalidFields mkString)
+}
+
+object Event {
+  def from(base: BaseEvent) = Event(base.id, base.name, base.startDate, base.endDate, base.offset, base.location, base.url)
+
   val InvalidNameMessage = "The name should be between 3 and 100 characters in length"
   val InvalidDatesMessage = "The start date must be before end date"
-  val InvalidOffsetMessage = "Offset is out of range (-15, 15) hours"
+  val InvalidOffsetMessage = "Invalid timezone supplied"
   val InvalidLocationMessage = "The location should be between 3 and 100 characters in length"
   val InvalidURLMessage = "The URL should be between 3 and 100 characters in length"
+
+  def invalidFieldsIn(event: BaseEvent): Set[String] = Map(
+    InvalidNameMessage -> (event.name.length inRange(3, 100)),
+    InvalidDatesMessage -> (event.startDate < event.endDate),
+    InvalidOffsetMessage -> (event.offset inRange(-15 * MillisecondsInHour, 15 * MillisecondsInHour)),
+    InvalidLocationMessage -> (event.location.length inRange(3, 100)),
+    InvalidURLMessage -> (event.url.length inRange(3, 100))
+  ).filter(_._2 == false).keySet
 }
 
 case class EventId(value: Long)

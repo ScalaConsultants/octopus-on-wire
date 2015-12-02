@@ -5,7 +5,9 @@ import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig._
 import io.scalac.octopus.client.views.SliderViewOperations._
-import io.scalac.octopus.client.views.{CalendarWindowOperations, EventWindowOperations, SliderViewOperations}
+import io.scalac.octopus.client.views.calendar.EventCalendarWindow
+import io.scalac.octopus.client.views.SliderViewOperations
+import io.scalac.octopus.client.views.detail.EventDetailWindow
 import org.scalajs.dom.html.{Div, UList}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -21,7 +23,7 @@ object OctopusClient extends js.JSApp {
   val calendarIcon = span(
     `class` := "calendar-icon",
     title := "All events",
-    onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(Date.now)) }
+    onclick := { () => EventCalendarWindow.open(octopusHome, new Date(Date.now)) }
   )
 
   val itemPlaceholder = li(
@@ -53,11 +55,11 @@ object OctopusClient extends js.JSApp {
 
             //calendar icon
             span(`class` := "calendar-icon", title := "All events",
-              onclick := { () => CalendarWindowOperations.openCalendarWindow(octopusHome, new Date(Date.now())) }),
+              onclick := { () => EventCalendarWindow.open(octopusHome, new Date(Date.now())) }),
 
             //event preview
             span(`class` := "item-name", item.name,
-              onclick := { () => EventWindowOperations.openEventWindow(item.id, octopusHome) }),
+              onclick := { () => EventDetailWindow.open(item.id, octopusHome) }),
 
             //next icon. Don't show it if there is nothing to slide to
             if(items.length > 1)
