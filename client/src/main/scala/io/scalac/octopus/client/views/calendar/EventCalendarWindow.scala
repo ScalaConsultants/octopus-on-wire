@@ -1,10 +1,15 @@
 package io.scalac.octopus.client.views.calendar
 
-import io.scalac.octopus.client.views.addition.{DateSelector, EventCreateWindowOperations}
+import autowire._
+import boopickle.Default._
+import io.scalac.octopus.client.config.{ClientConfig, Github}
 import io.scalac.octopus.client.views.WindowOperations
+import io.scalac.octopus.client.views.addition.{DateSelector, EventCreateWindowOperations}
 import io.scalac.octopus.client.views.detail.EventDetailWindow
-import org.scalajs.dom.html.Div
+import org.scalajs.dom
+import org.scalajs.dom.html.{Anchor, Div}
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.Date
 import scalatags.JsDom.all._
 
@@ -47,7 +52,26 @@ object EventCalendarWindow extends WindowOperations {
           }
         ).render
 
-        window.replaceChild(addEventButton, window.childNodes(1))
+        val loginToAddEventButton: Anchor = a(
+          `class` := "octopus-calendar-create-event",
+          "Login to add events ", i(`class` := "fa fa-github"),
+          href := Github.login(dom.location.href)
+        ).render
+
+        val joinEventsToAddView = (howMany: Long) => div(
+          `class` := "octopus-calendar-create-event inactive",
+          s"$howMany more to create",
+          title := s"Join $howMany more events, and when they end, you'll be able to add your own events"
+        ).render
+
+        ClientConfig.octoApi.canUserAddEvents().call().foreach { result =>
+          window.replaceChild(result match {
+            case Left(canThey) if canThey => addEventButton
+            case Right(eventJoinsUntilAllowed) => joinEventsToAddView(eventJoinsUntilAllowed)
+            case _ => loginToAddEventButton
+          }, window.childNodes(1))
+        }
+
         openWindow(window, octopusHome)
         Option(window)
     }

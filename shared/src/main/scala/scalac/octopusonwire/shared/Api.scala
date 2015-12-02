@@ -20,4 +20,6 @@ trait Api {
   def addEvent(event: Event): EventAddition
 
   def flagEvent(eventId: EventId): Unit
+
+  def canUserAddEvents(): Either[Boolean, Long]
 }

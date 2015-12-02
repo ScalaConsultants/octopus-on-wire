@@ -1,8 +1,10 @@
 package data
 
-import scalac.octopusonwire.shared.domain.{Event, EventId, EventAddition, UserId}
+import scalac.octopusonwire.shared.domain.{Event, EventAddition, EventId, UserId}
 
 trait EventSource {
+  def countPastJoinsBy(id: UserId): Long
+
   def getEvents: Seq[Event]
 
   def getEventsWhere(filter: Event => Boolean): Seq[Event]

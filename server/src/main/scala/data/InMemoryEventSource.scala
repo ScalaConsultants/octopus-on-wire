@@ -3,7 +3,10 @@ package data
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
+import scala.language.postfixOps
 import scalac.octopusonwire.shared.domain._
+import tools.EventServerOps._
+
 
 object InMemoryEventSource extends InMemoryEventSource
 
@@ -29,7 +32,15 @@ class InMemoryEventSource extends EventSource {
 
   override def getFlaggers(eventId: EventId): Set[UserId] = flags.getOrElse(eventId, Set.empty)
 
+  override def countPastJoinsBy(id: UserId): Long =
+    getPastEvents.map { event =>
+      getJoins(event.id)
+        .find(_ == id).size
+    }.sum
+
   override def getEvents: Seq[Event] = events
+
+  private def getPastEvents: Seq[Event] = getEvents.filterNot(_ isInTheFuture)
 
   override def getEventsWhere(filter: (Event) => Boolean): Seq[Event] = events.filter(filter)
 

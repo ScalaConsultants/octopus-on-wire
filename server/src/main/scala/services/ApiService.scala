@@ -1,8 +1,8 @@
 package services
-
-import java.util.Calendar
+import tools.EventServerOps._
 
 import config.ServerConfig
+import config.ServerConfig.PastJoinsRequiredToAddEvents
 import data.{EventSource, InMemoryEventSource}
 import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{Joined, EventNotFound, UserNotFound, TryingToJoinPastEvent}
 import scalac.octopusonwire.shared.tools.LongRangeOps._
@@ -23,7 +23,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
           event,
           userId exists (token => eventSource.hasUserJoinedEvent(eventId, token)),
           eventSource.countJoins(eventId),
-          isEventInFuture(event)
+          event isInTheFuture
         ))
       case None => None
     }
@@ -55,7 +55,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
   override def joinEventAndGetJoins(eventId: EventId): EventJoin = {
     val event = eventSource.eventById(eventId)
     val message = userId match {
-      case Some(id) if event.isDefined && event.exists(isEventInFuture) =>
+      case Some(id) if event.isDefined && event.exists(_ isInTheFuture) =>
         eventSource.joinEvent(id, eventId)
         Joined
       case None => UserNotFound
@@ -80,23 +80,26 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
       atMost = Duration.Inf
     ).flatten
 
-  private def isEventInFuture(event: Event): Boolean = {
-    val serverOffset = Calendar.getInstance.getTimeZone.getRawOffset
-
-    val eventEndUTC = event.endDate - event.offset
-    val currentUTC = System.currentTimeMillis - serverOffset
-
-    eventEndUTC > currentUTC
-  }
-
   override def addEvent(event: Event): EventAddition = userId match {
-    case Some(_) if isEventInFuture(event) => eventSource.addEvent(event)
+    case Some(_) if event isInTheFuture => eventSource.addEvent(event)
     case Some(_) => FailedToAdd(`The event can't end in the past`)
     case _ => FailedToAdd(`User not logged in`)
   }
 
   override def flagEvent(eventId: EventId): Unit =
     userId.foreach(eventSource.addFlag(eventId, _))
+
+
+  override def canUserAddEvents(): Either[Boolean, Long] =
+    userId.map {
+      PastJoinsRequiredToAddEvents - eventSource.countPastJoinsBy(_)
+    } match {
+      case Some(joinsLeft) if joinsLeft == 0 => Left(true)
+      case None => Left(false)
+      case Some(joinsLeft) => Right(joinsLeft)
+    }
+
+
 
   private def hasUserFlagged(event: Event) =
     userId.exists(eventSource.getFlaggers(event.id) contains)
