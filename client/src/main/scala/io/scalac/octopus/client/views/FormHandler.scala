@@ -242,9 +242,7 @@ class IntOnlyKeyHandler(maxLength: Int, min: Int, max: Int, view: HTMLElement, v
   }
 }
 
-case class FieldWithErrorMessages[T <: HTMLElement] private(field: T, messageSource: Map[String, HTMLElement]) {
-  val messages = messageSource.filter(_._2 == field).keySet
-
+class FieldWithErrorMessages[T <: HTMLElement] private(field: T, messages: Set[String]) {
   def updateErrors(errors: Set[String]) = {
     messages.zipWithIndex.partition(errors contains _._1) match {
       case (invalid, valid) =>
@@ -266,4 +264,9 @@ case class FieldWithErrorMessages[T <: HTMLElement] private(field: T, messageSou
       span(`class` := "octopus-validation-message", "!", title := message).render
     }.toList
   ).render
+}
+
+object FieldWithErrorMessages {
+  def apply[T <: HTMLElement](field: T, messageSource: Map[String, HTMLElement]) =
+    new FieldWithErrorMessages[T](field, messageSource.filter(_._2 == field).keySet)
 }
