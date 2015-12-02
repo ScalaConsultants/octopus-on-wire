@@ -395,14 +395,17 @@ body {
   margin-top: 10px;
   padding: 10px 15px;
   align-self: center;
-  cursor: pointer;
   .fa {
     position: relative;
     top: 1px;
   }
-  &:hover {
-    background: @blue-dark;
-    color: white;
+  &:not(.inactive) {
+    cursor: pointer;
+    &:hover {
+      background: @blue-dark;
+      color: white;
+      text-decoration: none;
+    }
   }
 }
 

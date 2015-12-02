@@ -33,6 +33,14 @@ object Application extends Controller {
     httpOnly = true
   ))
 
+  def loginWithGithub(code: String, source_url: String) = Action.async { request =>
+    GithubApi.getGithubToken(code).flatMap { tokenOpt =>
+      UserCache.getOrFetchUserId(tokenOpt).map { _ =>
+        RedirectTo(source_url, withToken = tokenOpt)
+      }
+    }
+  }
+
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
     GithubApi.getGithubToken(code).flatMap { tokenOpt =>
       UserCache.getOrFetchUserId(tokenOpt)

@@ -9,10 +9,13 @@ object Github {
   val AuthorizeUrl = s"$RootPath/login/oauth/authorize"
 
   val ClientId = "23d0d2f1f1cad53fd5f8"
+
   val LoginUrl = s"$AuthorizeUrl?client_id=$ClientId"
 
   private def loginWithRedirectUrl(redirectTo: String, currentUrl: String): String =
     s"$LoginUrl&redirect_uri=$ApiUrl/$redirectTo?source_url=$currentUrl"
+
+  def login(currentUrl: String): String = loginWithRedirectUrl("github/login", currentUrl)
 
   def loginWithJoinUrl(currentUrl: String, eventId: EventId): String =
     loginWithRedirectUrl(s"github/withJoin/${eventId.value}", currentUrl)
