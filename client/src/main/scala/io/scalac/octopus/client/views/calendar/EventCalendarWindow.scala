@@ -1,23 +1,26 @@
-package io.scalac.octopus.client.views
+package io.scalac.octopus.client.views.calendar
 
+import io.scalac.octopus.client.views.addition.{DateSelector, EventCreateWindowOperations}
+import io.scalac.octopus.client.views.WindowOperations
+import io.scalac.octopus.client.views.detail.EventDetailWindow
 import org.scalajs.dom.html.Div
 
 import scala.scalajs.js.Date
 import scalatags.JsDom.all._
 
-object CalendarWindowOperations extends WindowOperations {
+object EventCalendarWindow extends WindowOperations {
   type CalendarWindowOption = Option[Div]
 
   protected var calendarWindow: CalendarWindowOption = None
   private var isUserSelectingDate = false
 
-  def openCalendarWindow(octopusHome: Div, monthDay: Date): Unit = {
-    EventWindowOperations.closeWindow(octopusHome)
+  def open(octopusHome: Div, monthDay: Date): Unit = {
+    EventDetailWindow.closeWindow(octopusHome)
     EventCreateWindowOperations.closeWindow(octopusHome)
-    calendarWindow = switchCalendarWindow(octopusHome, monthDay)
+    calendarWindow = switchWindow(octopusHome, monthDay)
   }
 
-  def switchCalendarWindow(octopusHome: Div, current: Date): CalendarWindowOption =
+  def switchWindow(octopusHome: Div, current: Date): CalendarWindowOption =
     calendarWindow match {
       case Some(window) =>
         closeWindow(octopusHome)
@@ -49,7 +52,7 @@ object CalendarWindowOperations extends WindowOperations {
         Option(window)
     }
 
-  def closeWindow(octopusHome: Div): Unit = calendarWindow = calendarWindow match {
+  override def closeWindow(octopusHome: Div): Unit = calendarWindow = calendarWindow match {
     case Some(openedWindow) =>
       removeWindow(openedWindow, octopusHome)
       None
