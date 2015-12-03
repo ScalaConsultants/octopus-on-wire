@@ -11,6 +11,7 @@ import org.scalajs.dom.html.{Anchor, Div}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.Date
+import scalac.octopusonwire.shared.domain.UserReputationInfo
 import scalatags.JsDom.all._
 
 object EventCalendarWindow extends WindowOperations {
@@ -64,11 +65,11 @@ object EventCalendarWindow extends WindowOperations {
           title := s"Join $howMany more events, and when they end, you'll be able to add your own events"
         ).render
 
-        ClientConfig.octoApi.canUserAddEvents().call().foreach { result =>
+        ClientConfig.octoApi.getUserReputation().call().foreach { result =>
           window.replaceChild(result match {
-            case Left(canThey) if canThey => addEventButton
-            case Right(eventJoinsUntilAllowed) => joinEventsToAddView(eventJoinsUntilAllowed)
-            case _ => loginToAddEventButton
+            case None => loginToAddEventButton
+            case Some(UserReputationInfo(rep, treshold)) if rep >= treshold => addEventButton
+            case Some(UserReputationInfo(rep, treshold)) => joinEventsToAddView(treshold - rep)
           }, window.childNodes(1))
         }
 

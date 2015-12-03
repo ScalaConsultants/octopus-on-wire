@@ -4,6 +4,7 @@ import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
 import scala.language.postfixOps
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{EventNotFound, JoinSuccessful, AlreadyJoined}
 import scalac.octopusonwire.shared.domain._
 import tools.EventServerOps._
 
@@ -44,10 +45,15 @@ class InMemoryEventSource extends EventSource {
 
   override def getEventsWhere(filter: (Event) => Boolean): Seq[Event] = events.filter(filter)
 
-  override def joinEvent(userId: UserId, eventId: EventId): Unit =
-    eventById(eventId).foreach(event => {
-      eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
-    })
+  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage =
+    eventById(eventId).map(event => {
+      val alreadyJoined = eventJoins.get(eventId).exists(_ contains userId)
+      if (alreadyJoined) AlreadyJoined
+      else {
+        eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
+        JoinSuccessful
+      }
+    }).getOrElse(EventNotFound).apply
 
   override def eventById(id: EventId): Option[Event] = getEvents find (_.id == id)
 
@@ -60,9 +66,14 @@ class InMemoryEventSource extends EventSource {
 
   override def countFlags(eventId: EventId): Long = getFlaggers(eventId).size
 
-  override def addFlag(eventId: EventId, by: UserId): Unit =
-    eventById(eventId).foreach { event =>
-      flags(eventId) = getFlaggers(eventId) + by
+  override def addFlag(eventId: EventId, by: UserId): Boolean =
+    eventById(eventId).exists { event =>
+      val alreadyFlagged = flags.get(eventId).exists(_ contains by)
+      if (alreadyFlagged) false
+      else {
+        flags(eventId) = getFlaggers(eventId) + by
+        true
+      }
     }
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
