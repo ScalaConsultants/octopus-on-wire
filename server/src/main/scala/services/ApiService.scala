@@ -100,6 +100,13 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
       UserReputationInfo(eventSource.countPastJoinsBy(id), PastJoinsRequiredToAddEvents)
     }
 
+  override def addFakeEvents(): Unit = {
+    userId match {
+      case Some(id) => InMemoryEventSource.addFakeUserJoins(id)
+      case _ => ()
+    }
+  }
+
   private def hasUserFlagged(event: Event) =
     userId.exists(eventSource.getFlaggers(event.id) contains)
 }

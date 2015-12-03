@@ -22,4 +22,6 @@ trait Api {
   def flagEvent(eventId: EventId): Boolean
 
   def getUserReputation(): Option[UserReputationInfo]
+
+  def addFakeEvents(): Unit
 }
