@@ -5,7 +5,7 @@ import tools.EventServerOps._
 import config.ServerConfig
 import config.ServerConfig.PastJoinsRequiredToAddEvents
 import data.{EventSource, InMemoryEventSource}
-import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{Joined, EventNotFound, UserNotFound, TryingToJoinPastEvent}
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder._
 import scalac.octopusonwire.shared.tools.LongRangeOps._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -58,7 +58,6 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
     val message = userId match {
       case Some(id) if event.isDefined && event.exists(_ isInTheFuture) =>
         eventSource.joinEvent(id, eventId)
-        Joined
       case None => UserNotFound
       case _ if event.isDefined => TryingToJoinPastEvent
       case _ => EventNotFound
@@ -83,10 +82,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
 
   override def addEvent(event: Event): EventAddition = {
     val eventIsInFuture = event.isInTheFuture
-    val canAdd = canUserAddEvents() match{
-      case Left(true) => true
-      case _ => false
-    }
+    val canAdd = getUserReputation().exists { case UserReputationInfo(rep, treshold) => rep >= treshold }
 
     userId match {
       case Some(_) if eventIsInFuture && canAdd => eventSource.addEvent(event)
@@ -96,19 +92,13 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
     }
   }
 
-  override def flagEvent(eventId: EventId): Unit =
-    userId.foreach(eventSource.addFlag(eventId, _))
+  override def flagEvent(eventId: EventId): Boolean =
+    userId.exists(eventSource.addFlag(eventId, _))
 
-
-  override def canUserAddEvents(): Either[Boolean, Long] =
-    userId.map {
-      PastJoinsRequiredToAddEvents - eventSource.countPastJoinsBy(_)
-    } match {
-      case Some(joinsLeft) if joinsLeft == 0 => Left(true)
-      case None => Left(false)
-      case Some(joinsLeft) => Right(joinsLeft)
+  override def getUserReputation(): Option[UserReputationInfo] =
+    userId.map { id =>
+      UserReputationInfo(eventSource.countPastJoinsBy(id), PastJoinsRequiredToAddEvents)
     }
-
 
   private def hasUserFlagged(event: Event) =
     userId.exists(eventSource.getFlaggers(event.id) contains)

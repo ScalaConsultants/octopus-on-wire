@@ -19,7 +19,7 @@ trait Api {
 
   def addEvent(event: Event): EventAddition
 
-  def flagEvent(eventId: EventId): Unit
+  def flagEvent(eventId: EventId): Boolean
 
-  def canUserAddEvents(): Either[Boolean, Long]
+  def getUserReputation(): Option[UserReputationInfo]
 }

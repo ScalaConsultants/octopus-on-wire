@@ -8,7 +8,8 @@ class EventJoinMessageBuilder{
   def unapply(ejm: EventJoinMessage) = if(ejm.details == toString) Some(ejm.details) else None
 }
 object EventJoinMessageBuilder{
-  case object Joined extends EventJoinMessageBuilder
+  case object JoinSuccessful extends EventJoinMessageBuilder
+  case object AlreadyJoined extends EventJoinMessageBuilder
   case object EventNotFound extends EventJoinMessageBuilder
   case object UserNotFound extends EventJoinMessageBuilder
   case object TryingToJoinPastEvent extends EventJoinMessageBuilder
