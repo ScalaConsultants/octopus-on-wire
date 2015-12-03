@@ -9,10 +9,11 @@ import io.scalac.octopus.client.tools.EventDateOps._
 import io.scalac.octopus.client.views.calendarview.{CalendarViewTemplate, CalendarTable}
 import io.scalac.octopus.client.views.detail.EventDetailWindow
 import org.scalajs.dom.html.Div
+import org.scalajs.dom.raw.MouseEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.{Date, timers}
-import scalac.octopusonwire.shared.domain.Event
+import scalac.octopusonwire.shared.domain.{EventId, Event}
 import scalatags.JsDom.all._
 
 class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(window, octopusHome) {
@@ -29,15 +30,34 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
     view
   }
 
+  def openEventDetails(eventId: EventId)(e: MouseEvent) = {
+    EventCalendarWindow.closeWindow(octopusHome)
+    timers.setTimeout(ClientConfig.WindowOpenDelay)(EventDetailWindow.open(eventId, octopusHome))
+  }
+
   override def calendarTable(current: Date, events: Seq[Event]): Div = {
     EventCalendar.current = Option(current)
 
     new CalendarTable(now = current) {
       override def marker(date: Date): Boolean = events.exists(_ takesPlaceOn date)
 
+      override def classMapper(date: Date): List[String] =
+        super.classMapper(date) ::: (events.count(_ takesPlaceOn date) match {
+          case 1 => "clickable" :: Nil
+          case _ => Nil
+        })
+
       override def modifier(day: Date): Array[Modifier] = day match {
         case date if events.exists(_ takesPlaceOn date) =>
+
+          val clickHandler: MouseEvent => Unit = events.filter(_ takesPlaceOn date) match {
+            case Seq(single) =>
+              openEventDetails(single.id) _
+            case _ => _ => ()
+          }
+
           Array(span(date.getDate()),
+            onclick := clickHandler,
             div(
               `class` := "octopus-preview",
               div(
@@ -46,10 +66,7 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
                   div(
                     event.name,
                     `class` := "octopus-preview-element",
-                    onclick := { () =>
-                      EventCalendarWindow.closeWindow(octopusHome)
-                      timers.setTimeout(ClientConfig.WindowOpenDelay)(EventDetailWindow.open(event.id, octopusHome))
-                    }
+                    onclick := openEventDetails(event.id) _
                   )
                 }
               )

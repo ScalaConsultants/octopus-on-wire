@@ -330,8 +330,10 @@ body {
     }
     &.marked {
       background: white;
-      cursor: pointer;
       border: 1px solid white;
+      &.clickable {
+        cursor: pointer;
+      }
       color: @blue-light;
     }
     &.inactive-day {
@@ -491,7 +493,7 @@ body {
     :first-child {
       margin: 0;
     }
-    &.dirty .octopus-validation-message.invalid{
+    &.dirty .octopus-validation-message.invalid {
       display: inline-block;
     }
   }
