@@ -1,5 +1,6 @@
 package data
 
+import config.ServerConfig
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
@@ -28,6 +29,18 @@ class InMemoryEventSource extends EventSource {
     EventId(1) -> Set(1136843, 1548278, 10749622, 192549, 13625545, 1097302, 82964, 345056, 390629, 4959786, 5664242).map(UserId(_)),
     EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
   )
+
+  var addedJoins = false
+
+  def addFakeUserJoins(userId: UserId) =
+    if (!addedJoins) {
+      val oldEventCount = events.length
+      1 to ServerConfig.PastJoinsRequiredToAddEvents foreach { i =>
+        events ::= Event(EventId(i + oldEventCount), s"Some event $i", now - days(2), now - days(1), 3600000, "The cloud", "http://example.com")
+        eventJoins(EventId(i + oldEventCount)) = Set(userId)
+      }
+      addedJoins = true
+    }
 
   private val flags = TrieMap[EventId, Set[UserId]]()
 
