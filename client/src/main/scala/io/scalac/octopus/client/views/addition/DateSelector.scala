@@ -20,9 +20,9 @@ class DateSelector(window: Div, octopusHome: Div) extends CalendarViewTemplate(w
       }
     )
 
-    override def classMapper(date: Date): String = date match {
-      case day if day isBeforeOrOnToday => "inactive-day"
-      case _ => super.classMapper(date)
+    override def classMapper(date: Date): List[String] = date match {
+      case day if day isBeforeOrOnToday => "inactive-day" :: Nil
+      case _ => "clickable" :: super.classMapper(date)
     }
   }.view
 }
