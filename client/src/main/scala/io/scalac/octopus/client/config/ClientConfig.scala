@@ -6,6 +6,7 @@ import autowire.ClientProxy
 import boopickle.Default
 
 import scalac.octopusonwire.shared.Api
+import scalac.octopusonwire.shared.config.SharedConfig.BackendDomain
 
 object ClientConfig {
   val EmptyListPlaceholderText = "There are no events for you right now :("
@@ -22,7 +23,7 @@ object ClientConfig {
   val WindowLoadTime = 300
   val WindowOpenDelay = 50
   val WeeksToDisplay = 6
-  val ApiUrl = "http://octowire.com:9000"
+  val ApiUrl = s"http://$BackendDomain:9000"
   type ClientApi = ClientProxy[Api, ByteBuffer, Default.Pickler, Default.Pickler]
   val octoApi: ClientApi = AutowireClient[Api]
 }

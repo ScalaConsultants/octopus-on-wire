@@ -18,21 +18,22 @@ body {
   font-size: 16px;
 }
 
-#fake-item-adder{
+#fake-item-adder {
   margin-bottom: 100px;
 }
 
-.add-fake-events-button{
+.add-fake-events-button {
   background: @blue-dark;
   border: none;
   padding: 10px 20px;
   color: white;
   transition: .2s;
-  &:hover{
+  &:hover {
     background: white;
     color: @blue-dark;
   }
 }
+
 #root {
   width: 100%;
   height: 100%;
@@ -45,7 +46,7 @@ body {
 #octopus-home {
   position: relative;
   display: inline-block;
-  //bottom: 100px;
+  margin-top: 50px;
   max-width: @max-width;
   background: @blue-translucent;
   z-index: 1;
@@ -413,6 +414,8 @@ body {
   margin-top: 10px;
   padding: 10px 15px;
   align-self: center;
+  display: flex;
+  align-items: center;
   .fa {
     position: relative;
     top: 1px;
@@ -475,7 +478,7 @@ body {
 .octopus-preview-element {
   background: @gray-background;
   font-size: .75em;
-  padding: 5px 5px 3px;
+  padding: 5px 3px;
   color: white;
   cursor: pointer;
   text-align: left;
