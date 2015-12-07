@@ -13,8 +13,8 @@ class CalendarTable(now: Date) {
 
   def marker(date: Date): Boolean = false
 
-  def modifier(date: Date): Array[Modifier] = Array(date.getDate().toString)
-  def classMapper(date: Date): String = classFor(date)
+  def modifier(date: Date): Array[Modifier] = Array(div(date.getDate().toString))
+  def classMapper(date: Date): List[String] = classFor(date) :: Nil
 
   /**
     * A calendar table including the current month (specified by the "now" date parameter).
@@ -41,7 +41,7 @@ class CalendarTable(now: Date) {
       `class` := "ttable",
       div(
         `class` := "trow",
-        dayNames.map(div(_, `class` := "tcell"))
+        dayNames.map(name => div(name, `class` := "tcell"))
       ),
 
       weeks.grouped(7).map(week =>
@@ -52,7 +52,7 @@ class CalendarTable(now: Date) {
               val cell = div(modifier(day)).render
 
               //purposely add classes after modifier is called
-              Array("tcell", classMapper(day)).foreach(cell.classList.add)
+              ("tcell" :: classMapper(day)).foreach(cell.classList.add)
               cell
             }
           )
