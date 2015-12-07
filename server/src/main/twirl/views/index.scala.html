@@ -10,12 +10,15 @@
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("/public","images/favicon.png")">
     </head>
     <body>
-        <div id="root"></div>
+        <div id="root">
+            <div id="fake-item-adder"></div>
+        </div>
 
         <script src="/assets/client-jsdeps.js" type="text/javascript"></script>
         <script src="/assets/client-fastopt.js" type="text/javascript"></script>
         <script>
             io.scalac.octopus.client.OctopusClient().buildWidget(document.getElementById("root"))
+            io.scalac.octopus.client.OctopusClient().addFakeEventAdder(document.getElementById("fake-item-adder"))
         </script>
     </body>
 </html>
