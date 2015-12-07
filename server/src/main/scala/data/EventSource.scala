@@ -1,13 +1,15 @@
 package data
 
-import scalac.octopusonwire.shared.domain.{Event, EventId, EventAddition, UserId}
+import scalac.octopusonwire.shared.domain._
 
 trait EventSource {
+  def countPastJoinsBy(id: UserId): Long
+
   def getEvents: Seq[Event]
 
   def getEventsWhere(filter: Event => Boolean): Seq[Event]
 
-  def joinEvent(userId: UserId, eventId: EventId): Unit
+  def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage
 
   def eventById(id: EventId): Option[Event]
 
@@ -21,7 +23,7 @@ trait EventSource {
 
   def getFlaggers(eventId: EventId): Set[UserId]
 
-  def addFlag(eventId: EventId, by: UserId): Unit
+  def addFlag(eventId: EventId, by: UserId): Boolean
 
   def addEvent(event: Event): EventAddition
 }

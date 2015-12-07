@@ -1,9 +1,14 @@
 package data
 
+import config.ServerConfig
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
+import scala.language.postfixOps
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{EventNotFound, JoinSuccessful, AlreadyJoined}
 import scalac.octopusonwire.shared.domain._
+import tools.EventServerOps._
+
 
 object InMemoryEventSource extends InMemoryEventSource
 
@@ -20,23 +25,48 @@ class InMemoryEventSource extends EventSource {
     Event(EventId(8), "Best Scala event", now + days(28), now + days(28) + hours(8), 3600000, "Some nice place", "https://scalac.io")
   )
 
-  private val eventJoins = TrieMap[EventId, Set[UserId]](
+  val eventJoins = TrieMap[EventId, Set[UserId]](
     EventId(1) -> Set(1136843, 1548278, 10749622, 192549, 13625545, 1097302, 82964, 345056, 390629, 4959786, 5664242).map(UserId(_)),
     EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
   )
+
+  var addedJoins = false
+
+  def addFakeUserJoins(userId: UserId) =
+    if (!addedJoins) {
+      val oldEventCount = events.length
+      1 to ServerConfig.PastJoinsRequiredToAddEvents foreach { i =>
+        events ::= Event(EventId(i + oldEventCount), s"Some event $i", now - days(2), now - days(1), 3600000, "The cloud", "http://example.com")
+        eventJoins(EventId(i + oldEventCount)) = Set(userId)
+      }
+      addedJoins = true
+    }
 
   private val flags = TrieMap[EventId, Set[UserId]]()
 
   override def getFlaggers(eventId: EventId): Set[UserId] = flags.getOrElse(eventId, Set.empty)
 
+  override def countPastJoinsBy(id: UserId): Long =
+    getPastEvents.map { event =>
+      getJoins(event.id)
+        .find(_ == id).size
+    }.sum
+
   override def getEvents: Seq[Event] = events
+
+  private def getPastEvents: Seq[Event] = getEvents.filterNot(_ isInTheFuture)
 
   override def getEventsWhere(filter: (Event) => Boolean): Seq[Event] = events.filter(filter)
 
-  override def joinEvent(userId: UserId, eventId: EventId): Unit =
-    eventById(eventId).foreach(event => {
-      eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
-    })
+  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage =
+    eventById(eventId).map(event => {
+      val alreadyJoined = eventJoins.get(eventId).exists(_ contains userId)
+      if (alreadyJoined) AlreadyJoined
+      else {
+        eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
+        JoinSuccessful
+      }
+    }).getOrElse(EventNotFound).apply
 
   override def eventById(id: EventId): Option[Event] = getEvents find (_.id == id)
 
@@ -49,9 +79,14 @@ class InMemoryEventSource extends EventSource {
 
   override def countFlags(eventId: EventId): Long = getFlaggers(eventId).size
 
-  override def addFlag(eventId: EventId, by: UserId): Unit =
-    eventById(eventId).foreach { event =>
-      flags(eventId) = getFlaggers(eventId) + by
+  override def addFlag(eventId: EventId, by: UserId): Boolean =
+    eventById(eventId).exists { event =>
+      val alreadyFlagged = flags.get(eventId).exists(_ contains by)
+      if (alreadyFlagged) false
+      else {
+        flags(eventId) = getFlaggers(eventId) + by
+        true
+      }
     }
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)

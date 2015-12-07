@@ -9,6 +9,7 @@ import io.scalac.octopus.client.views.calendar.EventCalendarWindow
 import io.scalac.octopus.client.views.SliderViewOperations
 import io.scalac.octopus.client.views.detail.EventDetailWindow
 import org.scalajs.dom.html.{Div, UList}
+import org.scalajs.dom.raw.MouseEvent
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js
@@ -38,6 +39,18 @@ object OctopusClient extends js.JSApp {
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
 
+    val fakeEventAdder = button(
+      "Add fake events if needed (requires being logged in)",
+      `class` := "add-fake-events-button",
+      onclick := {
+        (e: MouseEvent) => octoApi.addFakeEvents().call().foreach { _ =>
+          root.removeChild(e.srcElement)
+        }
+      }
+    ).render
+
+    root.appendChild(fakeEventAdder)
+
     root.appendChild(octopusHome)
     refreshEvents(list, octopusHome)
   }
@@ -62,7 +75,7 @@ object OctopusClient extends js.JSApp {
               onclick := { () => EventDetailWindow.open(item.id, octopusHome) }),
 
             //next icon. Don't show it if there is nothing to slide to
-            if(items.length > 1)
+            if (items.length > 1)
               div(`class` := "next", title := "Next", onclick := { () => SliderViewOperations.moveToNextItem(list) })
             else ""
 

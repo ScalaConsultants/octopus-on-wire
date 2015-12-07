@@ -16,6 +16,7 @@ case object FailedToAdd {
       Some(mess.text.drop(prefix.length))
     else None
 
-  val `User not logged in` = "User not logged in"
-  val `The event can't end in the past` = "The event can't end in the past"
+  val UserNotLoggedIn = "User not logged in"
+  val EventCantEndInThePast = "The event can't end in the past"
+  val UserCantAddEventsYet = "User can't add events yet"
 }

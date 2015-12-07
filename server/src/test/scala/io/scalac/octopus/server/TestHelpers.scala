@@ -1,14 +1,19 @@
 package io.scalac.octopus.server
 
+import config.ServerConfig
 import data.InMemoryEventSource
 import org.scalatest._
 import org.scalatest.time.{Hours, Span}
 import services.ApiService
+
 import scala.concurrent.duration._
-import scalac.octopusonwire.shared.domain.{EventId, Event, UserId}
+import scalac.octopusonwire.shared.domain.{Event, EventId, UserId}
 
 private[server] object TestHelpers {
   val authorizedApi = new ApiService(Some("token"), Some(UserId(1)))
+  val authorizedApiWithJoinedPastEvents = new ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+    override def countPastJoinsBy(id: UserId): Long = ServerConfig.PastJoinsRequiredToAddEvents
+  })
   val authorizedApiWithOldEvent = new ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
     override def getEvents: Seq[Event] = oldEvent :: Nil
   })

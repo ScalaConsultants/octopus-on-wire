@@ -6,6 +6,7 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
+import data.InMemoryEventSource
 import play.api.mvc._
 import services._
 
@@ -32,6 +33,14 @@ object Application extends Controller {
     secure = false, //we don't have HTTPS yet
     httpOnly = true
   ))
+
+  def loginWithGithub(code: String, source_url: String) = Action.async { request =>
+    GithubApi.getGithubToken(code).flatMap { tokenOpt =>
+      UserCache.getOrFetchUserId(tokenOpt).map { _ =>
+        RedirectTo(source_url, withToken = tokenOpt)
+      }
+    }
+  }
 
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
     GithubApi.getGithubToken(code).flatMap { tokenOpt =>
