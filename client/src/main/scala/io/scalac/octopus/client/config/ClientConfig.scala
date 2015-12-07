@@ -6,7 +6,6 @@ import autowire.ClientProxy
 import boopickle.Default
 
 import scalac.octopusonwire.shared.Api
-import scalac.octopusonwire.shared.config.SharedConfig
 import scalac.octopusonwire.shared.config.SharedConfig.BackendDomain
 
 object ClientConfig {
