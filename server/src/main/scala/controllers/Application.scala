@@ -6,7 +6,6 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
-import data.InMemoryEventSource
 import play.api.mvc._
 import services._
 
@@ -16,12 +15,17 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
 
 object Application extends Controller {
-  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
-    result.withHeaders(
-      ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
+  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result ={
+    val newResult = result.withHeaders(
       ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
       ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true",
       CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
+
+    request.headers.get(ORIGIN) match{
+      case Some(origin) => result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
+      case _ => newResult
+    }
+  }
 
   def index = Action(Ok(views.html.index()))
 
