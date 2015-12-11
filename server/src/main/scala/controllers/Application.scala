@@ -22,7 +22,7 @@ object Application extends Controller {
       CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
 
     request.headers.get(ORIGIN) match{
-      case Some(origin) => result.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
+      case Some(origin) => newResult.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
       case _ => newResult
     }
   }
