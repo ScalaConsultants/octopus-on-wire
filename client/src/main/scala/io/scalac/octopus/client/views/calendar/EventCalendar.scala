@@ -32,6 +32,7 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
 
   def openEventDetails(eventId: EventId)(e: MouseEvent) = {
     EventCalendarWindow.closeWindow(octopusHome)
+    e.stopPropagation()
     timers.setTimeout(ClientConfig.WindowOpenDelay)(EventDetailWindow.open(eventId, octopusHome))
   }
 
