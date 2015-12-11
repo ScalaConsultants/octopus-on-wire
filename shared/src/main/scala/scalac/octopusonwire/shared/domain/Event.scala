@@ -37,12 +37,14 @@ object Event {
   ).filter(_._2 == false).keySet
 }
 
-case class EventId(value: Long)
-
-object NoId{
-  def apply = EventId(-1)
-  def unapply(eventId: EventId) = eventId.value == -1
+case class EventId(value: Long){
+  override def toString: String = this == NoId match{
+    case true => "NoId"
+    case _ => super.toString
+  }
 }
+
+object NoId extends EventId(-1)
 
 case class SimpleEvent(id: EventId, name: String)
 

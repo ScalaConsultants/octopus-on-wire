@@ -7,7 +7,7 @@ import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
 import play.api.mvc._
-import services._
+import services.{InMemoryUserCache, UserCache, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.{implicitConversions, postfixOps}
@@ -15,6 +15,7 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
 
 object Application extends Controller {
+  val userCache: UserCache = InMemoryUserCache
   def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
     result.withHeaders(
       ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
@@ -35,7 +36,7 @@ object Application extends Controller {
 
   def loginWithGithub(code: String, source_url: String) = Action.async { request =>
     GithubApi.getGithubToken(code).flatMap { tokenOpt =>
-      UserCache.getOrFetchUserId(tokenOpt).map { _ =>
+      userCache.getOrFetchUserId(tokenOpt).map { _ =>
         RedirectTo(source_url, withToken = tokenOpt)
       }
     }
@@ -43,7 +44,7 @@ object Application extends Controller {
 
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
     GithubApi.getGithubToken(code).flatMap { tokenOpt =>
-      UserCache.getOrFetchUserId(tokenOpt)
+      userCache.getOrFetchUserId(tokenOpt)
         .map { userOpt =>
           new ApiService(tokenOpt, userOpt)
             .joinEventAndGetJoins(EventId(joinEvent))
@@ -55,7 +56,7 @@ object Application extends Controller {
 
   def flagEventWithGithub(flagEventById: Long, code: String, sourceUrl: String) = Action.async { request =>
     GithubApi.getGithubToken(code).flatMap { tokenOpt =>
-      UserCache.getOrFetchUserId(tokenOpt)
+      userCache.getOrFetchUserId(tokenOpt)
         .map { userOpt =>
           new ApiService(tokenOpt, userOpt)
             .flagEvent(EventId(flagEventById))
@@ -70,7 +71,7 @@ object Application extends Controller {
 
     val tokenCookie: Option[String] = request.cookies.get(Github.AccessTokenKey).map(_.value)
 
-    val userFuture = UserCache.getOrFetchUserId(tokenCookie)
+    val userFuture = userCache.getOrFetchUserId(tokenCookie)
 
     // get the request body as Array[Byte]
     val b = request.body.asBytes(parse.UNLIMITED).get

@@ -38,7 +38,7 @@ class EventAdditionForm(val startDay: Date, octopusHome: Div) extends EventField
     val (startDateMillis, endDateMillis) = millis.getOrElse((-1L, 0L))
 
     val baseEvent = new BaseEvent(
-      id = NoId.apply,
+      id = NoId,
       name = eventNameField.textContent,
       startDate = startDateMillis,
       endDate = endDateMillis,

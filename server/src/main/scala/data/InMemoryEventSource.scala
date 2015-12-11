@@ -1,14 +1,14 @@
 package data
 
 import config.ServerConfig
+import tools.EventServerOps._
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
 import scala.language.postfixOps
-import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{EventNotFound, JoinSuccessful, AlreadyJoined}
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined, EventNotFound, JoinSuccessful}
 import scalac.octopusonwire.shared.domain._
-import tools.EventServerOps._
-
+import scalac.octopusonwire.shared.tools.LongRangeOps._
 
 object InMemoryEventSource extends InMemoryEventSource
 
@@ -32,6 +32,21 @@ class InMemoryEventSource extends EventSource {
 
   var addedJoins = false
 
+  override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Seq[SimpleEvent] = {
+    getEvents.filter { event =>
+      !userId.exists(hasUserFlagged(_, event.id)) && event.isInTheFuture
+    }.take(limit).map(_.toSimple)
+  }
+
+  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Seq[Event] =
+    getEvents.filter { event =>
+      !userId.exists(hasUserFlagged(_, event.id)) &&
+        (event.startDate.inRange(from, to) || event.endDate.inRange(from, to))
+    }.take(ServerConfig.MaxEventsInMonth)
+
+  private def hasUserFlagged(userId: UserId, eventId: EventId) =
+    getFlaggers(eventId) contains userId
+
   def addFakeUserJoins(userId: UserId) =
     if (!addedJoins) {
       val oldEventCount = events.length
@@ -52,11 +67,9 @@ class InMemoryEventSource extends EventSource {
         .find(_ == id).size
     }.sum
 
-  override def getEvents: Seq[Event] = events
+  private def getEvents: Seq[Event] = events
 
   private def getPastEvents: Seq[Event] = getEvents.filterNot(_ isInTheFuture)
-
-  override def getEventsWhere(filter: (Event) => Boolean): Seq[Event] = events.filter(filter)
 
   override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage =
     eventById(eventId).map(event => {

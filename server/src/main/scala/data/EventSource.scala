@@ -3,11 +3,11 @@ package data
 import scalac.octopusonwire.shared.domain._
 
 trait EventSource {
+  def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Seq[Event]
+
+  def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Seq[SimpleEvent]
+
   def countPastJoinsBy(id: UserId): Long
-
-  def getEvents: Seq[Event]
-
-  def getEventsWhere(filter: Event => Boolean): Seq[Event]
 
   def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage
 

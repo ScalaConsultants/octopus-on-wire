@@ -2,11 +2,9 @@ package services
 
 import tools.EventServerOps._
 
-import config.ServerConfig
 import config.ServerConfig.PastJoinsRequiredToAddEvents
-import data.{EventSource, InMemoryEventSource}
+import data.{PersistentEventSource, EventSource, InMemoryEventSource}
 import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder._
-import scalac.octopusonwire.shared.tools.LongRangeOps._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -15,7 +13,7 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.FailedToAdd.{UserCantAddEventsYet, EventCantEndInThePast, UserNotLoggedIn}
 import scalac.octopusonwire.shared.domain._
 
-class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: EventSource = InMemoryEventSource) extends Api {
+class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: EventSource = PersistentEventSource) extends Api {
 
   override def getUserEventInfo(eventId: EventId): Option[UserEventInfo] =
     eventSource.eventById(eventId) match {
@@ -32,28 +30,20 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
   override def getUserInfo(): Option[UserInfo] =
     userId.flatMap { id =>
       Await.result(
-        awaitable = UserCache.getOrFetchUserInfo(id, tokenOpt),
+        awaitable = InMemoryUserCache.getOrFetchUserInfo(id, tokenOpt),
         atMost = Duration.Inf
       )
     }
 
-  override def getFutureItems(limit: Int): Seq[SimpleEvent] = {
-    val now = System.currentTimeMillis()
-    eventSource.getEventsWhere { event =>
-      !hasUserFlagged(event) &&
-        (event.startDate >= now || event.endDate >= now)
-    } sortBy (_.startDate) take limit map (_.toSimple)
-  }
+  override def getFutureItems(limit: Int): Seq[SimpleEvent] =
+    eventSource.getSimpleFutureEventsNotFlaggedByUser(userId, limit)
 
   override def getEventsForRange(from: Long, to: Long): Seq[Event] =
-    eventSource.getEventsWhere { event =>
-      !hasUserFlagged(event) &&
-        (event.startDate inRange(from, to)) || (event.endDate inRange(from, to))
-    } take ServerConfig.MaxEventsInMonth
+    eventSource.getEventsBetweenDatesNotFlaggedBy(from, to, userId)
 
   override def isUserLoggedIn() = userId.isDefined
 
-  override def joinEventAndGetJoins(eventId: EventId): EventJoin = {
+  override def joinEventAndGetJoins(eventId: EventId): EventJoinInfo = {
     val event = eventSource.eventById(eventId)
     val message = userId match {
       case Some(id) if event.isDefined && event.exists(_ isInTheFuture) =>
@@ -63,19 +53,19 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
       case _ => EventNotFound
     }
 
-    EventJoin(eventSource.countJoins(eventId), EventJoinMessage(message.toString))
+    EventJoinInfo(eventSource.countJoins(eventId), EventJoinMessage(message.toString))
   }
 
   override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
     Await.result(
       awaitable =
-        UserCache.getOrFetchUserFriends(tokenOpt).flatMap { friends =>
+        InMemoryUserCache.getOrFetchUserFriends(tokenOpt).flatMap { friends =>
           val (joinedFriends, otherJoins) = eventSource.getJoins(eventId)
             .filterNot(userId contains).partition(friends contains)
 
           val othersLimited = otherJoins take (limit - joinedFriends.size)
 
-          Future.sequence((joinedFriends ++ othersLimited).map(UserCache.getOrFetchUserInfo(_, tokenOpt)))
+          Future.sequence((joinedFriends ++ othersLimited).map(InMemoryUserCache.getOrFetchUserInfo(_, tokenOpt)))
         },
       atMost = Duration.Inf
     ).flatten
@@ -106,7 +96,4 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
       case _ => ()
     }
   }
-
-  private def hasUserFlagged(event: Event) =
-    userId.exists(eventSource.getFlaggers(event.id) contains)
 }
