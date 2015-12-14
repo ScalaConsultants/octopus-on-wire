@@ -31,6 +31,8 @@ class EventDao(tag: Tag) extends Table[Event](tag, "events") {
 
   def toTuple = (id, name, startDate, endDate, offset, location, url)
 
+  def toSimpleTuple = (id, name)
+
   def endsAfter(time: Long) = (endDate - offset) > time
 }
 
@@ -56,12 +58,22 @@ object EventDao {
 
   def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: Long): Future[Seq[SimpleEvent]] = {
     val uid = userId.getOrElse(UserId(-1))
-    val eventz = Await.result(db.run {
+    db.run {
       events
-        .filter(_.endsAfter(now)) //todo filter unflagged by user
-        .map(e => (e.id, e.name))
-        .take(limit).result
-    }.map(_.map(SimpleEvent.tupled)), Duration.Inf)
+        .filter(_.endsAfter(now))
+        .map(_.toSimpleTuple).result
+    }.flatMap(futureEvents => {
+      val uid = userId.getOrElse(UserId(-1))
+
+      db.run {
+        eventFlags.filter(_.userId === uid).map(_.eventId).result
+      }.map { flaggedEvents =>
+        futureEvents
+          .filterNot { case (eventId, _) => flaggedEvents.contains(eventId) }
+          .take(limit)
+          .map(SimpleEvent.tupled)
+      }
+    })
   }
 
   def addEventAndGetId(event: Event): Future[EventId] = DbConfig.db.run {
