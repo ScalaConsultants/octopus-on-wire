@@ -49,7 +49,7 @@ object EventDetailWindow extends WindowOperations {
       closeWindow(octopusHome)
       switchWindow(eventId, octopusHome)
 
-    /*The window is not opened. Open it.*/
+    /*The window is closed. Open it.*/
     case _ =>
       var flagging = false
 
