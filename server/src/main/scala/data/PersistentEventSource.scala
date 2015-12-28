@@ -27,9 +27,7 @@ object PersistentEventSource extends EventSource {
 
   override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage = ??? //TODO
 
-  override def eventById(id: EventId): Option[Event] = waitFor {
-    EventDao.findEventById(id)
-  }
+  override def eventById(id: EventId): Option[Event] = waitFor(EventDao.findEventById(id))
 
   override def addEvent(event: Event): EventAddition = {
     waitFor(EventDao.addEventAndGetId(event)) match {
@@ -38,7 +36,7 @@ object PersistentEventSource extends EventSource {
     }
   }
 
-  override def getFlaggers(eventId: EventId): Set[UserId] = Set.empty
+  override def getFlaggers(eventId: EventId): Set[UserId] = waitFor(EventDao.getFlaggers(eventId))
 
   override def addFlag(eventId: EventId, by: UserId): Boolean =
     waitFor(EventDao.userHasFlaggedEvent(eventId, by).flatMap{
@@ -47,9 +45,9 @@ object PersistentEventSource extends EventSource {
     })
 
 
-  override def getJoins(eventId: EventId): Set[UserId] = Set.empty
+  override def getJoins(eventId: EventId): Set[UserId] = Set.empty //TODO
 
-  override def countFlags(eventId: EventId): Long = ??? //TODO
+  override def countFlags(eventId: EventId): Long = waitFor(EventDao.countFlags(eventId))
 
   //TODO make the calls asynchronous where possible
   def waitFor[T](f: Future[T]) = Await.result(f, Duration.Inf)

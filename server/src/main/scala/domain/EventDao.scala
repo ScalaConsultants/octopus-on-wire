@@ -47,35 +47,45 @@ class EventFlagDao(tag: Tag) extends Table[EventFlag](tag, "event_flags") {
 }
 
 object EventDao {
+  implicit val EventIdMapper = MappedColumnType.base[EventId, Long](_.value, EventId.apply)
+  implicit val UserIdMapper = UserDao.UserIdMapper
+
+  val db = DbConfig.db
+
+  val events = TableQuery[EventDao]
+
+  val eventFlags = TableQuery[EventFlagDao]
+
+  val eventFlagsById = (id: EventId) => eventFlags.filter(_.eventId === id)
+
+  def getFlaggers(eventId: EventId): Future[Set[UserId]] = db.run {
+    eventFlagsById(eventId).map(_.userId).result
+  }.map(_.toSet)
+
+  def countFlags(eventId: EventId): Future[Long] =
+    db.run {
+      eventFlags.filter(ef => ef.eventId === eventId).length.result
+    }.map(_.toLong)
+
   def userHasFlaggedEvent(eventId: EventId, by: UserId): Future[Boolean] =
     db.run {
-      eventFlags.filter(ef => ef.eventId === eventId && ef.userId === by).map(_.toTuple).result
-    }.map(_.nonEmpty)
+      eventFlagsById(eventId).filter(_.userId === by).exists.result
+    }
 
   def eventExists(eventId: EventId): Future[Boolean] =
-    db.run{
-      events.filter(_.id === eventId).map(_.id).result
-    }.map(_.nonEmpty)
+    db.run {
+      eventFlagsById(eventId).exists.result
+    }
 
-  def flagEvent(eventId: EventId, by: UserId): Future[Boolean] = eventExists(eventId).flatMap{
+  def flagEvent(eventId: EventId, by: UserId): Future[Boolean] = eventExists(eventId).flatMap {
     case true =>
-      db.run{
+      db.run {
         eventFlags.returning(eventFlags.map(_.eventId)) += EventFlag(eventId, by)
       }.map(_ == eventId)
     case _ => Future.successful(false)
   }
 
-  implicit val EventIdMapper = MappedColumnType.base[EventId, Long](_.value, EventId.apply)
-  implicit val UserIdMapper = UserDao.UserIdMapper
-  val db = DbConfig.db
-
-  val events = TableQuery[EventDao]
-
-  //  val users = TableQuery[UserDao]
-  val eventFlags = TableQuery[EventFlagDao]
-
   def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: Long): Future[Seq[SimpleEvent]] = {
-    val uid = userId.getOrElse(UserId(-1))
     db.run {
       events
         .filter(_.endsAfter(now))
