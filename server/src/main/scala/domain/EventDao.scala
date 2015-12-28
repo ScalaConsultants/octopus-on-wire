@@ -42,6 +42,18 @@ object EventDao {
 
   val eventById = (id: EventId) => eventQuery.filter(_.id === id)
 
+  def countPastJoinsBy(id: UserId, currentUTC: Long): Future[Long] = {
+    val pastEvents = db.run{
+      eventQuery.filterNot(_.endsAfter(currentUTC)).map(_.toSimpleTuple).result
+    }.map(_.map(SimpleEvent.tupled))
+
+    val userJoins = EventJoinDao.eventJoinsByUserId(id)
+    for{
+      events <- pastEvents
+      joins <- userJoins
+    } yield events.count(ev => joins.map(_.eventId).contains(ev.id))
+  }
+
   def eventExists(eventId: EventId): Future[Boolean] =
     db.run {
       eventById(eventId).exists.result

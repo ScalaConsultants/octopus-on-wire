@@ -1,7 +1,5 @@
 package scalac.octopusonwire.shared.domain
 
-case class EventFlag(eventId: EventId, userId: UserId)
-
 case class EventJoinInfo(joinCount: Long, message: EventJoinMessage)
 case class EventJoinMessage(details: String)
 

@@ -7,6 +7,7 @@ import slick.lifted.{ProvenShape, TableQuery, Tag}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{EventFlag, EventId, UserId}
+import scalac.octopusonwire.shared.domain._
 
 class EventFlagDao(tag: Tag) extends Table[EventFlag](tag, "event_flags") {
   def eventId = column[EventId]("event_id")(EventIdMapper)
