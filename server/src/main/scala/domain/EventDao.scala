@@ -57,9 +57,9 @@ object EventDao {
     val flagsByUser = EventFlagDao.eventFlagsByUserId(uid)
 
     for {
-      eventz <- eventsInPeriod
-      flagz <- flagsByUser
-    } yield eventz.filterNot(ev => flagz.exists(_.eventId == ev.id)).take(MaxEventsInMonth)
+      events <- eventsInPeriod
+      flags <- flagsByUser
+    } yield events.filterNot(ev => flags.exists(_.eventId == ev.id)).take(MaxEventsInMonth)
   }
 
   def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: Long): Future[Seq[SimpleEvent]] = {
@@ -74,9 +74,9 @@ object EventDao {
     val flagsByUser = EventFlagDao.eventFlagsByUserId(uid)
 
     for {
-      eventz <- eventsInFuture
-      flagz <- flagsByUser
-    } yield eventz.filterNot(ev => flagz.map(_.eventId).contains(ev.id)).take(limit)
+      events <- eventsInFuture
+      flags <- flagsByUser
+    } yield events.filterNot(ev => flags.map(_.eventId).contains(ev.id)).take(limit)
   }
 
   def addEventAndGetId(event: Event): Future[EventId] = db.run {
