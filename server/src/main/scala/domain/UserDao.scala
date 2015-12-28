@@ -1,6 +1,6 @@
 package domain
 
-import domain.UserDao._
+import domain.Mappers._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
@@ -18,7 +18,6 @@ class UserDao(tag: Tag) extends Table[UserInfo](tag, "users") {
 
 
 
-object UserDao {
+object UserDao{
   val users = TableQuery[UserDao]
-  implicit val UserIdMapper = MappedColumnType.base[UserId, Long](_.value, UserId.apply)
 }

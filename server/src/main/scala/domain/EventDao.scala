@@ -1,14 +1,12 @@
 package domain
 
-import config.DbConfig
-import domain.EventDao.EventIdMapper
-import domain.UserDao.UserIdMapper
+import config.DbConfig.db
+import domain.Mappers._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
 class EventDao(tag: Tag) extends Table[Event](tag, "events") {
@@ -36,54 +34,16 @@ class EventDao(tag: Tag) extends Table[Event](tag, "events") {
   def endsAfter(time: Long) = (endDate - offset) > time
 }
 
-class EventFlagDao(tag: Tag) extends Table[EventFlag](tag, "event_flags") {
-  def eventId = column[EventId]("event_id")(EventIdMapper)
-
-  def userId = column[UserId]("user_id")(UserIdMapper)
-
-  override def * : ProvenShape[EventFlag] = toTuple <>(EventFlag.tupled, EventFlag.unapply)
-
-  def toTuple = (eventId, userId)
-}
-
 object EventDao {
-  implicit val EventIdMapper = MappedColumnType.base[EventId, Long](_.value, EventId.apply)
-  implicit val UserIdMapper = UserDao.UserIdMapper
-
-  val db = DbConfig.db
 
   val events = TableQuery[EventDao]
 
-  val eventFlags = TableQuery[EventFlagDao]
-
-  val eventFlagsById = (id: EventId) => eventFlags.filter(_.eventId === id)
-
-  def getFlaggers(eventId: EventId): Future[Set[UserId]] = db.run {
-    eventFlagsById(eventId).map(_.userId).result
-  }.map(_.toSet)
-
-  def countFlags(eventId: EventId): Future[Long] =
-    db.run {
-      eventFlags.filter(ef => ef.eventId === eventId).length.result
-    }.map(_.toLong)
-
-  def userHasFlaggedEvent(eventId: EventId, by: UserId): Future[Boolean] =
-    db.run {
-      eventFlagsById(eventId).filter(_.userId === by).exists.result
-    }
+  val eventById = (id: EventId) => events.filter(_.id === id)
 
   def eventExists(eventId: EventId): Future[Boolean] =
     db.run {
-      eventFlagsById(eventId).exists.result
+      eventById(eventId).exists.result
     }
-
-  def flagEvent(eventId: EventId, by: UserId): Future[Boolean] = eventExists(eventId).flatMap {
-    case true =>
-      db.run {
-        eventFlags.returning(eventFlags.map(_.eventId)) += EventFlag(eventId, by)
-      }.map(_ == eventId)
-    case _ => Future.successful(false)
-  }
 
   def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: Long): Future[Seq[SimpleEvent]] = {
     db.run {
@@ -94,7 +54,7 @@ object EventDao {
       val uid = userId.getOrElse(UserId(-1))
 
       db.run {
-        eventFlags.filter(_.userId === uid).map(_.eventId).result
+        EventFlagDao.eventFlags.filter(_.userId === uid).map(_.eventId).result
       }.map { flaggedEvents =>
         futureEvents
           .filterNot { case (eventId, _) => flaggedEvents.contains(eventId) }
@@ -109,7 +69,7 @@ object EventDao {
   }
 
   def findEventById(id: EventId): Future[Option[Event]] = db.run {
-    events.filter(event => event.id === id).map(_.toTuple).result.headOption
+    eventById(id).map(_.toTuple).result.headOption
   }.map(_.map((Event.apply _).tupled))
 }
 

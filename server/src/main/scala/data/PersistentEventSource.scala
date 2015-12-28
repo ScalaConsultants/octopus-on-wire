@@ -2,12 +2,12 @@ package data
 
 import java.util.Calendar
 
-import domain.EventDao
+import domain.{EventDao, EventFlagDao}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scalac.octopusonwire.shared.domain._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object PersistentEventSource extends EventSource {
   override def countPastJoinsBy(id: UserId): Long = 3 //TODO
@@ -36,18 +36,17 @@ object PersistentEventSource extends EventSource {
     }
   }
 
-  override def getFlaggers(eventId: EventId): Set[UserId] = waitFor(EventDao.getFlaggers(eventId))
+  override def getFlaggers(eventId: EventId): Set[UserId] = waitFor(EventFlagDao.getFlaggers(eventId))
 
   override def addFlag(eventId: EventId, by: UserId): Boolean =
-    waitFor(EventDao.userHasFlaggedEvent(eventId, by).flatMap{
+    waitFor(EventFlagDao.userHasFlaggedEvent(eventId, by).flatMap{
       case true => Future.successful(false)
-      case _ => EventDao.flagEvent(eventId, by)
+      case _ => EventFlagDao.flagEvent(eventId, by)
     })
-
 
   override def getJoins(eventId: EventId): Set[UserId] = Set.empty //TODO
 
-  override def countFlags(eventId: EventId): Long = waitFor(EventDao.countFlags(eventId))
+  override def countFlags(eventId: EventId): Long = waitFor(EventFlagDao.countFlags(eventId))
 
   //TODO make the calls asynchronous where possible
   def waitFor[T](f: Future[T]) = Await.result(f, Duration.Inf)
