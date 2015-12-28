@@ -6,4 +6,5 @@ package scalac.octopusonwire.shared.domain
   **/
 case class UserId(value: Long)
 
+object NoUserId extends UserId(-1)
 case class UserInfo(userId: UserId, login: String)

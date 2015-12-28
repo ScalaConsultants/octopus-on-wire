@@ -24,6 +24,10 @@ object EventFlagDao {
 
   val eventFlagsById = (id: EventId) => eventFlags.filter(_.eventId === id)
 
+  val eventFlagsByUserId = (id: UserId) => db.run{
+    eventFlags.filter(_.userId === id).map(_.toTuple).result
+  }.map(_.map(EventFlag.tupled))
+
   def getFlaggers(eventId: EventId): Future[Set[UserId]] = db.run {
     eventFlagsById(eventId).map(_.userId).result
   }.map(_.toSet)

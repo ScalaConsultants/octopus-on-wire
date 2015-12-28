@@ -1,6 +1,7 @@
 package domain
 
 import config.DbConfig.db
+import config.ServerConfig.MaxEventsInMonth
 import domain.Mappers._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
@@ -32,40 +33,54 @@ class EventDao(tag: Tag) extends Table[Event](tag, "events") {
   def toSimpleTuple = (id, name)
 
   def endsAfter(time: Long) = (endDate - offset) > time
+
+  def isBetween(from: Long, to: Long) = (endDate - offset).between(from, to) || (startDate - offset).between(from, to)
 }
 
 object EventDao {
+  val eventQuery = TableQuery[EventDao]
 
-  val events = TableQuery[EventDao]
-
-  val eventById = (id: EventId) => events.filter(_.id === id)
+  val eventById = (id: EventId) => eventQuery.filter(_.id === id)
 
   def eventExists(eventId: EventId): Future[Boolean] =
     db.run {
       eventById(eventId).exists.result
     }
 
+  def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] = {
+    val uid = userId.getOrElse(NoUserId)
+
+    val eventsInPeriod = db.run {
+      eventQuery.filter(_.isBetween(from, to)).map(_.toTuple).result
+    }.map(_.map((Event.apply _).tupled))
+
+    val flagsByUser = EventFlagDao.eventFlagsByUserId(uid)
+
+    for {
+      eventz <- eventsInPeriod
+      flagz <- flagsByUser
+    } yield eventz.filterNot(ev => flagz.exists(_.eventId == ev.id)).take(MaxEventsInMonth)
+  }
+
   def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: Long): Future[Seq[SimpleEvent]] = {
-    db.run {
-      events
+    val uid = userId.getOrElse(UserId(-1))
+
+    val eventsInFuture = db.run {
+      eventQuery
         .filter(_.endsAfter(now))
         .map(_.toSimpleTuple).result
-    }.flatMap(futureEvents => {
-      val uid = userId.getOrElse(UserId(-1))
+    }.map(_.map(SimpleEvent.tupled))
 
-      db.run {
-        EventFlagDao.eventFlags.filter(_.userId === uid).map(_.eventId).result
-      }.map { flaggedEvents =>
-        futureEvents
-          .filterNot { case (eventId, _) => flaggedEvents.contains(eventId) }
-          .take(limit)
-          .map(SimpleEvent.tupled)
-      }
-    })
+    val flagsByUser = EventFlagDao.eventFlagsByUserId(uid)
+
+    for {
+      eventz <- eventsInFuture
+      flagz <- flagsByUser
+    } yield eventz.filterNot(ev => flagz.map(_.eventId).contains(ev.id)).take(limit)
   }
 
   def addEventAndGetId(event: Event): Future[EventId] = db.run {
-    events.returning(events.map(_.id)) += event
+    eventQuery.returning(eventQuery.map(_.id)) += event
   }
 
   def findEventById(id: EventId): Future[Option[Event]] = db.run {

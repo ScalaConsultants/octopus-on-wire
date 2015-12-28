@@ -16,7 +16,8 @@ object PersistentEventSource extends EventSource {
 
   override def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean = false //TODO
 
-  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Seq[Event] = Nil //TODO
+  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Seq[Event] =
+    waitFor(EventDao.getEventsBetweenDatesNotFlaggedBy(from, to, userId))
 
   override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Seq[SimpleEvent] = {
     val serverOffset = Calendar.getInstance.getTimeZone.getRawOffset
