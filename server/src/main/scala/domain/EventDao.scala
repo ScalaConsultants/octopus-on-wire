@@ -47,6 +47,24 @@ class EventFlagDao(tag: Tag) extends Table[EventFlag](tag, "event_flags") {
 }
 
 object EventDao {
+  def userHasFlaggedEvent(eventId: EventId, by: UserId): Future[Boolean] =
+    db.run {
+      eventFlags.filter(ef => ef.eventId === eventId && ef.userId === by).map(_.toTuple).result
+    }.map(_.nonEmpty)
+
+  def eventExists(eventId: EventId): Future[Boolean] =
+    db.run{
+      events.filter(_.id === eventId).map(_.id).result
+    }.map(_.nonEmpty)
+
+  def flagEvent(eventId: EventId, by: UserId): Future[Boolean] = eventExists(eventId).flatMap{
+    case true =>
+      db.run{
+        eventFlags.returning(eventFlags.map(_.eventId)) += EventFlag(eventId, by)
+      }.map(_ == eventId)
+    case _ => Future.successful(false)
+  }
+
   implicit val EventIdMapper = MappedColumnType.base[EventId, Long](_.value, EventId.apply)
   implicit val UserIdMapper = UserDao.UserIdMapper
   val db = DbConfig.db
@@ -76,7 +94,7 @@ object EventDao {
     })
   }
 
-  def addEventAndGetId(event: Event): Future[EventId] = DbConfig.db.run {
+  def addEventAndGetId(event: Event): Future[EventId] = db.run {
     events.returning(events.map(_.id)) += event
   }
 

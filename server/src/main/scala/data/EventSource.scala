@@ -23,6 +23,10 @@ trait EventSource {
 
   def getFlaggers(eventId: EventId): Set[UserId]
 
+  /**
+    * @return false if the event was already flagged by user or doesn't exist
+    *         //TODO "refactor to messages" opportunity?
+    * */
   def addFlag(eventId: EventId, by: UserId): Boolean
 
   def addEvent(event: Event): EventAddition

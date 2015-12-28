@@ -7,6 +7,7 @@ import domain.EventDao
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scalac.octopusonwire.shared.domain._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object PersistentEventSource extends EventSource {
   override def countPastJoinsBy(id: UserId): Long = 3 //TODO
@@ -32,14 +33,19 @@ object PersistentEventSource extends EventSource {
 
   override def addEvent(event: Event): EventAddition = {
     waitFor(EventDao.addEventAndGetId(event)) match {
-      case NoId => FailedToAdd("Unknown erro")
+      case NoId => FailedToAdd("Unknown error")
       case _ => Added()
     }
   }
 
   override def getFlaggers(eventId: EventId): Set[UserId] = Set.empty
 
-  override def addFlag(eventId: EventId, by: UserId): Boolean = ??? //TODO
+  override def addFlag(eventId: EventId, by: UserId): Boolean =
+    waitFor(EventDao.userHasFlaggedEvent(eventId, by).flatMap{
+      case true => Future.successful(false)
+      case _ => EventDao.flagEvent(eventId, by)
+    })
+
 
   override def getJoins(eventId: EventId): Set[UserId] = Set.empty
 
