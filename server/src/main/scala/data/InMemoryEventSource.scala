@@ -1,12 +1,14 @@
 package data
 
-import config.ServerConfig
+import config.ServerConfig.MaxEventsInMonth
 import tools.EventServerOps._
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.language.postfixOps
-import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined, EventNotFound, JoinSuccessful}
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined, JoinSuccessful}
 import scalac.octopusonwire.shared.domain._
 import scalac.octopusonwire.shared.tools.LongRangeOps._
 
@@ -32,77 +34,73 @@ class InMemoryEventSource extends EventSource {
 
   var addedJoins = false
 
-  override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Seq[SimpleEvent] = {
-    getEvents.filter { event =>
-      !userId.exists(hasUserFlagged(_, event.id)) && event.isInTheFuture
-    }.take(limit).map(_.toSimple)
-  }
+  override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]] =
+    Future.sequence {
+      getEvents.filter(_.isInTheFuture).map { event =>
+        Future.successful(event) zip userId.map(hasUserFlagged(_, event.id)).getOrElse(Future.successful(false))
+      }
+    }.map(_.collect { case (ev, joined) if !joined => ev.toSimple }.take(limit))
 
-  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Seq[Event] =
-    getEvents.filter { event =>
-      !userId.exists(hasUserFlagged(_, event.id)) &&
-        (event.startDate.inRange(from, to) || event.endDate.inRange(from, to))
-    }.take(ServerConfig.MaxEventsInMonth)
+  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] =
+    Future.sequence {
+      getEvents.filter(e => e.startDate.inRange(from, to) || e.endDate.inRange(from, to)).map { event =>
+        Future.successful(event) zip userId.map(hasUserFlagged(_, event.id)).getOrElse(Future.successful(false))
+      }
+    }.map(_.collect { case (ev, joined) if !joined => ev }.take(MaxEventsInMonth))
 
   private def hasUserFlagged(userId: UserId, eventId: EventId) =
-    getFlaggers(eventId) contains userId
-
-  def addFakeUserJoins(userId: UserId) =
-    if (!addedJoins) {
-      val oldEventCount = events.length
-      1 to ServerConfig.PastJoinsRequiredToAddEvents foreach { i =>
-        events ::= Event(EventId(i + oldEventCount), s"Some event $i", now - days(2), now - days(1), 3600000, "The cloud", "http://example.com")
-        eventJoins(EventId(i + oldEventCount)) = Set(userId)
-      }
-      addedJoins = true
-    }
+    Future(getFlaggers(eventId) contains userId)
 
   private val flags = TrieMap[EventId, Set[UserId]]()
 
-  override def getFlaggers(eventId: EventId): Set[UserId] = flags.getOrElse(eventId, Set.empty)
+  private def getFlaggers(eventId: EventId): Set[UserId] = flags.getOrElse(eventId, Set.empty)
 
-  override def countPastJoinsBy(id: UserId): Long =
-    getPastEvents.map { event =>
-      getJoins(event.id)
-        .find(_ == id).size
-    }.sum
+  override def countPastJoinsBy(id: UserId): Future[Int] =
+    getPastEvents.flatMap { pastEvents =>
+      Future.sequence(pastEvents.map { event =>
+        getJoins(event.id).map(_.find(_ == id).size)
+      }).map(_.sum)
+    }
 
-  private def getEvents: Seq[Event] = events
+  private def getEvents: List[Event] = events
 
-  private def getPastEvents: Seq[Event] = getEvents.filterNot(_ isInTheFuture)
+  private def getPastEvents: Future[Seq[Event]] = Future(getEvents.filterNot(_ isInTheFuture))
 
-  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage = {
-    if (hasUserJoinedEvent(eventId, userId)) AlreadyJoined
-    else {
+  override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] = hasUserJoinedEvent(eventId, userId).map {
+    case true =>
+      AlreadyJoined
+    case _ =>
       eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
       JoinSuccessful
-    }
-  }.apply
+  }.map(_.apply)
 
-  override def eventById(id: EventId): Option[Event] = getEvents find (_.id == id)
+  override def eventById(id: EventId): Future[Option[Event]] = Future(getEvents find (_.id == id))
 
-  override def countJoins(eventId: EventId): Long = eventJoins.getOrElse(eventId, Nil).size
+  override def countJoins(eventId: EventId): Future[Int] = Future(eventJoins.getOrElse(eventId, Nil).size)
 
-  override def getJoins(eventId: EventId): Set[UserId] = eventJoins.getOrElse(eventId, Set.empty[UserId])
+  override def getJoins(eventId: EventId): Future[Set[UserId]] = Future(eventJoins.getOrElse(eventId, Set.empty[UserId]))
 
-  override def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean =
-    eventJoins.get(event).exists(_.contains(userId))
+  override def hasUserJoinedEvent(event: EventId, userId: UserId): Future[Boolean] =
+    Future(eventJoins.get(event).exists(_.contains(userId)))
 
-  override def countFlags(eventId: EventId): Long = getFlaggers(eventId).size
+  override def countFlags(eventId: EventId): Future[Int] = Future(getFlaggers(eventId).size)
 
-  override def addFlag(eventId: EventId, by: UserId): Boolean =
-    eventById(eventId).exists { event =>
-      val alreadyFlagged = flags.get(eventId).exists(_ contains by)
-      if (alreadyFlagged) false
-      else {
-        flags(eventId) = getFlaggers(eventId) + by
-        true
+  override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
+    eventById(eventId).map {
+      _.exists {
+        event =>
+          val alreadyFlagged = flags.get(eventId).exists(_ contains by)
+          if (alreadyFlagged) false
+          else {
+            flags(eventId) = getFlaggers(eventId) + by
+            true
+          }
       }
     }
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
 
-  override def addEvent(event: Event): EventAddition = {
+  override def addEvent(event: Event): Future[EventAddition] = Future{
     val copiedEvent = event.copy(id = getNextEventId)
     events.synchronized(events ::= copiedEvent)
     Added()

@@ -36,10 +36,9 @@ object EventJoinDao {
     eventJoinsById(eventId).map(_.userId).result
   }.map(_.toSet)
 
-  def countJoins(eventId: EventId): Future[Long] =
-    db.run {
-      eventJoins.filter(ef => ef.eventId === eventId).length.result
-    }.map(_.toLong)
+  def countJoins(eventId: EventId): Future[Int] = db.run {
+    eventJoins.filter(ef => ef.eventId === eventId).length.result
+  }
 
   def userHasJoinedEvent(eventId: EventId, by: UserId): Future[Boolean] =
     db.run {

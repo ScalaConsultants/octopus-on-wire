@@ -36,21 +36,6 @@ object OctopusClient extends js.JSApp {
   ).render
 
   @JSExport
-  def addFakeEventAdder(elem: Div): Unit = {
-    val fakeEventAdder = button(
-      "Add fake events if needed (requires being logged in)",
-      `class` := "add-fake-events-button",
-      onclick := {
-        (e: MouseEvent) => octoApi.addFakeEvents().call().foreach { _ =>
-          elem.removeChild(e.srcElement)
-        }
-      }
-    ).render
-
-    elem.appendChild(fakeEventAdder)
-  }
-
-  @JSExport
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
     root.appendChild(octopusHome)

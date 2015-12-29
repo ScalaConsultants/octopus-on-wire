@@ -42,7 +42,7 @@ object EventDao {
 
   val eventById = (id: EventId) => eventQuery.filter(_.id === id)
 
-  def countPastJoinsBy(id: UserId, currentUTC: Long): Future[Long] = {
+  def countPastJoinsBy(id: UserId, currentUTC: Long): Future[Int] = {
     val pastEvents = db.run{
       eventQuery.filterNot(_.endsAfter(currentUTC)).map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))

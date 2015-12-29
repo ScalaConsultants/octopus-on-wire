@@ -1,33 +1,32 @@
 package data
 
+import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
 trait EventSource {
-  def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Seq[Event]
+  def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]]
 
-  def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Seq[SimpleEvent]
+  def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]]
 
-  def countPastJoinsBy(id: UserId): Long
+  def countPastJoinsBy(id: UserId): Future[Int]
 
-  def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage
+  def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage]
 
-  def eventById(id: EventId): Option[Event]
+  def eventById(id: EventId): Future[Option[Event]]
 
-  def countJoins(eventId: EventId): Long
+  def countJoins(eventId: EventId): Future[Int]
 
-  def getJoins(eventId: EventId): Set[UserId]
+  def getJoins(eventId: EventId): Future[Set[UserId]]
 
-  def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean
+  def hasUserJoinedEvent(event: EventId, userId: UserId): Future[Boolean]
 
-  def countFlags(eventId: EventId): Long
-
-  def getFlaggers(eventId: EventId): Set[UserId]
+  def countFlags(eventId: EventId): Future[Int]
 
   /**
     * @return false if the event was already flagged by user or doesn't exist
     *         //TODO "refactor to messages" opportunity?
     * */
-  def addFlag(eventId: EventId, by: UserId): Boolean
+  def addFlag(eventId: EventId, by: UserId): Future[Boolean]
 
-  def addEvent(event: Event): EventAddition
+  def addEvent(event: Event): Future[EventAddition]
 }

@@ -1,4 +1,5 @@
 package domain
+
 import config.DbConfig._
 import domain.Mappers._
 import slick.driver.PostgresDriver.api._
@@ -25,7 +26,7 @@ object EventFlagDao {
 
   val eventFlagsById = (id: EventId) => eventFlags.filter(_.eventId === id)
 
-  val eventFlagsByUserId = (id: UserId) => db.run{
+  val eventFlagsByUserId = (id: UserId) => db.run {
     eventFlags.filter(_.userId === id).map(_.toTuple).result
   }.map(_.map(EventFlag.tupled))
 
@@ -33,10 +34,9 @@ object EventFlagDao {
     eventFlagsById(eventId).map(_.userId).result
   }.map(_.toSet)
 
-  def countFlags(eventId: EventId): Future[Long] =
-    db.run {
-      eventFlags.filter(ef => ef.eventId === eventId).length.result
-    }.map(_.toLong)
+  def countFlags(eventId: EventId): Future[Int] = db.run {
+    eventFlags.filter(ef => ef.eventId === eventId).length.result
+  }
 
   def userHasFlaggedEvent(eventId: EventId, by: UserId): Future[Boolean] =
     db.run {

@@ -2,56 +2,52 @@ package data
 
 import java.util.Calendar
 
-import domain.{EventJoinDao, EventDao, EventFlagDao}
+import domain.{EventDao, EventFlagDao, EventJoinDao}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
 object PersistentEventSource extends EventSource {
-  override def countPastJoinsBy(id: UserId): Long =
-    waitFor(EventDao.countPastJoinsBy(id, currentUTC))
+  override def countPastJoinsBy(id: UserId): Future[Int] =
+    EventDao.countPastJoinsBy(id, currentUTC)
 
-  override def countJoins(eventId: EventId): Long = waitFor(EventJoinDao.countJoins(eventId))
+  override def countJoins(eventId: EventId): Future[Int] = EventJoinDao.countJoins(eventId)
 
-  override def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean =
-    waitFor(EventJoinDao.userHasJoinedEvent(event, userId))
+  override def hasUserJoinedEvent(event: EventId, userId: UserId): Future[Boolean] =
+    EventJoinDao.userHasJoinedEvent(event, userId)
 
-  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Seq[Event] =
-    waitFor(EventDao.getEventsBetweenDatesNotFlaggedBy(from, to, userId))
+  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] =
+    EventDao.getEventsBetweenDatesNotFlaggedBy(from, to, userId)
 
   def currentUTC = {
     val serverOffset = Calendar.getInstance.getTimeZone.getRawOffset
     System.currentTimeMillis - serverOffset
   }
 
-  override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Seq[SimpleEvent] =
-    waitFor(EventDao.getFutureUnflaggedEvents(userId, limit, currentUTC))
+  override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]] =
+    EventDao.getFutureUnflaggedEvents(userId, limit, currentUTC)
 
-  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage = waitFor(EventJoinDao.joinEvent(eventId, userId))
+  override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] =
+    EventJoinDao.joinEvent(eventId, userId)
 
-  override def getJoins(eventId: EventId): Set[UserId] = waitFor(EventJoinDao.getJoiners(eventId))
+  override def getJoins(eventId: EventId): Future[Set[UserId]] = EventJoinDao.getJoiners(eventId)
 
-  override def eventById(id: EventId): Option[Event] = waitFor(EventDao.findEventById(id))
+  override def eventById(id: EventId): Future[Option[Event]] = EventDao.findEventById(id)
 
-  override def addEvent(event: Event): EventAddition = {
-    waitFor(EventDao.addEventAndGetId(event)) match {
+  override def addEvent(event: Event): Future[EventAddition] =
+    EventDao.addEventAndGetId(event).map {
       case NoId => FailedToAdd("Unknown error")
       case _ => Added()
     }
-  }
 
-  override def getFlaggers(eventId: EventId): Set[UserId] = waitFor(EventFlagDao.getFlaggers(eventId))
+  private def getFlaggers(eventId: EventId): Future[Set[UserId]] = EventFlagDao.getFlaggers(eventId)
 
-  override def addFlag(eventId: EventId, by: UserId): Boolean =
-    waitFor(EventFlagDao.userHasFlaggedEvent(eventId, by).flatMap {
+  override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
+    EventFlagDao.userHasFlaggedEvent(eventId, by).flatMap {
       case true => Future.successful(false)
       case _ => EventFlagDao.flagEvent(eventId, by)
-    })
+    }
 
-  override def countFlags(eventId: EventId): Long = waitFor(EventFlagDao.countFlags(eventId))
-
-  //TODO make the calls asynchronous where possible
-  def waitFor[T](f: Future[T]) = Await.result(f, Duration.Inf)
+  override def countFlags(eventId: EventId): Future[Int] = EventFlagDao.countFlags(eventId)
 }
