@@ -29,7 +29,7 @@ object PersistentEventSource extends EventSource {
   override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Seq[SimpleEvent] =
     waitFor(EventDao.getFutureUnflaggedEvents(userId, limit, currentUTC))
 
-  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage = ??? //TODO
+  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage = waitFor(EventJoinDao.joinEvent(eventId, userId))
 
   override def getJoins(eventId: EventId): Set[UserId] = waitFor(EventJoinDao.getJoiners(eventId))
 

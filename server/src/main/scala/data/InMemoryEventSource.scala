@@ -71,15 +71,13 @@ class InMemoryEventSource extends EventSource {
 
   private def getPastEvents: Seq[Event] = getEvents.filterNot(_ isInTheFuture)
 
-  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage =
-    eventById(eventId).map(event => {
-      val alreadyJoined = eventJoins.get(eventId).exists(_ contains userId)
-      if (alreadyJoined) AlreadyJoined
-      else {
-        eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
-        JoinSuccessful
-      }
-    }).getOrElse(EventNotFound).apply
+  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage = {
+    if (hasUserJoinedEvent(eventId, userId)) AlreadyJoined
+    else {
+      eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
+      JoinSuccessful
+    }
+  }.apply
 
   override def eventById(id: EventId): Option[Event] = getEvents find (_.id == id)
 
