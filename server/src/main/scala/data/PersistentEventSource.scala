@@ -2,7 +2,7 @@ package data
 
 import java.util.Calendar
 
-import domain.{EventDao, EventFlagDao, EventJoinDao}
+import domain.{Events, EventFlags, EventJoins}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -10,15 +10,15 @@ import scalac.octopusonwire.shared.domain._
 
 object PersistentEventSource extends EventSource {
   override def countPastJoinsBy(id: UserId): Future[Int] =
-    EventDao.countPastJoinsBy(id, currentUTC)
+    Events.countPastJoinsBy(id, currentUTC)
 
-  override def countJoins(eventId: EventId): Future[Int] = EventJoinDao.countJoins(eventId)
+  override def countJoins(eventId: EventId): Future[Int] = EventJoins.countJoins(eventId)
 
   override def hasUserJoinedEvent(event: EventId, userId: UserId): Future[Boolean] =
-    EventJoinDao.userHasJoinedEvent(event, userId)
+    EventJoins.userHasJoinedEvent(event, userId)
 
   override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] =
-    EventDao.getEventsBetweenDatesNotFlaggedBy(from, to, userId)
+    Events.getEventsBetweenDatesNotFlaggedBy(from, to, userId)
 
   def currentUTC = {
     val serverOffset = Calendar.getInstance.getTimeZone.getRawOffset
@@ -26,28 +26,28 @@ object PersistentEventSource extends EventSource {
   }
 
   override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]] =
-    EventDao.getFutureUnflaggedEvents(userId, limit, currentUTC)
+    Events.getFutureUnflaggedEvents(userId, limit, currentUTC)
 
   override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] =
-    EventJoinDao.joinEvent(eventId, userId)
+    EventJoins.joinEvent(eventId, userId)
 
-  override def getJoins(eventId: EventId): Future[Set[UserId]] = EventJoinDao.getJoiners(eventId)
+  override def getJoins(eventId: EventId): Future[Set[UserId]] = EventJoins.getJoiners(eventId)
 
-  override def eventById(id: EventId): Future[Option[Event]] = EventDao.findEventById(id)
+  override def eventById(id: EventId): Future[Option[Event]] = Events.findEventById(id)
 
   override def addEvent(event: Event): Future[EventAddition] =
-    EventDao.addEventAndGetId(event).map {
+    Events.addEventAndGetId(event).map {
       case NoId => FailedToAdd("Unknown error")
       case _ => Added()
     }
 
-  private def getFlaggers(eventId: EventId): Future[Set[UserId]] = EventFlagDao.getFlaggers(eventId)
+  private def getFlaggers(eventId: EventId): Future[Set[UserId]] = EventFlags.getFlaggers(eventId)
 
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
-    EventFlagDao.userHasFlaggedEvent(eventId, by).flatMap {
+    EventFlags.userHasFlaggedEvent(eventId, by).flatMap {
       case true => Future.successful(false)
-      case _ => EventFlagDao.flagEvent(eventId, by)
+      case _ => EventFlags.flagEvent(eventId, by)
     }
 
-  override def countFlags(eventId: EventId): Future[Int] = EventFlagDao.countFlags(eventId)
+  override def countFlags(eventId: EventId): Future[Int] = EventFlags.countFlags(eventId)
 }

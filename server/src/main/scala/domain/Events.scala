@@ -2,7 +2,6 @@ package domain
 
 import config.DbConfig.db
 import config.ServerConfig.MaxEventsInMonth
-import domain.Mappers._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
@@ -10,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
-class EventDao(tag: Tag) extends Table[Event](tag, "events") {
+class Events(tag: Tag) extends Table[Event](tag, "events") {
 
   def id = column[EventId]("id", O.PrimaryKey, O.AutoInc)(EventIdMapper)
 
@@ -37,8 +36,8 @@ class EventDao(tag: Tag) extends Table[Event](tag, "events") {
   def isBetween(from: Long, to: Long) = (endDate - offset).between(from, to) || (startDate - offset).between(from, to)
 }
 
-object EventDao {
-  val eventQuery = TableQuery[EventDao]
+object Events {
+  val eventQuery = TableQuery[Events]
 
   val eventById = (id: EventId) => eventQuery.filter(_.id === id)
 
@@ -47,7 +46,7 @@ object EventDao {
       eventQuery.filterNot(_.endsAfter(currentUTC)).map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
-    val userJoins = EventJoinDao.eventJoinsByUserId(id)
+    val userJoins = EventJoins.eventJoinsByUserId(id)
     for{
       events <- pastEvents
       joins <- userJoins
@@ -66,7 +65,7 @@ object EventDao {
       eventQuery.filter(_.isBetween(from, to)).map(_.toTuple).result
     }.map(_.map((Event.apply _).tupled))
 
-    val flagsByUser = EventFlagDao.eventFlagsByUserId(uid)
+    val flagsByUser = EventFlags.eventFlagsByUserId(uid)
 
     for {
       events <- eventsInPeriod
@@ -83,7 +82,7 @@ object EventDao {
         .map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
-    val flagsByUser = EventFlagDao.eventFlagsByUserId(uid)
+    val flagsByUser = EventFlags.eventFlagsByUserId(uid)
 
     for {
       events <- eventsInFuture

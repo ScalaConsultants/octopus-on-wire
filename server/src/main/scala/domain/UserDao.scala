@@ -1,6 +1,5 @@
 package domain
 
-import domain.Mappers._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
