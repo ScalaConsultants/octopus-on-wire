@@ -1,7 +1,7 @@
 package services
 
 import config.ServerConfig.PastJoinsRequiredToAddEvents
-import data.{EventSource, PersistentEventSource}
+import data._
 import tools.EventServerOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,7 +13,10 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder._
 import scalac.octopusonwire.shared.domain.FailedToAdd.{EventCantEndInThePast, UserCantAddEventsYet, UserNotLoggedIn}
 import scalac.octopusonwire.shared.domain._
 
-class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: EventSource = PersistentEventSource) extends Api {
+class ApiService(tokenOpt: Option[String], userId: Option[UserId],
+                 eventSource: EventSource = InMemoryEventSource,
+                 userCache: UserCache = PersistentUserCache) extends Api {
+
   val timeout = 10.seconds
 
   override def getUserEventInfo(eventId: EventId): Option[UserEventInfo] = {
@@ -40,7 +43,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
   override def getUserInfo(): Option[UserInfo] =
     userId.flatMap { id =>
       Await.result(
-        awaitable = InMemoryUserCache.getOrFetchUserInfo(id, tokenOpt),
+        awaitable = userCache.getOrFetchUserInfo(id, tokenOpt),
         atMost = timeout
       )
     }
@@ -71,11 +74,11 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: 
 
   override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
     Await.result(
-      InMemoryUserCache.getOrFetchUserFriends(tokenOpt).flatMap { friends =>
+      userCache.getOrFetchUserFriends(tokenOpt).flatMap { friends =>
         val joinsFuture = eventSource.getJoins(eventId).map(_.filterNot(userId contains).partition(friends contains))
         joinsFuture.flatMap { case (joinedFriends, otherJoins) =>
           val othersLimited = otherJoins take (limit - joinedFriends.size)
-          Future.sequence((joinedFriends ++ othersLimited).map(InMemoryUserCache.getOrFetchUserInfo(_, tokenOpt))).map(_.flatten)
+          Future.sequence((joinedFriends ++ othersLimited).map(userCache.getOrFetchUserInfo(_, tokenOpt))).map(_.flatten)
         }
       },
       timeout

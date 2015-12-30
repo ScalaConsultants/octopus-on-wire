@@ -6,8 +6,9 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
+import data.{PersistentUserCache, UserCache}
 import play.api.mvc._
-import services.{InMemoryUserCache, UserCache, _}
+import services.{ApiService, GithubApi}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.{implicitConversions, postfixOps}
@@ -15,7 +16,8 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
 
 object Application extends Controller {
-  val userCache: UserCache = InMemoryUserCache
+  val userCache: UserCache = PersistentUserCache
+
   def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
     result.withHeaders(
       ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
