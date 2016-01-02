@@ -14,7 +14,7 @@ import scalac.octopusonwire.shared.domain.FailedToAdd.{EventCantEndInThePast, Us
 import scalac.octopusonwire.shared.domain._
 
 class ApiService(tokenOpt: Option[String], userId: Option[UserId],
-                 eventSource: EventSource = InMemoryEventSource,
+                 eventSource: EventSource = PersistentEventSource,
                  userCache: UserCache = PersistentUserCache) extends Api {
 
   val timeout = 10.seconds
