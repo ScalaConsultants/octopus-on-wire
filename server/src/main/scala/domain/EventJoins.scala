@@ -22,7 +22,7 @@ object EventJoins extends EventUserAbstractDaoCompanion[EventJoin, EventJoins]{
 
   val eventJoinsById = queryByEventId _
 
-  def eventJoinsByUserId(id: UserId) = getByUserId(id).map(_.map(EventJoin.tupled))
+  def eventJoinsByUserId(id: UserId) = getByUserId(id)
 
   def getJoiners(eventId: EventId): Future[Set[UserId]] = db.run {
     eventJoinsById(eventId).map(_.userId).result

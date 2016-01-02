@@ -24,8 +24,8 @@ object Users {
   }
 
   def userById(id: UserId): Future[Option[UserInfo]] = db.run{
-    users.filter(_.id === id).map(_.toTuple).result.headOption
-  }.map(_.map(UserInfo.tupled))
+    users.filter(_.id === id).result.headOption
+  }
 
   val db = DbConfig.db
   val users = TableQuery[Users]

@@ -62,8 +62,8 @@ object Events {
     val uid = userId.getOrElse(NoUserId)
 
     val eventsInPeriod = db.run {
-      eventQuery.filter(_.isBetween(from, to)).map(_.toTuple).result
-    }.map(_.map((Event.apply _).tupled))
+      eventQuery.filter(_.isBetween(from, to)).result
+    }
 
     val flagsByUser = EventFlags.eventFlagsByUserId(uid)
 
@@ -95,7 +95,7 @@ object Events {
   }
 
   def findEventById(id: EventId): Future[Option[Event]] = db.run {
-    eventById(id).map(_.toTuple).result.headOption
-  }.map(_.map((Event.apply _).tupled))
+    eventById(id).result.headOption
+  }
 }
 

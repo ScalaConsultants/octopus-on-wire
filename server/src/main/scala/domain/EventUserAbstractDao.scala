@@ -24,7 +24,7 @@ trait EventUserAbstractDaoCompanion[Entity <: EventUserPair, Dao <: EventUserAbs
   def queryByEventId(id: EventId) = allQuery.filter(_.eventId === id)
 
   def getByUserId(id: UserId) = db.run {
-    allQuery.filter(_.userId === id).map(_.toTuple).result
+    allQuery.filter(_.userId === id).result
   }
 
   def getAllUserIdByEventId(id: EventId) = db.run {
