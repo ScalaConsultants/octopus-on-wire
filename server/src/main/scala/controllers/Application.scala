@@ -6,6 +6,7 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
+import play.api.Logger
 import play.api.mvc._
 import services._
 
@@ -15,13 +16,14 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
 
 object Application extends Controller {
-  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result ={
+
+  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result = {
     val newResult = result.withHeaders(
       ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
       ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true",
       CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
 
-    request.headers.get(ORIGIN) match{
+    request.headers.get(ORIGIN) match {
       case Some(origin) => newResult.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
       case _ => newResult
     }
@@ -71,8 +73,13 @@ object Application extends Controller {
   }
 
   //fetch events on app start
-  val es = ApiService(None, None).eventSource
-  MeetupEventService.fetchEvents.foreach(_.foreach(es.addEvent))
+  val eventSource = ApiService(None, None).eventSource
+  MeetupEventService.fetchEvents.foreach {
+    events =>
+      val newEvents = events.filterNot(eventSource.sameOriginExists)
+      Logger.info(s"Downloaded ${events.size} events from meetup, ${newEvents.size} of which are new")
+      newEvents.foreach(eventSource.addEvent)
+  }
 
   def autowireApi(path: String) = Action.async(parse.raw) { implicit request =>
     println(s"Request path: $path")

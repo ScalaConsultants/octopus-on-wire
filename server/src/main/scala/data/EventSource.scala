@@ -26,4 +26,6 @@ trait EventSource {
   def addFlag(eventId: EventId, by: UserId): Boolean
 
   def addEvent(event: Event): EventAddition
+
+  def sameOriginExists(event: Event): Boolean
 }

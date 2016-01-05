@@ -97,4 +97,7 @@ class InMemoryEventSource extends EventSource {
     events.synchronized(events ::= copiedEvent)
     Added()
   }
+
+  override def sameOriginExists(event: Event): Boolean =
+    getEvents.exists(_.origin == event.origin)
 }
