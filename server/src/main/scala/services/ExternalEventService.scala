@@ -1,5 +1,6 @@
 package services
 
+import data.InMemoryEventSource
 import play.api.Play.current
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WS

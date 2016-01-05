@@ -70,6 +70,10 @@ object Application extends Controller {
     }
   }
 
+  //fetch events on app start
+  val es = ApiService(None, None).eventSource
+  MeetupEventService.fetchEvents.foreach(_.foreach(es.addEvent))
+
   def autowireApi(path: String) = Action.async(parse.raw) { implicit request =>
     println(s"Request path: $path")
 

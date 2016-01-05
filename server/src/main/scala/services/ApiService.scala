@@ -15,7 +15,7 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.FailedToAdd.{UserCantAddEventsYet, EventCantEndInThePast, UserNotLoggedIn}
 import scalac.octopusonwire.shared.domain._
 
-class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: EventSource = InMemoryEventSource) extends Api {
+case class ApiService(tokenOpt: Option[String], userId: Option[UserId], eventSource: EventSource = InMemoryEventSource) extends Api {
 
   override def getUserEventInfo(eventId: EventId): Option[UserEventInfo] =
     eventSource.eventById(eventId) match {
