@@ -28,3 +28,4 @@ out
 *.sc
 
 client/dist/*
+server/src/main/resources/secret.conf
