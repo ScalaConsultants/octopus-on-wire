@@ -5,7 +5,7 @@ import domain.{UserFriendPairs, TokenPairs, Users}
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
-object PersistentUserCache extends UserCache{
+class PersistentUserCache extends UserCache{
 
   override def getUserInfo(id: UserId): Future[Option[UserInfo]] = Users.userById(id)
 

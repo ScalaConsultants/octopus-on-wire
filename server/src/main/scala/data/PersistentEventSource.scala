@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
-object PersistentEventSource extends EventSource {
+class PersistentEventSource extends EventSource {
   override def countPastJoinsBy(id: UserId): Future[Int] =
     Events.countPastJoinsBy(id, currentUTC)
 
@@ -44,10 +44,5 @@ object PersistentEventSource extends EventSource {
   private def getFlaggers(eventId: EventId): Future[Set[UserId]] = EventFlags.getFlaggers(eventId)
 
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
-    EventFlags.userHasFlaggedEvent(eventId, by).flatMap {
-      case true => Future.successful(false)
-      case _ => EventFlags.flagEvent(eventId, by)
-    }
-
-  override def countFlags(eventId: EventId): Future[Int] = EventFlags.countFlags(eventId)
+    EventFlags.flagEvent(eventId, by)
 }

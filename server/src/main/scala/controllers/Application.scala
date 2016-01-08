@@ -6,7 +6,7 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
-import data.{PersistentUserCache, UserCache}
+import data.{PersistentEventSource, EventSource, PersistentUserCache, UserCache}
 import play.api.mvc._
 import services.{ApiService, GithubApi}
 
@@ -16,7 +16,8 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
 
 object Application extends Controller {
-  val userCache: UserCache = PersistentUserCache
+  val eventSource: EventSource = new PersistentEventSource
+  val userCache: UserCache = new PersistentUserCache
 
   def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
     result.withHeaders(
@@ -48,7 +49,7 @@ object Application extends Controller {
     GithubApi.getGithubToken(code).flatMap { tokenOpt =>
       userCache.getOrFetchUserId(tokenOpt)
         .map { userOpt =>
-          new ApiService(tokenOpt, userOpt)
+          new ApiService(tokenOpt, userOpt, eventSource, userCache)
             .joinEventAndGetJoins(EventId(joinEvent))
 
           RedirectTo(sourceUrl, withToken = tokenOpt)
@@ -60,7 +61,7 @@ object Application extends Controller {
     GithubApi.getGithubToken(code).flatMap { tokenOpt =>
       userCache.getOrFetchUserId(tokenOpt)
         .map { userOpt =>
-          new ApiService(tokenOpt, userOpt)
+          new ApiService(tokenOpt, userOpt, eventSource, userCache)
             .flagEvent(EventId(flagEventById))
 
           RedirectTo(sourceUrl, withToken = tokenOpt)
@@ -80,7 +81,7 @@ object Application extends Controller {
     val req = autowire.Core.Request(path.split("/"), Unpickle[Map[String, ByteBuffer]].fromBytes(ByteBuffer.wrap(b)))
 
     userFuture.flatMap { userOpt =>
-      val apiService = new ApiService(tokenCookie, userOpt)
+      val apiService = new ApiService(tokenCookie, userOpt, eventSource, userCache)
       val router = Router.route[Api](apiService)
 
       // call Autowire route

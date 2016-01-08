@@ -12,8 +12,6 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined
 import scalac.octopusonwire.shared.domain._
 import scalac.octopusonwire.shared.tools.LongRangeOps._
 
-object InMemoryEventSource extends InMemoryEventSource
-
 class InMemoryEventSource extends EventSource {
 
   private var events: List[Event] = List(
@@ -62,17 +60,15 @@ class InMemoryEventSource extends EventSource {
       }).map(_.sum)
     }
 
-  private def getEvents: List[Event] = events
+  protected def getEvents: List[Event] = events
 
   private def getPastEvents: Future[Seq[Event]] = Future(getEvents.filterNot(_ isInTheFuture))
 
-  override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] = hasUserJoinedEvent(eventId, userId).map {
-    case true =>
-      AlreadyJoined
-    case _ =>
+  override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] =
+    Future {
       eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
-      JoinSuccessful
-  }.map(_.apply)
+      JoinSuccessful.apply
+    }
 
   override def eventById(id: EventId): Future[Option[Event]] = Future(getEvents find (_.id == id))
 
@@ -82,8 +78,6 @@ class InMemoryEventSource extends EventSource {
 
   override def hasUserJoinedEvent(event: EventId, userId: UserId): Future[Boolean] =
     Future(eventJoins.get(event).exists(_.contains(userId)))
-
-  override def countFlags(eventId: EventId): Future[Int] = Future(getFlaggers(eventId).size)
 
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
     eventById(eventId).map {
@@ -100,7 +94,7 @@ class InMemoryEventSource extends EventSource {
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
 
-  override def addEvent(event: Event): Future[EventAddition] = Future{
+  override def addEvent(event: Event): Future[EventAddition] = Future {
     val copiedEvent = event.copy(id = getNextEventId)
     events.synchronized(events ::= copiedEvent)
     Added()

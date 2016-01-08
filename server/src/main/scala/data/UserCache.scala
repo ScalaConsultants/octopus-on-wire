@@ -45,21 +45,18 @@ trait UserCache {
       }
     }.getOrElse(Future(None))
 
-  def getOrFetchUserFriends(tokenOpt: Option[String]): Future[Set[UserId]] =
-    tokenOpt match {
-      case Some(token) =>
-        getUserIdByToken(token).flatMap {
-          case Some(userId) => getUserFriends(userId).flatMap {
-            case Some(friends) => Future.successful(friends)
-            case _ => fetchUserFriends(token).map { friends =>
-              saveUserFriends(userId, friends)
-              friends
-            }
-          }
-          case _ => Future.successful(Set.empty)
-        }
-      case _ => Future.successful(Set.empty)
+  def getOrFetchUserFriends(token: String, id: UserId): Future[Set[UserId]] = {
+    val dbFriends = for {
+      Some(friends) <- getUserFriends(id)
+    } yield friends
+
+    dbFriends.fallbackTo {
+      fetchUserFriends(token).map { friends =>
+        saveUserFriends(id, friends)
+        friends
+      }
     }
+  }
 
   protected def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] = {
     GithubApi.getUserInfo(id, tokenOpt).map { result =>

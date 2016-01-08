@@ -5,7 +5,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
 
-object InMemoryUserCache extends UserCache {
+class InMemoryUserCache extends UserCache {
   private val tokenCache = TrieMap[String, UserId]()
   private val userCache = TrieMap[UserId, UserInfo]()
 

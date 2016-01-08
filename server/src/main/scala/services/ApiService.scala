@@ -14,8 +14,7 @@ import scalac.octopusonwire.shared.domain.FailedToAdd.{EventCantEndInThePast, Us
 import scalac.octopusonwire.shared.domain._
 
 class ApiService(tokenOpt: Option[String], userId: Option[UserId],
-                 eventSource: EventSource = PersistentEventSource,
-                 userCache: UserCache = PersistentUserCache) extends Api {
+                 eventSource: EventSource, userCache: UserCache) extends Api {
 
   val timeout = 10.seconds
 
@@ -73,16 +72,18 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
   }
 
   override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
-    Await.result(
-      userCache.getOrFetchUserFriends(tokenOpt).flatMap { friends =>
-        val joinsFuture = eventSource.getJoins(eventId).map(_.filterNot(userId contains).partition(friends contains))
-        joinsFuture.flatMap { case (joinedFriends, otherJoins) =>
-          val othersLimited = otherJoins take (limit - joinedFriends.size)
-          Future.sequence((joinedFriends ++ othersLimited).map(userCache.getOrFetchUserInfo(_, tokenOpt))).map(_.flatten)
-        }
-      },
-      timeout
-    )
+    (tokenOpt zip userId).map {
+      case (token, id) =>
+        Await.result(
+          userCache.getOrFetchUserFriends(token, id).flatMap { friends =>
+            val joinsFuture = eventSource.getJoins(eventId).map(_.filterNot(userId contains).partition(friends contains))
+            joinsFuture.flatMap { case (joinedFriends, otherJoins) =>
+              val othersLimited = otherJoins take (limit - joinedFriends.size)
+              Future.sequence((joinedFriends ++ othersLimited).map(userCache.getOrFetchUserInfo(_, tokenOpt))).map(_.flatten)
+            }
+          },
+          atMost = timeout)
+    }.headOption.getOrElse(Set.empty)
 
   override def addEvent(event: Event): EventAddition = {
     val eventIsInFuture = event.isInTheFuture
@@ -95,7 +96,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
         case Some(_) => Future.successful(FailedToAdd(EventCantEndInThePast))
         case _ => Future.successful(FailedToAdd(UserNotLoggedIn))
       },
-      timeout
+      atMost = timeout
     )
   }
 

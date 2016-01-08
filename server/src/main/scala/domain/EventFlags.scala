@@ -19,11 +19,10 @@ object EventFlags extends EventUserAbstractDaoCompanion[EventFlag, EventFlags] {
 
   val getFlaggers = getAllUserIdByEventId _
 
-  val countFlags = getCountByEventId _
-
   val userHasFlaggedEvent = getExistsByEventIdAndUserId _
 
-  def eventFlagsByUserId(id: UserId): Future[Seq[EventFlag]] = getByUserId(id)
+  def eventFlagsByUserId(idOpt: Option[UserId]): Future[Seq[EventFlag]] =
+    idOpt.map(getByUserId).getOrElse(Future.successful(Nil))
 
   def flagEvent(eventId: EventId, by: UserId): Future[Boolean] = Events.eventExists(eventId).flatMap {
     case true =>

@@ -59,13 +59,11 @@ object Events {
     }
 
   def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] = {
-    val uid = userId.getOrElse(NoUserId)
-
     val eventsInPeriod = db.run {
       eventQuery.filter(_.isBetween(from, to)).result
     }
 
-    val flagsByUser = EventFlags.eventFlagsByUserId(uid)
+    val flagsByUser = EventFlags.eventFlagsByUserId(userId)
 
     for {
       events <- eventsInPeriod
@@ -74,7 +72,6 @@ object Events {
   }
 
   def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: Long): Future[Seq[SimpleEvent]] = {
-    val uid = userId.getOrElse(UserId(-1))
 
     val eventsInFuture = db.run {
       eventQuery
@@ -82,7 +79,7 @@ object Events {
         .map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
-    val flagsByUser = EventFlags.eventFlagsByUserId(uid)
+    val flagsByUser = EventFlags.eventFlagsByUserId(userId)
 
     for {
       events <- eventsInFuture

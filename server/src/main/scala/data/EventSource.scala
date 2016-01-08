@@ -20,8 +20,6 @@ trait EventSource {
 
   def hasUserJoinedEvent(event: EventId, userId: UserId): Future[Boolean]
 
-  def countFlags(eventId: EventId): Future[Int]
-
   /**
     * @return false if the event was already flagged by user or doesn't exist
     *         //TODO "refactor to messages" opportunity?
