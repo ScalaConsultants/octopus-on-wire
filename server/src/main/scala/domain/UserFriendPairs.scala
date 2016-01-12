@@ -19,12 +19,20 @@ class UserFriendPairs(tag: Tag) extends Table[UserFriendPair](tag, "user_friends
 }
 
 object UserFriendPairs {
-  def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit = db.run{
+  def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit = db.run {
     userFriendPairs ++= friends.map(UserFriendPair(userId, _))
   }
 
   val db = DbConfig.db
 
+  /**
+    * @return `None` if at least one of these is true for `userId`:
+    *         <ul>
+    *         <li>no friends have been cached</li>
+    *         <li>no friends were cached list time they were fetched</li>
+    *         </ul>
+    *         a `Set` of `UserId`s otherwise.
+    **/
   def getUserFriends(userId: UserId): Future[Option[Set[UserId]]] = db.run {
     userFriendPairs.filter(_.userId === userId).map(_.friendId).result
   }.map { friends =>
