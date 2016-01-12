@@ -1,14 +1,13 @@
 package data
 
 import config.ServerConfig
+import tools.EventServerOps._
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
 import scala.language.postfixOps
-import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{EventNotFound, JoinSuccessful, AlreadyJoined}
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined, EventNotFound, JoinSuccessful}
 import scalac.octopusonwire.shared.domain._
-import tools.EventServerOps._
-
 
 object InMemoryEventSource extends InMemoryEventSource
 
@@ -89,11 +88,16 @@ class InMemoryEventSource extends EventSource {
       }
     }
 
-  private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
+  private def getNextEventId: EventId = EventId(
+    Option(events).filter(_.nonEmpty).map(_.map(_.id).maxBy(_.value).value + 1).getOrElse(1)
+  )
 
   override def addEvent(event: Event): EventAddition = {
     val copiedEvent = event.copy(id = getNextEventId)
     events.synchronized(events ::= copiedEvent)
     Added()
   }
+
+  override def sameOriginExists(event: Event): Boolean =
+    getEvents.exists(_.origin == event.origin)
 }
