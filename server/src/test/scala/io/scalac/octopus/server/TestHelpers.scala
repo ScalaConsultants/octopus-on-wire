@@ -14,21 +14,21 @@ private[server] object TestHelpers {
   val inMemoryEventSource = new InMemoryEventSource
   val inMemoryUserCache = new InMemoryUserCache
 
-  val authorizedApi = new ApiService(Some("token"), Some(UserId(1)), inMemoryEventSource, inMemoryUserCache)
+  class AuthorizedApi extends ApiService(Some("token"), Some(UserId(1)), inMemoryEventSource, inMemoryUserCache)
 
-  val authorizedApiWithJoinedPastEvents = new ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithJoinedPastEvents extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
     override def countPastJoinsBy(id: UserId): Future[Int] = Future.successful(ServerConfig.PastJoinsRequiredToAddEvents)
   }, inMemoryUserCache)
 
-  val authorizedApiWithOldEvent = new ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithOldEvent extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
     override def getEvents: List[Event] = oldEvent :: Nil
   }, inMemoryUserCache)
 
-  val authorizedApiWithFutureEvent = new ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithFutureEvent extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
     override def getEvents: List[Event] = sampleValidEvent :: Nil
   }, inMemoryUserCache)
 
-  val unauthorizedApi = new ApiService(None, None, inMemoryEventSource, inMemoryUserCache)
+  class UnauthorizedApi extends ApiService(None, None, inMemoryEventSource, inMemoryUserCache)
 
   val sampleValidEvent = {
     val start = System.currentTimeMillis() + 10.hours.toMillis

@@ -66,8 +66,11 @@ class InMemoryEventSource extends EventSource {
 
   override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] =
     Future {
-      eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
-      JoinSuccessful.apply
+      if (!eventJoins.get(eventId).exists(_ contains userId)) {
+        eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
+        JoinSuccessful.apply
+      }
+      else AlreadyJoined.apply
     }
 
   override def eventById(id: EventId): Future[Option[Event]] = Future(getEvents find (_.id == id))
