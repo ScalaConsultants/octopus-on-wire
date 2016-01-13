@@ -7,7 +7,7 @@ import slick.lifted.{ProvenShape, TableQuery, Tag}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.JoinSuccessful
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined, JoinSuccessful}
 import scalac.octopusonwire.shared.domain.{EventId, EventJoin, UserId, _}
 
 class EventJoins(tag: Tag) extends EventUserAbstractDao[EventJoin](tag, "event_joins") {
@@ -33,7 +33,11 @@ object EventJoins extends EventUserAbstractDaoCompanion[EventJoin, EventJoins] {
   val userHasJoinedEvent = getExistsByEventIdAndUserId _
 
   def joinEvent(eventId: EventId, by: UserId): Future[EventJoinMessage] =
-    db.run {
-      allQuery += EventJoin(eventId, by)
-    }.map(_ => JoinSuccessful.apply)
+    userHasJoinedEvent(eventId, by).flatMap {
+      case false =>
+        db.run {
+          allQuery += EventJoin(eventId, by)
+        }.map(_ => JoinSuccessful.apply)
+      case _ => Future.successful(AlreadyJoined.apply)
+    }
 }

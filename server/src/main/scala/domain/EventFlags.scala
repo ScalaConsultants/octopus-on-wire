@@ -24,11 +24,12 @@ object EventFlags extends EventUserAbstractDaoCompanion[EventFlag, EventFlags] {
   def eventFlagsByUserId(idOpt: Option[UserId]): Future[Seq[EventFlag]] =
     idOpt.map(getByUserId).getOrElse(Future.successful(Nil))
 
-  def flagEvent(eventId: EventId, by: UserId): Future[Boolean] = Events.eventExists(eventId).flatMap {
-    case true =>
-      db.run {
-        allQuery.returning(allQuery.map(_.eventId)) += EventFlag(eventId, by)
-      }.map(_ == eventId)
-    case _ => Future.successful(false)
-  }
+  def flagEvent(eventId: EventId, by: UserId): Future[Boolean] =
+    userHasFlaggedEvent(eventId, by).flatMap {
+      case false =>
+        db.run {
+          allQuery.returning(allQuery.map(_.eventId)) += EventFlag(eventId, by)
+        }.map(_ == eventId)
+      case _ => Future.successful(false)
+    }
 }

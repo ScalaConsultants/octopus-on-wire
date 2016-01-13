@@ -44,5 +44,9 @@ class PersistentEventSource extends EventSource {
   private def getFlaggers(eventId: EventId): Future[Set[UserId]] = EventFlags.getFlaggers(eventId)
 
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
-    EventFlags.flagEvent(eventId, by)
+  Events.eventExists(eventId).flatMap{
+    case true => EventFlags.flagEvent(eventId, by)
+    case _ => Future.successful(false)
+  }
+
 }
