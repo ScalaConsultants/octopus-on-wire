@@ -4,7 +4,6 @@ import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 

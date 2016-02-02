@@ -2,6 +2,7 @@ package services
 
 import config.ServerConfig.PastJoinsRequiredToAddEvents
 import data._
+import domain.TrustedUsers
 import tools.EventServerOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -85,20 +86,22 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
           atMost = timeout)
     }.headOption.getOrElse(Set.empty)
 
-  override def addEvent(event: Event): EventAddition = {
+  override def addEvent(event: Event): EventAddition = userId.map { uid =>
     val eventIsInFuture = event.isInTheFuture
-    val canAdd = getUserReputation().exists { case UserReputationInfo(rep, treshold) => rep >= treshold }
+
+    val canAddFuture = getUserReputationFuture(uid).map(_.canAddEvents)
+
+    val result = canAddFuture.flatMap {
+      case true if eventIsInFuture => eventSource.addEvent(event)
+      case _ if !eventIsInFuture => Future.successful(FailedToAdd(EventCantEndInThePast))
+      case _ => Future.successful(FailedToAdd(UserCantAddEventsYet))
+    }
 
     Await.result(
-      userId match {
-        case Some(_) if eventIsInFuture && canAdd => eventSource.addEvent(event)
-        case Some(_) if eventIsInFuture => Future.successful(FailedToAdd(UserCantAddEventsYet))
-        case Some(_) => Future.successful(FailedToAdd(EventCantEndInThePast))
-        case _ => Future.successful(FailedToAdd(UserNotLoggedIn))
-      },
+      result,
       atMost = timeout
     )
-  }
+  }.getOrElse(FailedToAdd(UserNotLoggedIn))
 
   override def flagEvent(eventId: EventId): Boolean =
     Await.result(
@@ -106,14 +109,19 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
       atMost = timeout
     )
 
+  private def getUserReputationFuture(id: UserId): Future[UserReputationInfo] = {
+    val isTrustedFuture = TrustedUsers.isUserTrusted(id)
+    val canAddFuture = eventSource.countPastJoinsBy(id).map { rep =>
+      UserReputationInfo(rep.toLong, PastJoinsRequiredToAddEvents)
+    }
+    (isTrustedFuture zip canAddFuture).map {
+      case (true, _) => TrustedReputationInfo
+      case (_, info) => info
+    }
+  }
+
   override def getUserReputation(): Option[UserReputationInfo] =
-    userId.map { id =>
-      Await.result(
-        eventSource.countPastJoinsBy(id)
-          .map { rep =>
-            UserReputationInfo(rep.toLong, PastJoinsRequiredToAddEvents)
-          },
-        timeout
-      )
+    userId.map(getUserReputationFuture).map { rep =>
+      Await.result(rep, timeout)
     }
 }
