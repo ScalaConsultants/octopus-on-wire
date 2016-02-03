@@ -39,9 +39,9 @@ CREATE TABLE user_friends (
 
 # --- !Downs
 
-DROP TABLE events;
-DROP TABLE event_flags;
-DROP TABLE event_joins;
-DROP TABLE tokens;
 DROP TABLE user_friends;
+DROP TABLE tokens;
+DROP TABLE event_joins;
+DROP TABLE event_flags;
 DROP TABLE users;
+DROP TABLE events;

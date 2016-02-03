@@ -40,7 +40,7 @@ object Event {
 case class EventId(value: Long){
   override def toString: String = this == NoId match{
     case true => "NoId"
-    case _ => super.toString
+    case _ => s"EventId($value)"
   }
 }
 

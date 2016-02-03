@@ -6,11 +6,15 @@ import boopickle.Default._
 import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
-import data.{PersistentEventSource, EventSource, PersistentUserCache, UserCache}
+import data._
+import domain.{EventJoins, Events}
+import play.Play
+import play.api.Logger
 import play.api.mvc._
 import services.{ApiService, GithubApi}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
@@ -18,6 +22,29 @@ import scalac.octopusonwire.shared.domain.EventId
 object Application extends Controller {
   val eventSource: EventSource = new PersistentEventSource
   val userCache: UserCache = new PersistentUserCache
+
+  //add dummy events on dev if no future events exist
+  if (Play.isDev) {
+    val futureEvents = Events.getFutureUnflaggedEvents(None, 1, System.currentTimeMillis)
+    futureEvents.filter(_.nonEmpty) foreach {_ => Logger.info("Future events exist, no adding")}
+    def eventsFuture = Future.sequence(DummyData.events.map(eventSource.addEvent))
+    def usersFuture = Future.sequence(DummyData.eventJoins.flatMap(_._2).map(userCache.getOrFetchUserInfo(_, None)))
+
+    val pairs = DummyData.eventJoins.toList.flatMap {
+      case (eventId, userIds) => userIds.map(uid => (eventId, uid))
+    }
+    def joinsFuture = Future.sequence(pairs.map((EventJoins.joinEvent _).tupled))
+
+    val addedJoins = for {
+      futureEvents <- futureEvents
+      if futureEvents.isEmpty
+      events <- eventsFuture
+      users <- usersFuture
+      joins <- joinsFuture
+    } yield joins
+
+    addedJoins foreach { _ => Logger.info("Added dummy events") }
+  }
 
   def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
     result.withHeaders(

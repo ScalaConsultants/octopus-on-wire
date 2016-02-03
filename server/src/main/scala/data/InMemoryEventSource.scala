@@ -12,9 +12,8 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined
 import scalac.octopusonwire.shared.domain._
 import scalac.octopusonwire.shared.tools.LongRangeOps._
 
-class InMemoryEventSource extends EventSource {
-
-  private var events: List[Event] = List(
+object DummyData{
+  val events: List[Event] = List(
     Event(EventId(1), "Warsaw Scala FortyFives - Scala Application Development #scala45pl", now + days(1), now + days(1) + hours(4), 3600000, "Politechnika Warszawska Wydział Matematyki i Nauk Informacyjnych, Koszykowa 75, Warsaw", "http://www.meetup.com/WarszawScaLa/events/225320171/"),
     Event(EventId(2), "Spark: Wprowadzenie - Poland CodiLime Tech Talk (Warsaw) - Meetup", now + days(3) + hours(4), now + days(3) + hours(12), 3600000, "Wydział MIMUW, Banacha 2, Warsaw", "http://www.meetup.com/Poland-CodiLime-Tech-Talk/events/226054818/"),
     Event(EventId(3), "Let's Scala few Apache Spark apps together - part 4! - Warsaw Scala Enthusiasts (Warsaw) - Meetup", now + days(6), now + days(6) + hours(8), 3600000, "Javeo, Stadion Narodowy, Warsaw", "http://www.meetup.com/WarszawScaLa/events/226075320/"),
@@ -25,12 +24,16 @@ class InMemoryEventSource extends EventSource {
     Event(EventId(8), "Best Scala event", now + days(28), now + days(28) + hours(8), 3600000, "Some nice place", "https://scalac.io")
   )
 
-  val eventJoins = TrieMap[EventId, Set[UserId]](
+  val eventJoins: Map[EventId, Set[UserId]] = Map(
     EventId(1) -> Set(1136843, 1548278, 10749622, 192549, 13625545, 1097302, 82964, 345056, 390629, 4959786, 5664242).map(UserId(_)),
     EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
   )
+}
+class InMemoryEventSource extends EventSource {
 
-  var addedJoins = false
+  private var events: List[Event] = DummyData.events
+
+  private val eventJoins = TrieMap[EventId, Set[UserId]]() ++ DummyData.eventJoins
 
   override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]] =
     Future.sequence {
