@@ -26,21 +26,23 @@ object Application extends Controller {
   //add dummy events on dev if no future events exist
   if (Play.isDev) {
     val futureEvents = Events.getFutureUnflaggedEvents(None, 1, System.currentTimeMillis)
-    futureEvents.filter(_.nonEmpty) foreach {_ => Logger.info("Future events exist, no adding")}
-    def eventsFuture = Future.sequence(DummyData.events.map(eventSource.addEvent))
-    def usersFuture = Future.sequence(DummyData.eventJoins.flatMap(_._2).map(userCache.getOrFetchUserInfo(_, None)))
+    futureEvents.filter(_.nonEmpty) foreach { _ => Logger.info("Future events exist, no adding") }
+    def eventsFuture = Future.sequence(DummyData.events.map(Events.addEventAndGetId))
+    def usersFuture = Future.sequence(DummyData.eventJoins.flatMap(_._2).map(userCache.getOrFetchUserInfo(_, Some("c5c47e539854455813c9ea310c0dd0396d2b7189"))))
 
     val pairs = DummyData.eventJoins.toList.flatMap {
-      case (eventId, userIds) => userIds.map(uid => (eventId, uid))
+      case (eventIndex, userIds) => userIds.map(uid => (eventIndex.value.toInt - 1, uid))
     }
-    def joinsFuture = Future.sequence(pairs.map((EventJoins.joinEvent _).tupled))
+    def joinsFuture(eventIds: Seq[EventId]) = Future.sequence(pairs.map {
+      case (eventIndex, uid) => eventSource.joinEvent(uid, eventIds(eventIndex))
+    })
 
     val addedJoins = for {
       futureEvents <- futureEvents
       if futureEvents.isEmpty
       events <- eventsFuture
       users <- usersFuture
-      joins <- joinsFuture
+      joins <- joinsFuture(events)
     } yield joins
 
     addedJoins foreach { _ => Logger.info("Added dummy events") }

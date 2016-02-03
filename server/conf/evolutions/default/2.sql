@@ -1,7 +1,7 @@
 # --- !Ups
 
 CREATE TABLE trusted_users (
-    id    BIGINT NOT NULL PRIMARY KEY
+    id    BIGINT NOT NULL PRIMARY KEY REFERENCES users(id)
 );
 
 # --- !Downs
