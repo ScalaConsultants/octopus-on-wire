@@ -28,7 +28,7 @@ object Application extends Controller {
     val futureEvents = Events.getFutureUnflaggedEvents(None, 1, System.currentTimeMillis)
     futureEvents.filter(_.nonEmpty) foreach { _ => Logger.info("Future events exist, no adding") }
     def eventsFuture = Future.sequence(DummyData.events.map(Events.addEventAndGetId))
-    def usersFuture = Future.sequence(DummyData.eventJoins.flatMap(_._2).map(userCache.getOrFetchUserInfo(_, Some("c5c47e539854455813c9ea310c0dd0396d2b7189"))))
+    def usersFuture = Future.sequence(DummyData.eventJoins.flatMap(_._2).map(userCache.getOrFetchUserInfo(_, None)))
 
     val pairs = DummyData.eventJoins.toList.flatMap {
       case (eventIndex, userIds) => userIds.map(uid => (eventIndex.value.toInt - 1, uid))
