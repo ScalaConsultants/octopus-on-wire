@@ -6,6 +6,15 @@
 
 A JavaScript widget for displaying upcoming Scala events on your website in a fully customizable widget.
 
+# About
+
+- Public Name: Event Rocket
+- Type: Growth, (possibly) Startup
+- Status: Crawling, pre-MVP
+- Goals for 2016: Deploy an MVP
+- Description: A distributed network of widgets promoting technical events. Serves information to website visitors in a similar fassion as online adverts do (but without being intrusive) - using the reach of our affiliates
+- Value to Scalac: Promoting our events, Gathering Data for Huntly
+
 # Usage
 
 Firstly, copy the ```octopus-on-wire.js``` file located in the ```client/dist``` directory of this repository to your project.

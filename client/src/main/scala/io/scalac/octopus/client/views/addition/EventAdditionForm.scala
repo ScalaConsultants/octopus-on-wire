@@ -65,7 +65,7 @@ class EventAdditionForm(val startDay: Date, octopusHome: Div) extends EventField
       case Added() =>
         showWithText(messageField, s"Your Event ${event.name} has been created.")
 
-        OctopusClient.refreshEvents(SliderViewOperations.list, octopusHome)
+        OctopusClient.refreshEvents(SliderViewOperations.list)
         timers.setTimeout(MoveToCalendarDelay)(EventCreateWindowOperations.closeWindow(octopusHome))
         timers.setTimeout(MoveToCalendarDelay + WindowOpenDelay) {
           EventCalendarWindow.open(octopusHome, new Date(event.startDate))

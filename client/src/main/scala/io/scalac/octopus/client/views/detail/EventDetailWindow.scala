@@ -65,7 +65,7 @@ object EventDetailWindow extends WindowOperations {
         octoApi.flagEvent(eventId).call().foreach { _ =>
           closeWindow(octopusHome)
           timers.setTimeout(ClientConfig.WindowLoadTime) {
-            OctopusClient.refreshEvents(SliderViewOperations.list, octopusHome)
+            OctopusClient.refreshEvents(SliderViewOperations.list)
           }
         }
       }

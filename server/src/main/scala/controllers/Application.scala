@@ -48,12 +48,18 @@ object Application extends Controller {
     addedJoins foreach { _ => Logger.info("Added dummy events") }
   }
 
-  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result =
-    result.withHeaders(
+  def CorsEnabled(result: Result)(implicit request: Request[Any]): Result ={
+    val newResult = result.withHeaders(
       ACCESS_CONTROL_ALLOW_ORIGIN -> request.headers(ORIGIN),
       ACCESS_CONTROL_ALLOW_HEADERS -> CONTENT_TYPE,
       ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true",
       CONTENT_TYPE -> MediaType.OCTET_STREAM.`type`)
+
+    request.headers.get(ORIGIN) match{
+      case Some(origin) => newResult.withHeaders(ACCESS_CONTROL_ALLOW_ORIGIN -> origin)
+      case _ => newResult
+    }
+  }
 
   def index = Action(Ok(views.html.index()))
 

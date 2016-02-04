@@ -39,10 +39,10 @@ object OctopusClient extends js.JSApp {
   def buildWidget(root: Div): Unit = {
     println(s"Starting")
     root.appendChild(octopusHome)
-    refreshEvents(list, octopusHome)
+    refreshEvents(list)
   }
 
-  def refreshEvents(list: UList, octopusHome: Div): Unit = {
+  def refreshEvents(list: UList): Unit = {
 
     octoApi.getFutureItems(ClientConfig.ItemsToFetch).call().map { items =>
 
