@@ -68,8 +68,8 @@ object EventCalendarWindow extends WindowOperations {
         ClientConfig.octoApi.getUserReputation().call().foreach { result =>
           window.replaceChild(result match {
             case None => loginToAddEventButton
-            case Some(UserReputationInfo(rep, treshold)) if rep >= treshold => addEventButton
-            case Some(UserReputationInfo(rep, treshold)) => joinEventsToAddView(treshold - rep)
+            case Some(rep) if rep.canAddEvents => addEventButton
+            case Some(UserReputationInfo(rep, threshold)) => joinEventsToAddView(threshold - rep)
           }, window.childNodes(1))
         }
 

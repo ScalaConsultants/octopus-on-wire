@@ -53,7 +53,10 @@ object Settings {
     "com.vmunier" %% "play-scalajs-scripts" % versions.playScripts,
     "org.webjars.bower" % "font-awesome" % "4.5.0" % Provided,
     "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
-    "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
+    "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
+    "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
+    "com.typesafe.play" %% "play-slick" % "1.1.1",
+    "com.typesafe.play" %% "play-slick-evolutions" % "1.1.1"
   ))
 
   /** Dependencies only used by the JS project (note the use of %%% instead of %%) */
