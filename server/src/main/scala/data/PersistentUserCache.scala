@@ -18,7 +18,7 @@ class PersistentUserCache extends UserCache {
 
   override def getUserFriends(userId: UserId): Future[Option[Set[UserId]]] = UserFriendPairs.getUserFriends(userId)
 
-  override def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit = {
+  override def saveUserFriends(userId: UserId, friends: Set[UserId], githubTokenOpt: Option[String]): Unit = {
     val saveUsersFuture = Future.sequence(friends.map(getOrFetchUserInfo(_, tokenOpt)))
 
     for {
