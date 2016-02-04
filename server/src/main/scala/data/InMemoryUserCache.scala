@@ -31,7 +31,7 @@ class InMemoryUserCache extends UserCache {
     userFriends.get(userId)
   }
 
-  override def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit = {
+  override def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit = {
     userFriends(userId) = friends
   }
 }

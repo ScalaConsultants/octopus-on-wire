@@ -7,7 +7,7 @@ import com.google.common.net.MediaType
 import config.Github._
 import config.{Github, Router, ServerConfig}
 import data._
-import domain.{EventJoins, Events}
+import domain.Events
 import play.Play
 import play.api.Logger
 import play.api.mvc._

@@ -18,7 +18,7 @@ trait UserCache {
 
   def getUserFriends(userId: UserId): Future[Option[Set[UserId]]]
 
-  def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit
+  def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit
 
   def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] =
     getUserInfo(id).flatMap {
@@ -52,7 +52,7 @@ trait UserCache {
 
     dbFriends.fallbackTo {
       fetchUserFriends(token).map { friends =>
-        saveUserFriends(id, friends)
+        saveUserFriends(id, friends, Some(token))
         friends
       }
     }

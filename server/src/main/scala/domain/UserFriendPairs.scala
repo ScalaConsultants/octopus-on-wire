@@ -29,7 +29,7 @@ object UserFriendPairs {
     * @return `None` if at least one of these is true for `userId`:
     *         <ul>
     *         <li>no friends have been cached</li>
-    *         <li>no friends were cached list time they were fetched</li>
+    *         <li>no friends were cached by the time they were fetched</li>
     *         </ul>
     *         a `Set` of `UserId`s otherwise.
     **/
