@@ -1,11 +1,12 @@
 package data
 
-import domain.{UserFriendPairs, TokenPairs, Users}
+import domain.{TokenPairs, UserFriendPairs, Users}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
-class PersistentUserCache extends UserCache{
+class PersistentUserCache extends UserCache {
 
   override def getUserInfo(id: UserId): Future[Option[UserInfo]] = Users.userById(id)
 
@@ -17,5 +18,11 @@ class PersistentUserCache extends UserCache{
 
   override def getUserFriends(userId: UserId): Future[Option[Set[UserId]]] = UserFriendPairs.getUserFriends(userId)
 
-  override def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit = UserFriendPairs.saveUserFriends(userId, friends)
+  override def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit = {
+    val saveUsersFuture = Future.sequence(friends.map(getOrFetchUserInfo(_, tokenOpt)))
+
+    for {
+      users <- saveUsersFuture
+    } yield UserFriendPairs.saveUserFriends(userId, friends)
+  }
 }
