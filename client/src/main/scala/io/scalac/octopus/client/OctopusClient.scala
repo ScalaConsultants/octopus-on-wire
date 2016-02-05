@@ -65,7 +65,10 @@ object OctopusClient extends js.JSApp {
 
             //next icon. Don't show it if there is nothing to slide to
             if (items.length > 1)
-              div(`class` := "next", title := "Next", onclick := { () => SliderViewOperations.moveToNextItem(list) })
+              img(
+                src := "/assets/images/next-icon.svg",
+                `class` := "next shake",
+                onclick := { () => SliderViewOperations.moveToNextItem(list) })
             else ""
 
           )).render
