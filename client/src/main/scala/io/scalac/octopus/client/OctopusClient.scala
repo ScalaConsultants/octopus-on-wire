@@ -59,7 +59,9 @@ object OctopusClient extends js.JSApp {
 
             //event preview
             span(`class` := "item-name", item.name,
-              onclick := { () => EventDetailWindow.open(item.id, octopusHome) }),
+              onclick := { () => EventDetailWindow.open(item.id, octopusHome) },
+              onmouseover := { () => EventDetailWindow.open(item.id, octopusHome) }
+            ),
 
             //next icon. Don't show it if there is nothing to slide to
             if (items.length > 1)
