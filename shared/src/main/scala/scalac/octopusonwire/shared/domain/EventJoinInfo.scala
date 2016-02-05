@@ -1,6 +1,6 @@
 package scalac.octopusonwire.shared.domain
 
-case class EventJoin(joinCount: Long, message: EventJoinMessage)
+case class EventJoinInfo(joinCount: Long, message: EventJoinMessage)
 case class EventJoinMessage(details: String)
 
 class EventJoinMessageBuilder{

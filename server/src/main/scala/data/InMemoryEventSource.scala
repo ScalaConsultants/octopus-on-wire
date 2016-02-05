@@ -1,20 +1,19 @@
 package data
 
-import config.ServerConfig
+import config.ServerConfig.MaxEventsInMonth
+import tools.EventServerOps._
 import tools.TimeHelpers._
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.language.postfixOps
-import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{EventNotFound, JoinSuccessful, AlreadyJoined}
+import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined, JoinSuccessful}
 import scalac.octopusonwire.shared.domain._
-import tools.EventServerOps._
+import scalac.octopusonwire.shared.tools.LongRangeOps._
 
-
-object InMemoryEventSource extends InMemoryEventSource
-
-class InMemoryEventSource extends EventSource {
-
-  private var events: List[Event] = List(
+object DummyData{
+  val events: List[Event] = List(
     Event(EventId(1), "Warsaw Scala FortyFives - Scala Application Development #scala45pl", now + days(1), now + days(1) + hours(4), 3600000, "Politechnika Warszawska Wydział Matematyki i Nauk Informacyjnych, Koszykowa 75, Warsaw", "http://www.meetup.com/WarszawScaLa/events/225320171/"),
     Event(EventId(2), "Spark: Wprowadzenie - Poland CodiLime Tech Talk (Warsaw) - Meetup", now + days(3) + hours(4), now + days(3) + hours(12), 3600000, "Wydział MIMUW, Banacha 2, Warsaw", "http://www.meetup.com/Poland-CodiLime-Tech-Talk/events/226054818/"),
     Event(EventId(3), "Let's Scala few Apache Spark apps together - part 4! - Warsaw Scala Enthusiasts (Warsaw) - Meetup", now + days(6), now + days(6) + hours(8), 3600000, "Javeo, Stadion Narodowy, Warsaw", "http://www.meetup.com/WarszawScaLa/events/226075320/"),
@@ -25,73 +24,83 @@ class InMemoryEventSource extends EventSource {
     Event(EventId(8), "Best Scala event", now + days(28), now + days(28) + hours(8), 3600000, "Some nice place", "https://scalac.io")
   )
 
-  val eventJoins = TrieMap[EventId, Set[UserId]](
+  val eventJoins: Map[EventId, Set[UserId]] = Map(
     EventId(1) -> Set(1136843, 1548278, 10749622, 192549, 13625545, 1097302, 82964, 345056, 390629, 4959786, 5664242).map(UserId(_)),
     EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
   )
+}
+class InMemoryEventSource extends EventSource {
 
-  var addedJoins = false
+  private var events: List[Event] = DummyData.events
 
-  def addFakeUserJoins(userId: UserId) =
-    if (!addedJoins) {
-      val oldEventCount = events.length
-      1 to ServerConfig.PastJoinsRequiredToAddEvents foreach { i =>
-        events ::= Event(EventId(i + oldEventCount), s"Some event $i", now - days(2), now - days(1), 3600000, "The cloud", "http://example.com")
-        eventJoins(EventId(i + oldEventCount)) = Set(userId)
+  private val eventJoins = TrieMap[EventId, Set[UserId]]() ++ DummyData.eventJoins
+
+  override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]] =
+    Future.sequence {
+      getEvents.filter(_.isInTheFuture).map { event =>
+        Future.successful(event) zip userId.map(hasUserFlagged(_, event.id)).getOrElse(Future.successful(false))
       }
-      addedJoins = true
-    }
+    }.map(_.collect { case (ev, joined) if !joined => ev.toSimple }.take(limit))
+
+  override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] =
+    Future.sequence {
+      getEvents.filter(e => e.startDate.inRange(from, to) || e.endDate.inRange(from, to)).map { event =>
+        Future.successful(event) zip userId.map(hasUserFlagged(_, event.id)).getOrElse(Future.successful(false))
+      }
+    }.map(_.collect { case (ev, joined) if !joined => ev }.take(MaxEventsInMonth))
+
+  private def hasUserFlagged(userId: UserId, eventId: EventId) =
+    Future(getFlaggers(eventId) contains userId)
 
   private val flags = TrieMap[EventId, Set[UserId]]()
 
-  override def getFlaggers(eventId: EventId): Set[UserId] = flags.getOrElse(eventId, Set.empty)
+  private def getFlaggers(eventId: EventId): Set[UserId] = flags.getOrElse(eventId, Set.empty)
 
-  override def countPastJoinsBy(id: UserId): Long =
-    getPastEvents.map { event =>
-      getJoins(event.id)
-        .find(_ == id).size
-    }.sum
+  override def countPastJoinsBy(id: UserId): Future[Int] =
+    getPastEvents.flatMap { pastEvents =>
+      Future.sequence(pastEvents.map { event =>
+        getJoins(event.id).map(_.find(_ == id).size)
+      }).map(_.sum)
+    }
 
-  override def getEvents: Seq[Event] = events
+  protected def getEvents: List[Event] = events
 
-  private def getPastEvents: Seq[Event] = getEvents.filterNot(_ isInTheFuture)
+  private def getPastEvents: Future[Seq[Event]] = Future(getEvents.filterNot(_ isInTheFuture))
 
-  override def getEventsWhere(filter: (Event) => Boolean): Seq[Event] = events.filter(filter)
-
-  override def joinEvent(userId: UserId, eventId: EventId): EventJoinMessage =
-    eventById(eventId).map(event => {
-      val alreadyJoined = eventJoins.get(eventId).exists(_ contains userId)
-      if (alreadyJoined) AlreadyJoined
-      else {
+  override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] =
+    Future {
+      if (!eventJoins.get(eventId).exists(_ contains userId)) {
         eventJoins(eventId) = eventJoins.getOrElse(eventId, Set.empty) + userId
-        JoinSuccessful
+        JoinSuccessful.apply
       }
-    }).getOrElse(EventNotFound).apply
+      else AlreadyJoined.apply
+    }
 
-  override def eventById(id: EventId): Option[Event] = getEvents find (_.id == id)
+  override def eventById(id: EventId): Future[Option[Event]] = Future(getEvents find (_.id == id))
 
-  override def countJoins(eventId: EventId): Long = eventJoins.getOrElse(eventId, Nil).size
+  override def countJoins(eventId: EventId): Future[Int] = Future(eventJoins.getOrElse(eventId, Nil).size)
 
-  override def getJoins(eventId: EventId): Set[UserId] = eventJoins.getOrElse(eventId, Set.empty[UserId])
+  override def getJoins(eventId: EventId): Future[Set[UserId]] = Future(eventJoins.getOrElse(eventId, Set.empty[UserId]))
 
-  override def hasUserJoinedEvent(event: EventId, userId: UserId): Boolean =
-    eventJoins.get(event).exists(_.contains(userId))
+  override def hasUserJoinedEvent(event: EventId, userId: UserId): Future[Boolean] =
+    Future(eventJoins.get(event).exists(_.contains(userId)))
 
-  override def countFlags(eventId: EventId): Long = getFlaggers(eventId).size
-
-  override def addFlag(eventId: EventId, by: UserId): Boolean =
-    eventById(eventId).exists { event =>
-      val alreadyFlagged = flags.get(eventId).exists(_ contains by)
-      if (alreadyFlagged) false
-      else {
-        flags(eventId) = getFlaggers(eventId) + by
-        true
+  override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
+    eventById(eventId).map {
+      _.exists {
+        event =>
+          val alreadyFlagged = flags.get(eventId).exists(_ contains by)
+          if (alreadyFlagged) false
+          else {
+            flags(eventId) = getFlaggers(eventId) + by
+            true
+          }
       }
     }
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
 
-  override def addEvent(event: Event): EventAddition = {
+  override def addEvent(event: Event): Future[EventAddition] = Future {
     val copiedEvent = event.copy(id = getNextEventId)
     events.synchronized(events ::= copiedEvent)
     Added()

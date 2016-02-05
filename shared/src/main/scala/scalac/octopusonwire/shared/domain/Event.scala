@@ -8,8 +8,6 @@ import scalac.octopusonwire.shared.tools.LongRangeOps._
 //Event sans validation
 class BaseEvent(val id: EventId, val name: String, val startDate: Long, val endDate: Long, val offset: Long, val location: String, val url: String) {
   def toSimple: SimpleEvent = SimpleEvent(id, name)
-
-  override def toString = s"BaseEvent($id, $name, $startDate, $endDate, $offset, $location, $url)"
 }
 
 case class Event(override val id: EventId, override val name: String,
@@ -39,7 +37,14 @@ object Event {
   ).filter(_._2 == false).keySet
 }
 
-case class EventId(value: Long)
+case class EventId(value: Long){
+  override def toString: String = this == NoId match{
+    case true => "NoId"
+    case _ => s"EventId($value)"
+  }
+}
+
+object NoId extends EventId(-1)
 
 case class SimpleEvent(id: EventId, name: String)
 
