@@ -108,6 +108,7 @@ object EventDetailWindow extends WindowOperations {
                     .getButton(joined, joinCount, eventActive)
                 ),
                 div(`class` := "octopus-event view-right",
+                  closingX(octopusHome),
                   twitterLink(event),
                   a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank"),
                   flagView
@@ -124,6 +125,13 @@ object EventDetailWindow extends WindowOperations {
       openWindow(window, octopusHome)
       Option((eventId, window))
   }
+
+  def closingX(octopusHome: Div): Anchor = a(
+    `class` := "octopus-link octopus-event-close",
+    onclick := { () =>
+      closeWindow(octopusHome)
+    }
+  ).render
 
   def twitterLink(event: Event): Anchor = {
     a(
