@@ -30,24 +30,24 @@ object EventDetailWindow extends WindowOperations {
 
   protected var eventWindow: EventWindowOption = None
 
-  def open(eventId: EventId, octopusHome: Div): Unit = {
+  def open(eventId: EventId, octopusHome: Div, eventType: String): Unit = {
     EventCalendarWindow.closeWindow(octopusHome)
     EventCreateWindowOperations.closeWindow(octopusHome)
-    eventWindow = switchWindow(eventId, octopusHome)
+    eventWindow = switchWindow(eventId, octopusHome, eventType)
   }
 
-  protected def switchWindow(eventId: EventId, octopusHome: Div): EventWindowOption = eventWindow match {
-    /*The event we want to display is the same as the one already displayed.
-      Close the window.*/
+  protected def switchWindow(eventId: EventId, octopusHome: Div, eventType: String): EventWindowOption = eventWindow match {
+    /*The event we want to display is the same as the one already displayed. */
     case Some((storedEventId, window)) if storedEventId == eventId =>
-      closeWindow(octopusHome)
-      None
+      eventWindow // do nothing, user will close either by clicking outside of detail or using X
 
     /*The window is visible, but the clicked event is another one.
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
-      closeWindow(octopusHome)
-      switchWindow(eventId, octopusHome)
+      if(eventType == "click") { // prevent from accidental hovers damaging
+        closeWindow(octopusHome)
+        switchWindow(eventId, octopusHome, eventType)
+      } else eventWindow
 
     /*The window is closed. Open it.*/
     case _ =>
