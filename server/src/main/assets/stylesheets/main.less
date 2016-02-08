@@ -3,6 +3,8 @@
 @max-width: 500px;
 @window-load-time: .3s;
 @window-max-height: 400px;
+
+@white: #fff;
 @blue-light: #5595c3;
 @blue-translucent: rgba(85, 149, 195, .2);
 @blue-dark: #0288D1;
@@ -306,13 +308,13 @@ body {
   cursor: pointer;
   transition: .1s;
   padding: 3px 10px;
-  color: @blue-dark;
-  background: white;
-  &:hover {
-    text-decoration: none;
-    color: white;
-    background: transparent;
-  }
+  color: white;
+}
+
+.octopus-event-join-rocket {
+  width: 65%;
+  height: 65%;
+  margin: auto;
 }
 
 .octopus-event-join-count {
@@ -590,4 +592,9 @@ body {
 	transform-origin: 50% 50%;
 	animation-iteration-count: infinite;
 	animation-timing-function: linear;
+}
+
+/* reset the default hover on links */
+a, a:hover, a:focus {
+  color: @white;
 }

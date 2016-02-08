@@ -41,7 +41,11 @@ class JoinButton(window: Div, eventId: EventId) {
 
   def getButton(joined: Boolean, joinCount: Long, active: Boolean): Div = {
     val buttonView = a(
-      s"${if (!joined) "+=1" else "\u2713"} ($joinCount)",
+      if (!joined) {
+        img(src := "/assets/images/rocket.png", `class` := "octopus-event-join-rocket").render
+      } else {
+        s"\u2713 ($joinCount)"
+      },
       `class` := "octopus-event-join-link",
       onclick := { () => joinEvent(joined) }
     ).render
