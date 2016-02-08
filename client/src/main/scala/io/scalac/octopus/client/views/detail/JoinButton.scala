@@ -24,7 +24,9 @@ class JoinButton(window: Div, eventId: EventId) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
         case EventJoinInfo(eventJoinCount, _) =>
           val left = window.firstChild
-          left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
+          dom.setTimeout({() =>
+            left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
+          }, 3.1 * 1000) /// consult this timeout with `octopus-rocket-flies` animation class in css
       }
     } else location assign Github.loginWithJoinUrl(dom.window.location.href, eventId)
 
@@ -40,14 +42,19 @@ class JoinButton(window: Div, eventId: EventId) {
   ).render
 
   def getButton(joined: Boolean, joinCount: Long, active: Boolean): Div = {
+    val rocket = img(src := "/assets/images/rocket.png", `class` := "octopus-event-join-rocket").render
+
     val buttonView = a(
       if (!joined) {
-        img(src := "/assets/images/rocket.png", `class` := "octopus-event-join-rocket").render
+        rocket
       } else {
         s"\u2713 ($joinCount)"
       },
       `class` := "octopus-event-join-link",
-      onclick := { () => joinEvent(joined) }
+      onclick := { () =>
+        rocket.classList.add("octopus-rocket-flies")
+        joinEvent(joined)
+      }
     ).render
 
     val infoView = p(s"$joinCount joined", `class` := "octopus-event-join-count").render
