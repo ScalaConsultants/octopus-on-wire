@@ -26,7 +26,7 @@ class JoinButton(window: Div, eventId: EventId) {
           val left = window.firstChild
           dom.setTimeout({() =>
             left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
-          }, 3.1 * 1000) /// consult this timeout with `octopus-rocket-flies` animation class in css
+          }, 3 * 1000) /// consult this timeout with `octopus-rocket-flies` animation class in css
       }
     } else location assign Github.loginWithJoinUrl(dom.window.location.href, eventId)
 
@@ -52,7 +52,7 @@ class JoinButton(window: Div, eventId: EventId) {
       },
       `class` := "octopus-event-join-link",
       onclick := { () =>
-        rocket.classList.add("octopus-rocket-flies")
+        rocket.classList.add("octopus-rocket-flying")
         joinEvent(joined)
       }
     ).render

@@ -5,6 +5,8 @@
 # Home page
 GET            /                                      controllers.Application.index
 
+GET            /plain                                 controllers.Application.plain
+
 #Apply CORS
 OPTIONS        /api/*path                             controllers.Application.options(path)
 

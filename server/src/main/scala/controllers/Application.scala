@@ -63,6 +63,8 @@ object Application extends Controller {
 
   def index = Action(Ok(views.html.index()))
 
+  def plain = Action(Ok(views.html.plain()))
+
   def RedirectTo(url: String, withToken: Option[String]) = Redirect(url).withCookies(Cookie(
     name = AccessTokenKey,
     value = withToken.getOrElse(""),

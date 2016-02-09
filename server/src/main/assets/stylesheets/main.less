@@ -96,7 +96,6 @@ body {
     }
     .next {
       flex: 0 0 16px;
-      //background: url("../images/next-icon.svg") no-repeat center / contain;
       width: 16px;
       height: 16px;
       cursor: pointer;
@@ -334,24 +333,20 @@ body {
   margin: auto;
 
   animation-name: rocket-anim;
-  animation-duration: 3.0s;
+  animation-duration: 4.0s;
   transform-origin: 50% 50%;
-  animation-iteration-count: 1;
+  animation-iteration-count: infinite;
   animation-timing-function: linear;
-
-  &:hover {
-    animation-name: none;
-  }
 }
 
-@keyframes rocket-flies-away-anim {
+@keyframes rocket-flying-anim {
   0% { transform: translate(0px, 0px);}
   100% { transform: translate(350px, -350px);}
 }
 
-.octopus-rocket-flies {
-  animation-name: rocket-flies-away-anim;
-  animation-duration: 3.0s;
+.octopus-rocket-flying {
+  animation-name: rocket-flying-anim;
+  animation-duration: 3.1s;
   animation-iteration-count: 1;
   animation-timing-function: cubic-bezier(.8,.1,1,.04);
 }
@@ -602,8 +597,6 @@ body {
   display: none;
   padding: 5px 12px;
   margin: 0 2px 0 5px;
-  //position: relative;
-  //bottom: 3px;
   color: white;
   transition: .2s;
 }

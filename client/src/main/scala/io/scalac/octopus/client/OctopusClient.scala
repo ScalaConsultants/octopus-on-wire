@@ -4,6 +4,7 @@ import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig._
+import io.scalac.octopus.client.tools.{HoverEvent, ClickEvent}
 import io.scalac.octopus.client.views.SliderViewOperations._
 import io.scalac.octopus.client.views.calendar.EventCalendarWindow
 import io.scalac.octopus.client.views.SliderViewOperations
@@ -59,8 +60,8 @@ object OctopusClient extends js.JSApp {
 
             //event preview
             span(`class` := "item-name", item.name,
-              onclick := { () => EventDetailWindow.open(item.id, octopusHome, "click") },
-              onmouseover := { () => EventDetailWindow.open(item.id, octopusHome, "hover") }
+              onclick := { () => EventDetailWindow.open(item.id, octopusHome, ClickEvent) },
+              onmouseover := { () => EventDetailWindow.open(item.id, octopusHome, HoverEvent) }
             ),
 
             //next icon. Don't show it if there is nothing to slide to
