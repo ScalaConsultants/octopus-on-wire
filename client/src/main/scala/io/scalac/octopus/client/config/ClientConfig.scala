@@ -9,7 +9,7 @@ import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.config.SharedConfig.BackendDomain
 
 object ClientConfig {
-  val EmptyListPlaceholderText = "Be the first one to launch an event!"
+  val EmptyListPlaceholderText = "Launch an event now for maximum visibility!"
 
   val TwitterSharingText: String = "I just found about %s - join me there!"
 

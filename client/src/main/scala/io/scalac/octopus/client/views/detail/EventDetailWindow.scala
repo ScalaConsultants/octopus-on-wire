@@ -71,7 +71,7 @@ object EventDetailWindow extends WindowOperations {
         }
       }
 
-      def flagView: Anchor = {
+      def flagIcon(): Anchor = {
         val canFlag = userInfo.isDefined && !flagging
         a(
           `class` := "octopus-link octopus-event-flag",
@@ -109,10 +109,10 @@ object EventDetailWindow extends WindowOperations {
                     .getButton(joined, joinCount, eventActive)
                 ),
                 div(`class` := "octopus-event view-right",
-                  closingX(octopusHome),
-                  twitterLink(event),
+                  closingXIcon(octopusHome),
+                  twitterLinkIcon(event),
                   a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank"),
-                  flagView
+                  flagIcon()
                 ),
                 bottomArrow
               ).map(_.render)
@@ -127,14 +127,14 @@ object EventDetailWindow extends WindowOperations {
       Option((eventId, window))
   }
 
-  def closingX(octopusHome: Div): Anchor = a(
+  def closingXIcon(octopusHome: Div): Anchor = a(
     `class` := "octopus-link octopus-event-close",
     onclick := { () =>
       closeWindow(octopusHome)
     }
   ).render
 
-  def twitterLink(event: Event): Anchor = {
+  def twitterLinkIcon(event: Event): Anchor = {
     a(
       href := s"https://twitter.com/intent/tweet?text=${TwitterSharingText.format(event.name).encode}&url=${event.url.encode}",
       `class` := "octopus-link octopus-twitter-link", target := "_blank"
