@@ -1,6 +1,6 @@
 package services
 
-import config.ServerConfig.PastJoinsRequiredToAddEvents
+import config.ServerConfig._
 import data._
 import domain.TrustedUsers
 import tools.EventServerOps._
@@ -111,12 +111,27 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
 
   private def getUserReputationFuture(id: UserId): Future[UserReputationInfo] = {
     val isTrustedFuture = TrustedUsers.isUserTrusted(id)
-    val canAddFuture = eventSource.countPastJoinsBy(id).map { rep =>
-      UserReputationInfo(rep.toLong, PastJoinsRequiredToAddEvents)
+    val pastJoinsFuture = eventSource.countPastJoinsBy(id)
+    val userFuture = userCache.getUserInfo(id)
+
+    for {
+      isTrusted <- isTrustedFuture
+      pastJoins <- pastJoinsFuture
+      user <- userFuture
+    } yield {
+      buildReputationResponse(isTrusted, pastJoins, user)
     }
-    (isTrustedFuture zip canAddFuture).map {
-      case (true, _) => TrustedReputationInfo
-      case (_, info) => info
+
+  }
+
+  private def buildReputationResponse(isTrusted: Boolean, pastJoins: Int, user: Option[UserInfo]): UserReputationInfo = {
+    val name = user.map(_.login).getOrElse("Event Explorer")
+    if (!isTrusted) {
+      // normal user
+      UserReputationInfo(name, pastJoins.toLong + 1, ReputationRequiredToAddEvents)
+    } else {
+      // trusted user
+      UserReputationInfo(name, pastJoins.toLong + ReputationRequiredToAddEvents + 1, ReputationRequiredToAddEvents)
     }
   }
 

@@ -17,9 +17,9 @@ class TrustedUsers(tag: Tag) extends Table[TrustedUser](tag, "trusted_users") {
 
 object TrustedUsers {
   val db = DbConfig.db
-  val users = TableQuery[TrustedUsers]
+  val trustedUsers = TableQuery[TrustedUsers]
 
   def isUserTrusted(userId: UserId): Future[Boolean] = db.run {
-    users.filter(_.id === userId).exists.result
+    trustedUsers.filter(_.id === userId).exists.result
   }
 }
