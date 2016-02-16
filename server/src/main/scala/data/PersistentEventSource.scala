@@ -36,7 +36,7 @@ class PersistentEventSource extends EventSource {
   override def eventById(id: EventId): Future[Option[Event]] = Events.findEventById(id)
 
   override def addEvent(event: Event): Future[EventAddition] =
-    Events.addEventAndGetId(event).map { //TODO: should check permission
+    Events.addEventAndGetId(event).map { 
       case NoId => FailedToAdd("Unknown error")
       case _ => Added()
     }
