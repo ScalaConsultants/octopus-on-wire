@@ -72,19 +72,33 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
     )
   }
 
-  override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] =
-    (tokenOpt zip userId).map {
-      case (token, id) =>
-        Await.result(
-          userCache.getOrFetchUserFriends(token, id).flatMap { friends =>
-            val joinsFuture = eventSource.getJoins(eventId).map(_.filterNot(userId contains).partition(friends contains))
-            joinsFuture.flatMap { case (joinedFriends, otherJoins) =>
-              val othersLimited = otherJoins take (limit - joinedFriends.size)
-              Future.sequence((joinedFriends ++ othersLimited).map(userCache.getOrFetchUserInfo(_, tokenOpt))).map(_.flatten)
-            }
-          },
-          atMost = timeout)
-    }.headOption.getOrElse(Set.empty)
+
+  override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] = {
+    val joinsFuture = eventSource.getJoins(eventId).flatMap { allEventJoins =>
+      (tokenOpt zip userId match {
+        //user is logged in
+        case Seq((token, id)) => userCache.getOrFetchUserFriends(token, id).map { friends =>
+          val (joinedFriends, otherJoins) = allEventJoins.filterNot(userId contains).partition(friends contains)
+
+          //in case the user has more friends than limit
+          val joinedFriendsLimited = joinedFriends take limit
+
+          val othersLimited = otherJoins take (limit - joinedFriendsLimited.size)
+          joinedFriendsLimited ++ othersLimited
+        }
+        // user not logged in
+        case _ => Future.successful(allEventJoins take limit)
+      }).flatMap { joins =>
+        Future.sequence(joins.map(userCache.getOrFetchUserInfo(_, tokenOpt)))
+          .map(_.flatten)
+      }
+    }
+
+    Await.result(
+      joinsFuture,
+      atMost = timeout
+    )
+  }
 
   override def addEvent(event: Event): EventAddition = userId.map { uid =>
     val eventIsInFuture = event.isInTheFuture
