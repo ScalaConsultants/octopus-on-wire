@@ -1,12 +1,14 @@
 package data
 
-import domain.{TokenPairs, UserFriendPairs, Users}
+import domain.{TrustedUsers, TokenPairs, UserFriendPairs, Users}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 class PersistentUserCache extends UserCache {
+
+  override def isUserTrusted(id: UserId): Future[Boolean] = TrustedUsers.isUserTrusted(id)
 
   override def getUserInfo(id: UserId): Future[Option[UserInfo]] = Users.userById(id)
 

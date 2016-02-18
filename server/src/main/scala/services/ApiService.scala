@@ -110,7 +110,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
     )
 
   private def getUserReputationFuture(id: UserId): Future[UserReputationInfo] = {
-    val isTrustedFuture = TrustedUsers.isUserTrusted(id)
+    val isTrustedFuture = userCache.isUserTrusted(id)
     val canAddFuture = eventSource.countPastJoinsBy(id).map { rep =>
       UserReputationInfo(rep.toLong, PastJoinsRequiredToAddEvents)
     }
