@@ -42,7 +42,7 @@ class JoinButton(window: Div, eventId: EventId) {
   ).render
 
   def getButton(joined: Boolean, joinCount: Long, active: Boolean): Div = {
-    val rocket = img(src := "/assets/images/rocket.png", `class` := "octopus-event-join-rocket").render
+    val rocket = img(src := "/assets/images/rocket.svg", `class` := "octopus-event-join-rocket").render
 
     val buttonView = a(
       if (!joined) {
