@@ -64,7 +64,7 @@ class JoinButton(window: Div, eventId: EventId) {
     val infoView = p(s"$joinCount joined", `class` := "octopus-event-join-count").render
 
     val wrapper = div(
-      `class` := "octopus-user-avatar-wrapper",
+      `class` := "octopus-user-avatar-wrapper" + (if (active) "" else " inactive"),
       userInfo.map {
         case user if active || joined => userAvatar(user, currentUser = true)
         case _ => "".render

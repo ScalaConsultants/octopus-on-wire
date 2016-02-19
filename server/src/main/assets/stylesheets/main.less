@@ -247,6 +247,10 @@ body {
 .octopus-user-avatar-wrapper {
   display: flex;
   height: 30px;
+  align-items: center;
+  &:not(.inactive) .current-user{
+    margin-right: @join-info-padding;
+  }
 }
 
 .octopus-user-avatar {
@@ -263,9 +267,6 @@ body {
   &:not(:hover) .octopus-user-nickname {
     visibility: hidden;
     opacity: 0;
-  }
-  &.current-user{
-    margin-right: @join-info-padding;
   }
 }
 
@@ -374,9 +375,7 @@ body {
 }
 
 .octopus-event-join-count {
-  display: flex;
-  height: 100%;
-  align-items: center;
+  font-family: sans-serif;
   color: white;
   order: -1;
   margin-right: 20px;
