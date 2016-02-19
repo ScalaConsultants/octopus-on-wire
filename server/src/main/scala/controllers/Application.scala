@@ -12,6 +12,7 @@ import play.Play
 import play.api.Logger
 import play.api.mvc._
 import services.{ApiService, GithubApi}
+import tools.{OffsetTime, TimeHelpers}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -25,7 +26,7 @@ object Application extends Controller {
 
   //add dummy events on dev if no future events exist
   if (Play.isDev) {
-    val futureEvents = Events.getFutureUnflaggedEvents(None, 1, System.currentTimeMillis)
+    val futureEvents = Events.getFutureUnflaggedEvents(None, 1, OffsetTime.serverCurrent)
     futureEvents.filter(_.nonEmpty) foreach { _ => Logger.info("Future events exist, no adding") }
     def eventsFuture = Future.sequence(DummyData.events.map(Events.addEventAndGetId))
     def usersFuture = Future.sequence(DummyData.eventJoins.flatMap(_._2).map(userCache.getOrFetchUserInfo(_, None)))
