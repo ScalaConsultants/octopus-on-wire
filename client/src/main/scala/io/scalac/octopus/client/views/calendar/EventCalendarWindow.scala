@@ -33,9 +33,9 @@ object EventCalendarWindow extends WindowOperations {
         None
       case None =>
         val window: Div = div(
-          div(),
           `class` := "octopus-window octopus-calendar closed",
-          div(),
+          div(), //template for calendar
+          div(), //template for message related to adding events
           div(`class` := "octopus-window-bottom-arrow arrow-left")
         ).render
 

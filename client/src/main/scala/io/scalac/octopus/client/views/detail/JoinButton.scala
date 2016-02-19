@@ -24,32 +24,36 @@ class JoinButton(window: Div, eventId: EventId) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
         case EventJoinInfo(eventJoinCount, _) =>
           val left = window.firstChild
-          dom.setTimeout({() =>
+          dom.setTimeout({ () =>
             left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
           }, 3 * 1000) /// consult this timeout with `octopus-rocket-flying` animation class in css
       }
     } else location assign Github.loginWithJoinUrl(dom.window.location.href, eventId)
 
-  def userAvatar(user: UserInfo): Anchor = a(
-    `class` := "octopus-user-avatar",
-    href := Github.buildUserPageUrl(user.login),
-    target := "_blank",
-    img(src := Github.buildUserAvatarUrl(user.userId, UserThumbSize)),
-    span(
-      `class` := "octopus-user-nickname",
-      user.login
-    )
-  ).render
+  def userAvatar(user: UserInfo, currentUser: Boolean): Anchor = {
+    val currentUserClass = if (currentUser) " current-user" else ""
+    a(
+      `class` := s"octopus-user-avatar$currentUserClass",
+      href := Github.buildUserPageUrl(user.login),
+      target := "_blank",
+      img(src := Github.buildUserAvatarUrl(user.userId, UserThumbSize)),
+      span(
+        `class` := "octopus-user-nickname",
+        user.login
+      )
+    ).render
+  }
 
   def getButton(joined: Boolean, joinCount: Long, active: Boolean): Div = {
-    val rocket = img(src := "/assets/images/rocket.svg", `class` := "octopus-event-join-rocket").render
+    val rocket = div(`class` := "octopus-event-join-rocket").render
 
     val buttonView = a(
       if (!joined) {
         rocket
       } else {
-        s"\u2713 ($joinCount)"
+        "\u2713"
       },
+      s"($joinCount)",
       `class` := "octopus-event-join-link",
       onclick := { () =>
         rocket.classList.add("octopus-rocket-flying")
@@ -62,14 +66,14 @@ class JoinButton(window: Div, eventId: EventId) {
     val wrapper = div(
       `class` := "octopus-user-avatar-wrapper",
       userInfo.map {
-        case user if active || joined => userAvatar(user)
+        case user if active || joined => userAvatar(user, currentUser = true)
         case _ => "".render
       },
       if (active) buttonView else infoView
     ).render
 
     octoApi.getUsersJoined(eventId, ClientConfig.UsersToDisplay).call().foreach(_.foreach { person =>
-      wrapper.appendChild(userAvatar(person))
+      wrapper.appendChild(userAvatar(person, currentUser = false))
     })
 
     wrapper
