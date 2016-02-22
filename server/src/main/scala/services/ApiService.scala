@@ -1,5 +1,6 @@
 package services
 
+import config.ServerConfig
 import config.ServerConfig._
 import data._
 import domain.TrustedUsers
@@ -128,10 +129,10 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
     val name = user.map(_.login).getOrElse("Event Explorer")
     if (!isTrusted) {
       // normal user
-      UserReputationInfo(name, pastJoins.toLong + 1, ReputationRequiredToAddEvents)
+      UserReputationInfo(name, pastJoins.toLong + ServerConfig.DefaultReputation, ReputationRequiredToAddEvents)
     } else {
       // trusted user
-      UserReputationInfo(name, pastJoins.toLong + ReputationRequiredToAddEvents + 1, ReputationRequiredToAddEvents)
+      UserReputationInfo(name, pastJoins.toLong + ReputationRequiredToAddEvents + ServerConfig.DefaultReputation, ReputationRequiredToAddEvents)
     }
   }
 

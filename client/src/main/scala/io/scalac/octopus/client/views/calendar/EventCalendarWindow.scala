@@ -62,7 +62,7 @@ object EventCalendarWindow extends WindowOperations {
         val joinEventsToAddView = (reputation: UserReputationInfo) =>
           div(
             `class` := "octopus-reinforce-copy",
-            s"Hi ${reputation.user}! " +
+            s"Hi ${reputation.userLogin}! " +
             s"To add your own events you have to build your reputation. " +
             s"To do that join ${reputation.eventAddThreshold} events via event rocket and attend them in real life. " +
             s"Your current reputation is ${reputation.userRep}. " +

@@ -8,4 +8,6 @@ object ServerConfig {
   val MaxEventsInMonth = 30
 
   val Domain = s".$BackendDomain"
+
+  val DefaultReputation = 1
 }
