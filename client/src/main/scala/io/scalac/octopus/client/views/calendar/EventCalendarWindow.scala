@@ -59,17 +59,21 @@ object EventCalendarWindow extends WindowOperations {
           href := Github.login(dom.location.href)
         ).render
 
-        val joinEventsToAddView = (howMany: Long) => div(
-          `class` := "octopus-calendar-create-event inactive",
-          s"$howMany more to create",
-          title := s"Join $howMany more events, and when they end, you'll be able to add your own events"
-        ).render
+        val joinEventsToAddView = (reputation: UserReputationInfo) =>
+          div(
+            `class` := "octopus-reinforce-copy",
+            s"Hi ${reputation.userLogin}! " +
+            s"To add your own events you have to build your reputation. " +
+            s"To do that join ${reputation.eventAddThreshold} events via event rocket and attend them in real life. " +
+            s"Your current reputation is ${reputation.userRep}. " +
+            s"Keep up the good work!"
+          ).render
 
         ClientConfig.octoApi.getUserReputation().call().foreach { result =>
           window.replaceChild(result match {
             case None => loginToAddEventButton
             case Some(rep) if rep.canAddEvents => addEventButton
-            case Some(UserReputationInfo(rep, threshold)) => joinEventsToAddView(threshold - rep)
+            case Some(rep) => joinEventsToAddView(rep)
           }, window.childNodes(1))
         }
 
