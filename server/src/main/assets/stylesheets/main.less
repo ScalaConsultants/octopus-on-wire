@@ -1,13 +1,14 @@
-@import "lib/bootstrap/less/bootstrap.less";
 @import "lib/font-awesome/less/font-awesome.less";
 
 @max-width: 500px;
 @window-load-time: .3s;
-@window-max-height: 400px;
+
 @blue-light: #5595c3;
 @blue-translucent: rgba(85, 149, 195, .2);
 @blue-dark: #0288D1;
 @gray-background: #455A64;
+
+@join-info-padding: 10px;
 
 html, body {
   width: 100%;
@@ -81,6 +82,7 @@ body {
         }
         &.item-name {
           flex: 1;
+          text-align: left;
         }
       }
     }
@@ -96,9 +98,9 @@ body {
     }
     .next {
       flex: 0 0 16px;
-      background: url("../images/next-icon.svg") no-repeat center / contain;
       width: 16px;
       height: 16px;
+      background: url("../images/next-icon.svg") no-repeat center / contain;
       cursor: pointer;
     }
 
@@ -136,7 +138,6 @@ body {
   align-items: flex-start;
   background: @blue-dark;
   max-width: @max-width;
-  max-height: @window-max-height;
   position: absolute;
   bottom: 100%;
   left: 0;
@@ -155,13 +156,21 @@ body {
 .octopus-event-view {
   flex-direction: row;
   justify-content: space-between;
+  padding-right: 5px; // win more space for the text and move buttons further to the right
+  align-items: stretch;
 }
 
 .octopus-event {
   display: flex;
   flex-direction: column;
+  &.view-left {
+    justify-content: space-between;
+  }
   &.view-right {
-    flex: 42px 0 0;
+    flex: 1 0 42px;
+    align-items: flex-end;
+    justify-content: space-around;
+    margin-top: -8px; // move detail buttons further up, without moving the whole content
   }
 }
 
@@ -185,8 +194,14 @@ body {
   cursor: pointer;
 }
 
+.octopus-event-close {
+  background: url("../images/close-icon.svg") no-repeat center / contain;
+  cursor: pointer;
+}
+
 .octopus-loading-text {
   color: white;
+  font-family: sans-serif;
 }
 
 .octopus-window-bottom-arrow {
@@ -209,19 +224,22 @@ body {
 }
 
 .octopus-event-name {
-  margin-top: 0;
+  margin: 0;
   font-size: 1.5em;
   font-family: sans-serif;
+  font-weight: 500;
   color: white;
 }
 
 .octopus-event-date {
+  margin: 10px 0 0;
   font-size: 1em;
   font-family: sans-serif;
   color: white;
 }
 
 .octopus-event-location {
+  margin: 10px 0;
   font-size: 1em;
   font-family: sans-serif;
   color: white;
@@ -230,6 +248,10 @@ body {
 .octopus-user-avatar-wrapper {
   display: flex;
   height: 30px;
+  align-items: center;
+  &:not(.inactive) .current-user{
+    margin-right: @join-info-padding;
+  }
 }
 
 .octopus-user-avatar {
@@ -262,6 +284,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
+  font-family: sans-serif;
 
   &:hover {
     text-decoration: none;
@@ -299,26 +322,68 @@ body {
 .octopus-event-join-link {
   cursor: pointer;
   transition: .1s;
-  padding: 3px 10px;
-  color: @blue-dark;
-  background: white;
-  &:hover {
-    text-decoration: none;
-    color: white;
-    background: transparent;
-  }
+  padding: 0 @join-info-padding 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  color: white;
+  font-family: sans-serif;
+}
+
+@keyframes rocket-anim {
+	0% { transform: translate(0px, 0px);}
+	74% { transform: translate(1px, -1px);}
+    76% { transform: translate(2px, -2px);}
+    78% { transform: translate(3px, -3px);}
+    80% { transform: translate(4px, -4px);}
+    82% { transform: translate(3px, -3px);}
+    84% { transform: translate(2px, -2px);}
+    86% { transform: translate(1px, -1px);}
+	88% { transform: translate(1px, -1px);}
+	90% { transform: translate(2px, -2px);}
+	92% { transform: translate(3px, -3px);}
+	94% { transform: translate(4px, -4px);}
+	96% { transform: translate(3px, -3px);}
+	98% { transform: translate(2px, -2px);}
+	100% { transform: translate(1px, -1px);}
+}
+
+.octopus-event-join-rocket {
+  background: url("../images/rocket.svg") no-repeat left / 80%;
+  width: 30px;
+  height: 30px;
+  margin: auto;
+
+  animation-name: rocket-anim;
+  animation-duration: 4.0s;
+  transform-origin: 50% 50%;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+
+  fill: white;
+}
+
+@keyframes rocket-flying-anim {
+  0% { transform: translate(0px, 0px);}
+  100% { transform: translate(350px, -350px);}
+}
+
+.octopus-rocket-flying {
+  animation-name: rocket-flying-anim;
+  animation-duration: 3.1s;
+  animation-iteration-count: 1;
+  animation-timing-function: cubic-bezier(.8,.1,1,.04);
 }
 
 .octopus-event-join-count {
-  display: flex;
-  height: 100%;
-  align-items: center;
+  font-family: sans-serif;
   color: white;
   order: -1;
   margin-right: 20px;
 }
 
 .octopus-calendar {
+  font-family: sans-serif;
   display: inline-flex;
   flex-direction: column;
   right: auto;
@@ -326,6 +391,7 @@ body {
     display: inline-block;
   }
   .trow {
+    line-height: 1.6em;
     display: flex;
     flex-wrap: nowrap;
     &:first-of-type {
@@ -334,7 +400,7 @@ body {
   }
   .tcell {
     flex: 14%;
-    font-size: 1em;
+    font-size: 16px;
     padding: 6px;
     color: white;
     position: relative;
@@ -416,9 +482,9 @@ body {
   align-self: center;
   display: flex;
   align-items: center;
+  text-decoration: none;
   .fa {
-    position: relative;
-    top: 1px;
+    margin: 0 5px;
   }
   &:not(.inactive) {
     cursor: pointer;
@@ -525,10 +591,14 @@ body {
     color: white;
   }
   .octopus-event-url-wrapper {
+    margin-top: 5px;
     margin-bottom: 20px;
   }
+  .octopus-event-hours {
+    margin: 10px 0;
+  }
   .octopus-message {
-    .hidden {
+    &.hidden {
       display: none;
     }
   }
@@ -555,8 +625,46 @@ body {
   display: none;
   padding: 5px 12px;
   margin: 0 2px 0 5px;
-  //position: relative;
-  //bottom: 3px;
   color: white;
   transition: .2s;
+}
+
+@keyframes shake-anim {
+	0% { transform: translate(0px, 0px);}
+	74% { transform: translate(1px, 0px);}
+    76% { transform: translate(2px, 0px);}
+    78% { transform: translate(3px, 0px);}
+    80% { transform: translate(4px, 0px);}
+    82% { transform: translate(3px, 0px);}
+    84% { transform: translate(2px, 0px);}
+    86% { transform: translate(1px, 0px);}
+	88% { transform: translate(1px, 0px);}
+	90% { transform: translate(2px, 0px);}
+	92% { transform: translate(3px, 0px);}
+	94% { transform: translate(4px, 0px);}
+	96% { transform: translate(3px, 0px);}
+	98% { transform: translate(2px, 0px);}
+	100% { transform: translate(1px, 0px);}
+}
+.shake{
+	animation-name: shake-anim;
+	animation-duration: 3.0s;
+	transform-origin: 50% 50%;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+}
+
+/* reset the default hover on links */
+a, a:hover, a:focus {
+  color: white;
+}
+
+/* Small text to explain functionality */
+.octopus-reinforce-copy {
+  font-size: 12px;
+  line-height: 14px;
+
+  width: 285px;
+
+  color: white;
 }

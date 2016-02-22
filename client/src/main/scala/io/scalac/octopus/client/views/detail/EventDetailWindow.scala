@@ -7,6 +7,7 @@ import io.scalac.octopus.client.config.ClientConfig.{TwitterSharingText, octoApi
 import io.scalac.octopus.client.config.{ClientConfig, Github}
 import io.scalac.octopus.client.tools.EncodableString.string2Encodable
 import io.scalac.octopus.client.tools.EventDateOps._
+import io.scalac.octopus.client.tools.{ClickEvent, UserEvent}
 import io.scalac.octopus.client.views.addition.EventCreateWindowOperations
 import io.scalac.octopus.client.views.calendar.EventCalendarWindow
 import io.scalac.octopus.client.views.{SliderViewOperations, WindowOperations}
@@ -30,26 +31,26 @@ object EventDetailWindow extends WindowOperations {
 
   protected var eventWindow: EventWindowOption = None
 
-  def open(eventId: EventId, octopusHome: Div): Unit = {
+  def open(eventId: EventId, octopusHome: Div, eventType: UserEvent): Unit = {
     EventCalendarWindow.closeWindow(octopusHome)
     EventCreateWindowOperations.closeWindow(octopusHome)
-    eventWindow = switchWindow(eventId, octopusHome)
+    eventWindow = switchWindow(eventId, octopusHome, eventType)
   }
 
-  protected def switchWindow(eventId: EventId, octopusHome: Div): EventWindowOption = eventWindow match {
-    /*The event we want to display is the same as the one already displayed.
-      Close the window.*/
+  protected def switchWindow(eventId: EventId, octopusHome: Div, eventType: UserEvent): EventWindowOption = eventWindow match {
+    /*The event we want to display is the same as the one already displayed. */
     case Some((storedEventId, window)) if storedEventId == eventId =>
-      closeWindow(octopusHome)
-      None
+      eventWindow // do nothing, user will close either by clicking outside of detail or using X
 
     /*The window is visible, but the clicked event is another one.
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
-      closeWindow(octopusHome)
-      switchWindow(eventId, octopusHome)
+      if(eventType == ClickEvent) { // prevent from accidental hovers damaging
+        closeWindow(octopusHome)
+        switchWindow(eventId, octopusHome, eventType)
+      } else eventWindow
 
-    /*The window is not opened. Open it.*/
+    /*The window is closed. Open it.*/
     case _ =>
       var flagging = false
 
@@ -70,7 +71,7 @@ object EventDetailWindow extends WindowOperations {
         }
       }
 
-      def flagView: Anchor = {
+      def flagIcon(): Anchor = {
         val canFlag = userInfo.isDefined && !flagging
         a(
           `class` := "octopus-link octopus-event-flag",
@@ -108,9 +109,10 @@ object EventDetailWindow extends WindowOperations {
                     .getButton(joined, joinCount, eventActive)
                 ),
                 div(`class` := "octopus-event view-right",
-                  twitterLink(event),
+                  closingXIcon(octopusHome),
+                  twitterLinkIcon(event),
                   a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank"),
-                  flagView
+                  flagIcon()
                 ),
                 bottomArrow
               ).map(_.render)
@@ -125,7 +127,14 @@ object EventDetailWindow extends WindowOperations {
       Option((eventId, window))
   }
 
-  def twitterLink(event: Event): Anchor = {
+  def closingXIcon(octopusHome: Div): Anchor = a(
+    `class` := "octopus-link octopus-event-close",
+    onclick := { () =>
+      closeWindow(octopusHome)
+    }
+  ).render
+
+  def twitterLinkIcon(event: Event): Anchor = {
     a(
       href := s"https://twitter.com/intent/tweet?text=${TwitterSharingText.format(event.name).encode}&url=${event.url.encode}",
       `class` := "octopus-link octopus-twitter-link", target := "_blank"

@@ -17,7 +17,7 @@ private[server] object TestHelpers {
   class AuthorizedApi extends ApiService(Some("token"), Some(UserId(1)), inMemoryEventSource, inMemoryUserCache)
 
   class AuthorizedApiWithJoinedPastEvents extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
-    override def countPastJoinsBy(id: UserId): Future[Int] = Future.successful(ServerConfig.PastJoinsRequiredToAddEvents)
+    override def countPastJoinsBy(id: UserId): Future[Int] = Future.successful(ServerConfig.ReputationRequiredToAddEvents)
   }, inMemoryUserCache)
 
   class AuthorizedApiWithOldEvent extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {

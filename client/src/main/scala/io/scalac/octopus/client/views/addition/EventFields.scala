@@ -27,7 +27,7 @@ trait EventFields {
     validateForm)
 
   val eventUrlField = addValidationListeners(p(
-    placeholder := "Event url",
+    placeholder := "Event URL",
     contenteditable := "true",
     `class` := "octopus-event-url"
   ).render, validateForm)
@@ -54,7 +54,8 @@ trait EventFields {
       startHourField, ":",
       startMinuteField, " to ",
       endHourField, ":", endMinuteWrapper.contents,
-      " Timezone: UTC ", timezoneHourField, ":", timezoneMinuteField
+      " Timezone: UTC ", timezoneHourField, ":", timezoneMinuteField,
+      `class` := "octopus-event-hours"
     ).render,
     eventLocationWrapper.contents,
     eventUrlWrapper.contents,

@@ -4,6 +4,7 @@ import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.config.ClientConfig
 import io.scalac.octopus.client.config.ClientConfig.octoApi
+import io.scalac.octopus.client.tools.ClickEvent
 import io.scalac.octopus.client.tools.DateOps._
 import io.scalac.octopus.client.tools.EventDateOps._
 import io.scalac.octopus.client.views.calendarview.{CalendarViewTemplate, CalendarTable}
@@ -33,7 +34,7 @@ class EventCalendar(window: Div, octopusHome: Div) extends CalendarViewTemplate(
   def openEventDetails(eventId: EventId)(e: MouseEvent) = {
     EventCalendarWindow.closeWindow(octopusHome)
     e.stopPropagation()
-    timers.setTimeout(ClientConfig.WindowOpenDelay)(EventDetailWindow.open(eventId, octopusHome))
+    timers.setTimeout(ClientConfig.WindowOpenDelay)(EventDetailWindow.open(eventId, octopusHome, ClickEvent))
   }
 
   override def calendarTable(current: Date, events: Seq[Event]): Div = {

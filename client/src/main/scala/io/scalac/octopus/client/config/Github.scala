@@ -8,7 +8,7 @@ object Github {
 
   val AuthorizeUrl = s"$RootPath/login/oauth/authorize"
 
-  val ClientId = "23d0d2f1f1cad53fd5f8"
+  val ClientId = "ab13541e20f48a23d7a6"  // "23d0d2f1f1cad53fd5f8"
 
   val LoginUrl = s"$AuthorizeUrl?client_id=$ClientId"
 
