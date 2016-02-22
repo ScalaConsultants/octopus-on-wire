@@ -2,12 +2,13 @@
 
 @max-width: 500px;
 @window-load-time: .3s;
-@window-max-height: 400px;
 
 @blue-light: #5595c3;
 @blue-translucent: rgba(85, 149, 195, .2);
 @blue-dark: #0288D1;
 @gray-background: #455A64;
+
+@join-info-padding: 10px;
 
 html, body {
   width: 100%;
@@ -81,6 +82,7 @@ body {
         }
         &.item-name {
           flex: 1;
+          text-align: left;
         }
       }
     }
@@ -98,6 +100,7 @@ body {
       flex: 0 0 16px;
       width: 16px;
       height: 16px;
+      background: url("../images/next-icon.svg") no-repeat center / contain;
       cursor: pointer;
     }
 
@@ -135,7 +138,6 @@ body {
   align-items: flex-start;
   background: @blue-dark;
   max-width: @max-width;
-  max-height: @window-max-height;
   position: absolute;
   bottom: 100%;
   left: 0;
@@ -155,14 +157,20 @@ body {
   flex-direction: row;
   justify-content: space-between;
   padding-right: 5px; // win more space for the text and move buttons further to the right
+  align-items: stretch;
 }
 
 .octopus-event {
   display: flex;
   flex-direction: column;
+  &.view-left {
+    justify-content: space-between;
+  }
   &.view-right {
-    flex: 42px 0 0;
-    margin-top: -20px; // move detail buttons further up, without moving the whole content
+    flex: 1 0 42px;
+    align-items: flex-end;
+    justify-content: space-around;
+    margin-top: -8px; // move detail buttons further up, without moving the whole content
   }
 }
 
@@ -193,6 +201,7 @@ body {
 
 .octopus-loading-text {
   color: white;
+  font-family: sans-serif;
 }
 
 .octopus-window-bottom-arrow {
@@ -215,19 +224,22 @@ body {
 }
 
 .octopus-event-name {
-  margin-top: 0;
+  margin: 0;
   font-size: 1.5em;
   font-family: sans-serif;
+  font-weight: 500;
   color: white;
 }
 
 .octopus-event-date {
+  margin: 10px 0 0;
   font-size: 1em;
   font-family: sans-serif;
   color: white;
 }
 
 .octopus-event-location {
+  margin: 10px 0;
   font-size: 1em;
   font-family: sans-serif;
   color: white;
@@ -236,6 +248,10 @@ body {
 .octopus-user-avatar-wrapper {
   display: flex;
   height: 30px;
+  align-items: center;
+  &:not(.inactive) .current-user{
+    margin-right: @join-info-padding;
+  }
 }
 
 .octopus-user-avatar {
@@ -268,6 +284,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
+  font-family: sans-serif;
 
   &:hover {
     text-decoration: none;
@@ -305,8 +322,12 @@ body {
 .octopus-event-join-link {
   cursor: pointer;
   transition: .1s;
-  padding: 3px 10px;
+  padding: 0 @join-info-padding 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   color: white;
+  font-family: sans-serif;
 }
 
 @keyframes rocket-anim {
@@ -328,6 +349,7 @@ body {
 }
 
 .octopus-event-join-rocket {
+  background: url("../images/rocket.svg") no-repeat left / 80%;
   width: 30px;
   height: 30px;
   margin: auto;
@@ -354,15 +376,14 @@ body {
 }
 
 .octopus-event-join-count {
-  display: flex;
-  height: 100%;
-  align-items: center;
+  font-family: sans-serif;
   color: white;
   order: -1;
   margin-right: 20px;
 }
 
 .octopus-calendar {
+  font-family: sans-serif;
   display: inline-flex;
   flex-direction: column;
   right: auto;
@@ -370,6 +391,7 @@ body {
     display: inline-block;
   }
   .trow {
+    line-height: 1.6em;
     display: flex;
     flex-wrap: nowrap;
     &:first-of-type {
@@ -378,7 +400,7 @@ body {
   }
   .tcell {
     flex: 14%;
-    font-size: 1em;
+    font-size: 16px;
     padding: 6px;
     color: white;
     position: relative;
@@ -460,9 +482,9 @@ body {
   align-self: center;
   display: flex;
   align-items: center;
+  text-decoration: none;
   .fa {
-    position: relative;
-    top: 1px;
+    margin: 0 5px;
   }
   &:not(.inactive) {
     cursor: pointer;
@@ -569,10 +591,14 @@ body {
     color: white;
   }
   .octopus-event-url-wrapper {
+    margin-top: 5px;
     margin-bottom: 20px;
   }
+  .octopus-event-hours {
+    margin: 10px 0;
+  }
   .octopus-message {
-    .hidden {
+    &.hidden {
       display: none;
     }
   }
