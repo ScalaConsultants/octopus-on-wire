@@ -31,21 +31,22 @@ trait UserCache {
       case someInfo => Future.successful(someInfo)
     }
 
-  def getOrFetchUserId(tokenOpt: Option[String]): Future[Option[UserId]] =
-    tokenOpt.map { token =>
-      getUserIdByToken(token).flatMap {
-        case None => fetchCurrentUserInfo(token).map { infoOpt =>
-          //update caches
-          infoOpt.foreach(user => {
-            saveUserInfo(user)
-            saveUserToken(token, user)
-          })
+  def getOrFetchUserId(token: String): Future[UserId] =
+    getUserIdByToken(token).flatMap {
+      case None => fetchCurrentUserInfo(token).flatMap { infoOpt =>
+        //update caches
+        infoOpt.foreach(user => {
+          saveUserInfo(user)
+          saveUserToken(token, user)
+        })
 
-          infoOpt.map(_.userId)
+        infoOpt match{
+          case Some(info) => Future.successful(info.userId)
+          case _ => Future.failed(new Exception("Invalid user token"))
         }
-        case someId => Future.successful(someId)
       }
-    }.getOrElse(Future(None))
+      case Some(id) => Future.successful(id)
+    }
 
   def getOrFetchUserFriends(token: String, id: UserId): Future[Set[UserId]] = {
     val dbFriends = for {

@@ -2,6 +2,7 @@ package io.scalac.octopus.server
 
 import config.ServerConfig
 import data.{InMemoryUserCache, InMemoryEventSource}
+import domain.UserIdentity
 import org.scalatest._
 import org.scalatest.time.{Hours, Span}
 import services.ApiService
@@ -14,21 +15,21 @@ private[server] object TestHelpers {
   val inMemoryEventSource = new InMemoryEventSource
   val inMemoryUserCache = new InMemoryUserCache
 
-  class AuthorizedApi extends ApiService(Some("token"), Some(UserId(1)), inMemoryEventSource, inMemoryUserCache)
+  class AuthorizedApi extends ApiService(Some(UserIdentity("token", UserId(1))), inMemoryEventSource, inMemoryUserCache)
 
-  class AuthorizedApiWithJoinedPastEvents extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithJoinedPastEvents extends ApiService(Some(UserIdentity("token", UserId(1))), new InMemoryEventSource {
     override def countPastJoinsBy(id: UserId): Future[Int] = Future.successful(ServerConfig.ReputationRequiredToAddEvents)
   }, inMemoryUserCache)
 
-  class AuthorizedApiWithOldEvent extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithOldEvent extends ApiService(Some(UserIdentity("token", UserId(1))), new InMemoryEventSource {
     override def getEvents: List[Event] = oldEvent :: Nil
   }, inMemoryUserCache)
 
-  class AuthorizedApiWithFutureEvent extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithFutureEvent extends ApiService(Some(UserIdentity("token", UserId(1))), new InMemoryEventSource {
     override def getEvents: List[Event] = sampleValidEvent :: Nil
   }, inMemoryUserCache)
 
-  class UnauthorizedApi extends ApiService(None, None, inMemoryEventSource, inMemoryUserCache)
+  class UnauthorizedApi extends ApiService(None, inMemoryEventSource, inMemoryUserCache)
 
   val sampleValidEvent = {
     val start = System.currentTimeMillis() + 10.hours.toMillis

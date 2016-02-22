@@ -2,7 +2,7 @@ package services
 
 import config.ServerConfig._
 import data._
-import domain.TrustedUsers
+import domain.UserIdentity
 import tools.EventServerOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,14 +14,14 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder._
 import scalac.octopusonwire.shared.domain.FailedToAdd.{EventCantEndInThePast, UserCantAddEventsYet, UserNotLoggedIn}
 import scalac.octopusonwire.shared.domain._
 
-class ApiService(tokenOpt: Option[String], userId: Option[UserId],
+class ApiService(userIdentity: Option[UserIdentity],
                  eventSource: EventSource, userCache: UserCache) extends Api {
 
   val timeout = 10.seconds
 
   override def getUserEventInfo(eventId: EventId): Option[UserEventInfo] = {
     val eventFuture = eventSource.eventById(eventId)
-    val userJoinedFuture = userId.map(eventSource.hasUserJoinedEvent(eventId, _)).getOrElse(Future.successful(false))
+    val userJoinedFuture = userIdentity.map(_.id).map(eventSource.hasUserJoinedEvent(eventId, _)).getOrElse(Future.successful(false))
     val joinCountFuture = eventSource.countJoins(eventId)
 
     val resultFuture = (for {
@@ -41,23 +41,23 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
   }
 
   override def getUserInfo(): Option[UserInfo] =
-    userId.flatMap { id =>
+    userIdentity.flatMap { case UserIdentity(token, id) =>
       Await.result(
-        awaitable = userCache.getOrFetchUserInfo(id, tokenOpt),
+        awaitable = userCache.getOrFetchUserInfo(id, Some(token)),
         atMost = timeout
       )
     }
 
   override def getFutureItems(limit: Int): Seq[SimpleEvent] =
-    Await.result(eventSource.getSimpleFutureEventsNotFlaggedByUser(userId, limit), timeout)
+    Await.result(eventSource.getSimpleFutureEventsNotFlaggedByUser(userIdentity.map(_.id), limit), timeout)
 
   override def getEventsForRange(from: Long, to: Long): Seq[Event] =
-    Await.result(eventSource.getEventsBetweenDatesNotFlaggedBy(from, to, userId), timeout)
+    Await.result(eventSource.getEventsBetweenDatesNotFlaggedBy(from, to, userIdentity.map(_.id)), timeout)
 
   override def joinEventAndGetJoins(eventId: EventId): EventJoinInfo = {
     val messageFuture = eventSource.eventById(eventId).flatMap { event =>
-      userId match {
-        case Some(id) if event.isDefined && event.exists(_ isInTheFuture) =>
+      userIdentity match {
+        case Some(UserIdentity(_, id)) if event.isDefined && event.exists(_ isInTheFuture) =>
           eventSource.joinEvent(id, eventId)
         case None => Future.successful(UserNotFound.apply)
         case _ if event.isDefined => Future.successful(TryingToJoinPastEvent.apply)
@@ -75,10 +75,10 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
 
   override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] = {
     val joinsFuture = eventSource.getJoins(eventId).flatMap { allEventJoins =>
-      (tokenOpt zip userId match {
+      (userIdentity match {
         //user is logged in
-        case Seq((token, id)) => userCache.getOrFetchUserFriends(token, id).map { friends =>
-          val (joinedFriends, otherJoins) = allEventJoins.filterNot(userId contains).partition(friends contains)
+        case Some(UserIdentity(token, id)) => userCache.getOrFetchUserFriends(token, id).map { friends =>
+          val (joinedFriends, otherJoins) = allEventJoins.filterNot(_ == id).partition(friends contains)
 
           //in case the user has more friends than limit
           val joinedFriendsLimited = joinedFriends take limit
@@ -89,7 +89,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
         // user not logged in
         case _ => Future.successful(allEventJoins take limit)
       }).flatMap { joins =>
-        Future.sequence(joins.map(userCache.getOrFetchUserInfo(_, tokenOpt)))
+        Future.sequence(joins.map(userCache.getOrFetchUserInfo(_, userIdentity.map(_.token))))
           .map(_.flatten)
       }
     }
@@ -100,7 +100,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
     )
   }
 
-  override def addEvent(event: Event): EventAddition = userId.map { uid =>
+  override def addEvent(event: Event): EventAddition = userIdentity.map { case UserIdentity(_, uid) =>
     val eventIsInFuture = event.isInTheFuture
 
     val canAddFuture = getUserReputationFuture(uid).map(_.canAddEvents)
@@ -119,7 +119,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
 
   override def flagEvent(eventId: EventId): Boolean =
     Await.result(
-      userId.map(eventSource.addFlag(eventId, _)).getOrElse(Future.successful(false)),
+      userIdentity.map(_.id).map(eventSource.addFlag(eventId, _)).getOrElse(Future.successful(false)),
       atMost = timeout
     )
 
@@ -150,7 +150,7 @@ class ApiService(tokenOpt: Option[String], userId: Option[UserId],
   }
 
   override def getUserReputation(): Option[UserReputationInfo] =
-    userId.map(getUserReputationFuture).map { rep =>
+    userIdentity.map(_.id).map(getUserReputationFuture).map { rep =>
       Await.result(rep, timeout)
     }
 }
