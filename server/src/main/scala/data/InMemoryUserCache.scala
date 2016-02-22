@@ -1,15 +1,22 @@
 package data
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
+import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 class InMemoryUserCache extends UserCache {
   private val tokenCache = TrieMap[String, UserId]()
   private val userCache = TrieMap[UserId, UserInfo]()
 
   private val userFriends = TrieMap[UserId, Set[UserId]]()
+
+  val trustedUsers: mutable.Set[UserId] = mutable.Set.empty
+
+  override def isUserTrusted(id: UserId): Future[Boolean] = Future {
+    trustedUsers contains id
+  }
 
   override def getUserInfo(id: UserId): Future[Option[UserInfo]] = Future {
     userCache.get(id)

@@ -8,6 +8,8 @@ import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
 
 trait UserCache {
+  def isUserTrusted(id: UserId): Future[Boolean]
+
   def getUserInfo(id: UserId): Future[Option[UserInfo]]
 
   def saveUserInfo(userInfo: UserInfo): Unit
