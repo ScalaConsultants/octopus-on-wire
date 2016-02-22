@@ -1,8 +1,7 @@
 package data
 
-import java.util.Calendar
-
-import domain.{Events, EventFlags, EventJoins}
+import domain.{EventFlags, EventJoins, Events}
+import tools.{OffsetTime, TimeHelpers}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -10,7 +9,7 @@ import scalac.octopusonwire.shared.domain._
 
 class PersistentEventSource extends EventSource {
   override def countPastJoinsBy(id: UserId): Future[Int] =
-    Events.countPastJoinsBy(id, currentUTC)
+    Events.countPastJoinsBy(id, OffsetTime.serverCurrent)
 
   override def countJoins(eventId: EventId): Future[Int] = EventJoins.countJoins(eventId)
 
@@ -20,13 +19,9 @@ class PersistentEventSource extends EventSource {
   override def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] =
     Events.getEventsBetweenDatesNotFlaggedBy(from, to, userId)
 
-  def currentUTC = {
-    val serverOffset = Calendar.getInstance.getTimeZone.getRawOffset
-    System.currentTimeMillis - serverOffset
-  }
 
   override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]] =
-    Events.getFutureUnflaggedEvents(userId, limit, currentUTC)
+    Events.getFutureUnflaggedEvents(userId, limit, OffsetTime.serverCurrent)
 
   override def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage] =
     EventJoins.joinEvent(eventId, userId)
@@ -48,5 +43,4 @@ class PersistentEventSource extends EventSource {
     case true => EventFlags.flagEvent(eventId, by)
     case _ => Future.successful(false)
   }
-
 }

@@ -4,6 +4,7 @@ import config.DbConfig.db
 import config.ServerConfig.MaxEventsInMonth
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
+import tools.{OffsetTime, TimeHelpers}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -31,9 +32,10 @@ class Events(tag: Tag) extends Table[Event](tag, "events") {
 
   def toSimpleTuple = (id, name)
 
-  def endsAfter(time: Long) = (endDate - offset) > time
+  def endsAfter(time: OffsetTime) = (endDate - offset) > time.value
 
-  def isBetween(from: Long, to: Long) = (endDate - offset).between(from, to) || (startDate - offset).between(from, to)
+  def isBetween(from: OffsetTime, to: OffsetTime) =
+    (endDate - offset).between(from.value, to.value) || (startDate - offset).between(from.value, to.value)
 }
 
 object Events {
@@ -41,13 +43,13 @@ object Events {
 
   val eventById = (id: EventId) => eventQuery.filter(_.id === id)
 
-  def countPastJoinsBy(id: UserId, currentUTC: Long): Future[Int] = {
-    val pastEvents = db.run{
-      eventQuery.filterNot(_.endsAfter(currentUTC)).map(_.toSimpleTuple).result
+  def countPastJoinsBy(id: UserId, currentTime: OffsetTime): Future[Int] = {
+    val pastEvents = db.run {
+      eventQuery.filterNot(_.endsAfter(currentTime)).map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
     val userJoins = EventJoins.eventJoinsByUserId(id)
-    for{
+    for {
       events <- pastEvents
       joins <- userJoins
     } yield events.count(ev => joins.map(_.eventId).contains(ev.id))
@@ -59,8 +61,9 @@ object Events {
     }
 
   def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] = {
+    val serverOffset = TimeHelpers.getServerOffset
     val eventsInPeriod = db.run {
-      eventQuery.filter(_.isBetween(from, to)).result
+      eventQuery.filter(_.isBetween(OffsetTime(from, serverOffset), OffsetTime(to,serverOffset))).result
     }
 
     val flagsByUser = EventFlags.eventFlagsByUserId(userId)
@@ -71,11 +74,11 @@ object Events {
     } yield events.filterNot(ev => flags.exists(_.eventId == ev.id)).take(MaxEventsInMonth)
   }
 
-  def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: Long): Future[Seq[SimpleEvent]] = {
-
+  def getFutureUnflaggedEvents(userId: Option[UserId], limit: Int, now: OffsetTime): Future[Seq[SimpleEvent]] = {
     val eventsInFuture = db.run {
       eventQuery
         .filter(_.endsAfter(now))
+        .sortBy(_.endDate)
         .map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
