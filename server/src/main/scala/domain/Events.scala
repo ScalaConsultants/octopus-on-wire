@@ -7,7 +7,7 @@ import slick.lifted.{ProvenShape, TableQuery, Tag}
 import tools.{OffsetTime, TimeHelpers}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scalac.octopusonwire.shared.domain._
 
 class Events(tag: Tag) extends Table[Event](tag, "events") {
@@ -94,8 +94,11 @@ object Events {
     eventQuery.returning(eventQuery.map(_.id)) += event
   }
 
-  def findEventById(id: EventId): Future[Option[Event]] = db.run {
-    eventById(id).result.headOption
+  def findEventById(id: EventId)(implicit ec: ExecutionContext): Future[Event] = db.run {
+    eventById(id).result
+  } flatMap {
+    case Seq(event) => Future.successful(event)
+    case _ => Future.failed(new Exception("Event not found"))
   }
 }
 

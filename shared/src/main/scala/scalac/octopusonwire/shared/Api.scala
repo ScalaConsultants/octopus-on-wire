@@ -1,5 +1,6 @@
 package scalac.octopusonwire.shared
 
+import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
 trait Api {
@@ -15,7 +16,7 @@ trait Api {
 
   def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo]
 
-  def addEvent(event: Event): EventAddition
+  def addEvent(event: Event): Future[EventAddition]
 
   def flagEvent(eventId: EventId): Boolean
 

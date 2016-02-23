@@ -10,48 +10,40 @@ import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
 trait UserCache {
   def isUserTrusted(id: UserId): Future[Boolean]
 
-  def getUserInfo(id: UserId): Future[Option[UserInfo]]
+  def getUserInfo(id: UserId): Future[UserInfo]
 
   def saveUserInfo(userInfo: UserInfo): Unit
 
-  def getUserIdByToken(token: String): Future[Option[UserId]]
+  def getUserIdByToken(token: String): Future[UserId]
 
   def saveUserToken(token: String, user: UserInfo): Unit
 
-  def getUserFriends(userId: UserId): Future[Option[Set[UserId]]]
+  def getUserFriends(userId: UserId): Future[Set[UserId]]
 
   def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit
 
-  def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] =
-    getUserInfo(id).flatMap {
-      case None => fetchUserInfo(id, tokenOpt).map { infoOpt =>
-        infoOpt foreach saveUserInfo
-        infoOpt
+  def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[UserInfo] =
+    getUserInfo(id).recoverWith { case _ =>
+      fetchUserInfo(id, tokenOpt).map { info =>
+        saveUserInfo(info)
+        info
       }
-      case someInfo => Future.successful(someInfo)
     }
 
   def getOrFetchUserId(token: String): Future[UserId] =
-    getUserIdByToken(token).flatMap {
-      case None => fetchCurrentUserInfo(token).flatMap { infoOpt =>
+    getUserIdByToken(token).recoverWith {
+      case _ => fetchCurrentUserInfo(token).flatMap { info =>
         //update caches
-        infoOpt.foreach(user => {
-          saveUserInfo(user)
-          saveUserToken(token, user)
-        })
-
-        infoOpt match{
-          case Some(info) => Future.successful(info.userId)
-          case _ => Future.failed(new Exception("Invalid user token"))
-        }
+        saveUserInfo(info)
+        saveUserToken(token, info)
+        Future.successful(info.userId)
+      }.recoverWith {
+        case _ => Future.failed(new Exception("Invalid user token"))
       }
-      case Some(id) => Future.successful(id)
     }
 
   def getOrFetchUserFriends(token: String, id: UserId): Future[Set[UserId]] = {
-    val dbFriends = for {
-      Some(friends) <- getUserFriends(id)
-    } yield friends
+    val dbFriends = getUserFriends(id)
 
     dbFriends.fallbackTo {
       fetchUserFriends(token).map { friends =>
@@ -61,20 +53,26 @@ trait UserCache {
     }
   }
 
-  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] = {
+  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[UserInfo] = {
     GithubApi.getUserInfo(id, tokenOpt).map { result =>
       val loginOpt = (result \ "login").asOpt[String]
       loginOpt.map(name => UserInfo(id, name))
+    }.flatMap {
+      case Some(info) => Future.successful(info)
+      case None => Future.failed(new Exception("User info not found"))
     }
   }
 
-  protected def fetchCurrentUserInfo(token: String): Future[Option[UserInfo]] = {
+  protected def fetchCurrentUserInfo(token: String): Future[UserInfo] = {
     GithubApi.getCurrentUserInfo(token)
-      .map { result =>
+      .flatMap { result =>
         val uid = (result \ "id").asOpt[Long].map(UserId)
         val ulogin = (result \ "login").asOpt[String]
 
-        (uid, ulogin).zipped.map((id, name) => UserInfo(id, name)).headOption
+        (uid zip ulogin).headOption match {
+          case Some((id, name)) => Future.successful(UserInfo(id, name))
+          case _ => Future.failed(new Exception("Invalid token"))
+        }
       }
   }
 

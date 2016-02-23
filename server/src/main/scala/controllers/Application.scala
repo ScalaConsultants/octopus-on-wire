@@ -70,7 +70,7 @@ object Application extends Controller {
     name = AccessTokenKey,
     value = withToken.getOrElse(""),
     maxAge = withToken.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
-    domain = Some(ServerConfig.Domain),
+    domain = Some(ServerConfig.CookieDomain),
     secure = false, //we don't have HTTPS yet
     httpOnly = true
   ))
@@ -108,7 +108,7 @@ object Application extends Controller {
   }
 
   def autowireApi(path: String) = Action.async(parse.raw) { implicit request =>
-    println(s"Request path: $path")
+    Logger.info(s"Request path: $path")
 
     val tokenCookie: Option[String] = request.cookies.get(Github.AccessTokenKey).map(_.value)
 

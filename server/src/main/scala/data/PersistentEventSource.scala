@@ -28,10 +28,10 @@ class PersistentEventSource extends EventSource {
 
   override def getJoins(eventId: EventId): Future[Set[UserId]] = EventJoins.getJoiners(eventId)
 
-  override def eventById(id: EventId): Future[Option[Event]] = Events.findEventById(id)
+  override def eventById(id: EventId): Future[Event] = Events.findEventById(id)
 
   override def addEvent(event: Event): Future[EventAddition] =
-    Events.addEventAndGetId(event).map { 
+    Events.addEventAndGetId(event).map {
       case NoId => FailedToAdd("Unknown error")
       case _ => Added()
     }
@@ -39,8 +39,8 @@ class PersistentEventSource extends EventSource {
   private def getFlaggers(eventId: EventId): Future[Set[UserId]] = EventFlags.getFlaggers(eventId)
 
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
-  Events.eventExists(eventId).flatMap{
-    case true => EventFlags.flagEvent(eventId, by)
-    case _ => Future.successful(false)
-  }
+    Events.eventExists(eventId).flatMap {
+      case true => EventFlags.flagEvent(eventId, by)
+      case _ => Future.successful(false)
+    }
 }

@@ -25,7 +25,7 @@ class ApiService(userIdentity: Option[UserIdentity],
     val joinCountFuture = eventSource.countJoins(eventId)
 
     val resultFuture = (for {
-      Some(event) <- eventFuture
+      event <- eventFuture
       joinResult <- userJoinedFuture
       joinCount <- joinCountFuture
     } yield {
@@ -41,7 +41,7 @@ class ApiService(userIdentity: Option[UserIdentity],
   }
 
   override def getUserInfo(): Option[UserInfo] =
-    userIdentity.flatMap { case UserIdentity(token, id) =>
+    userIdentity.map { case UserIdentity(token, id) =>
       Await.result(
         awaitable = userCache.getOrFetchUserInfo(id, Some(token)),
         atMost = timeout
@@ -57,12 +57,13 @@ class ApiService(userIdentity: Option[UserIdentity],
   override def joinEventAndGetJoins(eventId: EventId): EventJoinInfo = {
     val messageFuture = eventSource.eventById(eventId).flatMap { event =>
       userIdentity match {
-        case Some(UserIdentity(_, id)) if event.isDefined && event.exists(_ isInTheFuture) =>
+        case Some(UserIdentity(_, id)) if event.isInTheFuture =>
           eventSource.joinEvent(id, eventId)
         case None => Future.successful(UserNotFound.apply)
-        case _ if event.isDefined => Future.successful(TryingToJoinPastEvent.apply)
-        case _ => Future.successful(EventNotFound.apply)
+        case _ => Future.successful(TryingToJoinPastEvent.apply)
       }
+    } recoverWith {
+      case _ => Future.successful(EventNotFound.apply)
     }
 
     Await.result(
@@ -78,7 +79,7 @@ class ApiService(userIdentity: Option[UserIdentity],
       (userIdentity match {
         //user is logged in
         case Some(UserIdentity(token, id)) => userCache.getOrFetchUserFriends(token, id).map { friends =>
-          val (joinedFriends, otherJoins) = allEventJoins.filterNot(_ == id).partition(friends contains)
+          val (joinedFriends, otherJoins) = (allEventJoins - id).partition(friends contains)
 
           //in case the user has more friends than limit
           val joinedFriendsLimited = joinedFriends take limit
@@ -90,7 +91,6 @@ class ApiService(userIdentity: Option[UserIdentity],
         case _ => Future.successful(allEventJoins take limit)
       }).flatMap { joins =>
         Future.sequence(joins.map(userCache.getOrFetchUserInfo(_, userIdentity.map(_.token))))
-          .map(_.flatten)
       }
     }
 
@@ -100,22 +100,18 @@ class ApiService(userIdentity: Option[UserIdentity],
     )
   }
 
-  override def addEvent(event: Event): EventAddition = userIdentity.map { case UserIdentity(_, uid) =>
+  override def addEvent(event: Event): Future[EventAddition] = userIdentity.map { case UserIdentity(_, uid) =>
     val eventIsInFuture = event.isInTheFuture
 
     val canAddFuture = getUserReputationFuture(uid).map(_.canAddEvents)
 
-    val result = canAddFuture.flatMap {
+    canAddFuture.flatMap {
       case true if eventIsInFuture => eventSource.addEvent(event)
       case _ if !eventIsInFuture => Future.successful(FailedToAdd(EventCantEndInThePast))
       case _ => Future.successful(FailedToAdd(UserCantAddEventsYet))
     }
 
-    Await.result(
-      result,
-      atMost = timeout
-    )
-  }.getOrElse(FailedToAdd(UserNotLoggedIn))
+  }.getOrElse(Future.successful(FailedToAdd(UserNotLoggedIn)))
 
   override def flagEvent(eventId: EventId): Boolean =
     Await.result(
@@ -133,7 +129,7 @@ class ApiService(userIdentity: Option[UserIdentity],
       pastJoins <- pastJoinsFuture
       user <- userFuture
     } yield {
-      buildReputationResponse(isTrusted, pastJoins, user)
+      buildReputationResponse(isTrusted, pastJoins, Option(user))
     }
 
   }

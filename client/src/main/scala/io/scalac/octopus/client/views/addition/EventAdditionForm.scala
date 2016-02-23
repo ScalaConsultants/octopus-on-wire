@@ -1,5 +1,8 @@
 package io.scalac.octopus.client.views.addition
 
+import java.time.temporal.TemporalAccessor
+import java.time.{ZoneId, ZonedDateTime}
+
 import autowire._
 import boopickle.Default._
 import io.scalac.octopus.client.OctopusClient
@@ -11,6 +14,7 @@ import io.scalac.octopus.client.views.calendar.EventCalendarWindow
 import org.scalajs.dom.html.{Button, Div}
 import org.scalajs.dom.raw.MouseEvent
 
+import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.{Date, timers}
@@ -58,7 +62,7 @@ class EventAdditionForm(val startDay: Date, octopusHome: Div) extends EventField
   }
 
   //sends valid event to the server
-  def sendEvent(event: Event) = {
+  def sendEvent(event: Event): Unit = {
     showWithText(messageField, "Submitting event, please wait...")
     hide(submitButton)
     octoApi.addEvent(event).call().foreach {
