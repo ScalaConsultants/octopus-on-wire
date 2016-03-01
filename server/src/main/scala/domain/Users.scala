@@ -4,7 +4,7 @@ import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 class Users(tag: Tag) extends Table[UserInfo](tag, "users") {
@@ -18,12 +18,15 @@ class Users(tag: Tag) extends Table[UserInfo](tag, "users") {
 }
 
 object Users {
-  def saveUserInfo(userInfo: UserInfo): Unit = db.run{
+  def saveUserInfo(userInfo: UserInfo): Unit = db.run {
     users.insertOrUpdate(userInfo)
   }
 
-  def userById(id: UserId): Future[Option[UserInfo]] = db.run{
-    users.filter(_.id === id).result.headOption
+  def userById(id: UserId)(implicit ec: ExecutionContext): Future[UserInfo] = db.run {
+    users.filter(_.id === id).result
+  }.flatMap {
+    case Seq(info) => Future.successful(info)
+    case _ => Future.failed(new Exception("User info not found"))
   }
 
   val db = DbConfig.db

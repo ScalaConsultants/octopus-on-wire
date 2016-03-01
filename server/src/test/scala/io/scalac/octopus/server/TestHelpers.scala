@@ -1,34 +1,43 @@
 package io.scalac.octopus.server
 
 import config.ServerConfig
-import data.{InMemoryUserCache, InMemoryEventSource}
+import data.{InMemoryEventSource, InMemoryUserCache}
+import domain.UserIdentity
 import org.scalatest._
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Hours, Span}
 import services.ApiService
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scalac.octopusonwire.shared.domain.{Event, EventId, UserId}
+import scalac.octopusonwire.shared.domain.{UserInfo, Event, EventId, UserId}
 
 private[server] object TestHelpers {
   val inMemoryEventSource = new InMemoryEventSource
   val inMemoryUserCache = new InMemoryUserCache
 
-  class AuthorizedApi extends ApiService(Some("token"), Some(UserId(1)), inMemoryEventSource, inMemoryUserCache)
+  val inMemoryUserCacheWithUser = new InMemoryUserCache{
+    override def getUserInfo(id: UserId): Future[UserInfo] = id match{
+      case uid@UserId(1) => Future.successful(UserInfo(uid, "Test user"))
+      case _ => super.getUserInfo(id)
+    }
+  }
 
-  class AuthorizedApiWithJoinedPastEvents extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApi extends ApiService(Some(UserIdentity("token", UserId(1))), inMemoryEventSource, inMemoryUserCacheWithUser)
+
+  class AuthorizedApiWithJoinedPastEvents extends ApiService(Some(UserIdentity("token", UserId(1))), new InMemoryEventSource {
     override def countPastJoinsBy(id: UserId): Future[Int] = Future.successful(ServerConfig.ReputationRequiredToAddEvents)
-  }, inMemoryUserCache)
+  }, inMemoryUserCacheWithUser)
 
-  class AuthorizedApiWithOldEvent extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithOldEvent extends ApiService(Some(UserIdentity("token", UserId(1))), new InMemoryEventSource {
     override def getEvents: List[Event] = oldEvent :: Nil
   }, inMemoryUserCache)
 
-  class AuthorizedApiWithFutureEvent extends ApiService(Some("token"), Some(UserId(1)), new InMemoryEventSource {
+  class AuthorizedApiWithFutureEvent extends ApiService(Some(UserIdentity("token", UserId(1))), new InMemoryEventSource {
     override def getEvents: List[Event] = sampleValidEvent :: Nil
   }, inMemoryUserCache)
 
-  class UnauthorizedApi extends ApiService(None, None, inMemoryEventSource, inMemoryUserCache)
+  class UnauthorizedApi extends ApiService(None, inMemoryEventSource, inMemoryUserCache)
 
   val sampleValidEvent = {
     val start = System.currentTimeMillis() + 10.hours.toMillis
@@ -42,4 +51,4 @@ private[server] object TestHelpers {
   }
 }
 
-trait OctoSpec extends FlatSpec with ShouldMatchers
+trait OctoSpec extends FlatSpec with ScalaFutures with ShouldMatchers

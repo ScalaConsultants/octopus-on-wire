@@ -37,8 +37,8 @@ object Event {
   ).filter(_._2 == false).keySet
 }
 
-case class EventId(value: Long){
-  override def toString: String = this == NoId match{
+case class EventId(value: Long) {
+  override def toString: String = this == NoId match {
     case true => "NoId"
     case _ => s"EventId($value)"
   }

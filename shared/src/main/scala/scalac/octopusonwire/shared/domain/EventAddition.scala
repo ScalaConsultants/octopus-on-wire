@@ -2,17 +2,21 @@ package scalac.octopusonwire.shared.domain
 
 sealed case class EventAddition(text: String)
 
-case object Added{
+case object Added {
   val prefix = "Added"
+
   def apply(): EventAddition = new EventAddition(prefix)
+
   def unapply(mess: EventAddition): Boolean = mess.text == prefix
 }
 
 case object FailedToAdd {
   val prefix = "Failed: "
+
   def apply(arg: String): EventAddition = new EventAddition(prefix + arg)
+
   def unapply(mess: EventAddition): Option[String] =
-    if(mess.text.startsWith(prefix))
+    if (mess.text.startsWith(prefix))
       Some(mess.text.drop(prefix.length))
     else None
 

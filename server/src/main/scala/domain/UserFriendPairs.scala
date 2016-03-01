@@ -33,14 +33,9 @@ object UserFriendPairs {
     *         </ul>
     *         a `Set` of `UserId`s otherwise.
     **/
-  def getUserFriends(userId: UserId): Future[Option[Set[UserId]]] = db.run {
+  def getUserFriends(userId: UserId): Future[Set[UserId]] = db.run {
     userFriendPairs.filter(_.userId === userId).map(_.friendId).result
-  }.map { friends =>
-    friends.isEmpty match {
-      case true => None
-      case _ => Some(friends.toSet)
-    }
-  }
+  }.map(_.toSet)
 
   val userFriendPairs = TableQuery[UserFriendPairs]
 }

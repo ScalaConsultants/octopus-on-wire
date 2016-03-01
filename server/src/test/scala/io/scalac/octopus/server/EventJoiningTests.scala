@@ -2,7 +2,6 @@ package io.scalac.octopus.server
 
 import io.scalac.octopus.server.TestHelpers._
 
-import scala.util.Try
 import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined, JoinSuccessful, TryingToJoinPastEvent}
 
 class EventJoiningTests extends OctoSpec {

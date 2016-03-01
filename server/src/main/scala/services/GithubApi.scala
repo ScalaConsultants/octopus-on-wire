@@ -31,13 +31,16 @@ object GithubApi {
   def getCurrentUserFollowing(token: String): Future[JsValue] =
     buildUserCall(UserFollowingUrl, token).get().map(_.json)
 
-  def getGithubToken(code: String): Future[Option[String]] = {
+  def getGithubToken(code: String): Future[String] = {
     val result = WS.url(Github.AccessTokenUrl)
       .withRequestTimeout(ApiRequestTimeout)
       .withHeaders(HeaderNames.ACCEPT -> "application/json")
       .withQueryString("client_id" -> ClientId, "client_secret" -> ClientSecret, "code" -> code)
       .post(EmptyContent())
 
-    result.map(r => (r.json \ AccessTokenKey).asOpt[String])
+    result.map(r => (r.json \ AccessTokenKey).asOpt[String]).flatMap{
+      case Some(token) => Future.successful(token)
+      case _ => Future.failed(new Exception("Invalid code"))
+    }
   }
 }

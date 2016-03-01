@@ -12,7 +12,7 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined
 import scalac.octopusonwire.shared.domain._
 import scalac.octopusonwire.shared.tools.LongRangeOps._
 
-object DummyData{
+object DummyData {
   val events: List[Event] = List(
     Event(EventId(1), "Warsaw Scala FortyFives - Scala Application Development #scala45pl", now + days(1), now + days(1) + hours(4), 3600000, "Politechnika Warszawska Wydział Matematyki i Nauk Informacyjnych, Koszykowa 75, Warsaw", "http://www.meetup.com/WarszawScaLa/events/225320171/"),
     Event(EventId(2), "Spark: Wprowadzenie - Poland CodiLime Tech Talk (Warsaw) - Meetup", now + days(3) + hours(4), now + days(3) + hours(12), 3600000, "Wydział MIMUW, Banacha 2, Warsaw", "http://www.meetup.com/Poland-CodiLime-Tech-Talk/events/226054818/"),
@@ -29,6 +29,7 @@ object DummyData{
     EventId(2) -> Set(13625545, 1097302, 82964, 345056, 390629, 4959786).map(UserId(_))
   )
 }
+
 class InMemoryEventSource extends EventSource {
 
   private var events: List[Event] = DummyData.events
@@ -76,7 +77,10 @@ class InMemoryEventSource extends EventSource {
       else AlreadyJoined.apply
     }
 
-  override def eventById(id: EventId): Future[Option[Event]] = Future(getEvents find (_.id == id))
+  override def eventById(id: EventId): Future[Event] = Future(getEvents find (_.id == id)) flatMap {
+    case Some(event) => Future.successful(event)
+    case None => Future.failed(new Exception("Event not found"))
+  }
 
   override def countJoins(eventId: EventId): Future[Int] = Future(eventJoins.getOrElse(eventId, Nil).size)
 
@@ -87,15 +91,13 @@ class InMemoryEventSource extends EventSource {
 
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
     eventById(eventId).map {
-      _.exists {
-        event =>
-          val alreadyFlagged = flags.get(eventId).exists(_ contains by)
-          if (alreadyFlagged) false
-          else {
-            flags(eventId) = getFlaggers(eventId) + by
-            true
-          }
-      }
+      event =>
+        val alreadyFlagged = flags.get(eventId).exists(_ contains by)
+        if (alreadyFlagged) false
+        else {
+          flags(eventId) = getFlaggers(eventId) + by
+          true
+        }
     }
 
   private def getNextEventId: EventId = EventId(events.map(_.id).maxBy(_.value).value + 1)
