@@ -4,21 +4,21 @@ import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
 trait Api {
-  def getFutureItems(limit: Int): Seq[SimpleEvent]
+  def getFutureItems(limit: Int): Future[Seq[SimpleEvent]]
 
-  def getEventsForRange(from: Long, to: Long): Seq[Event]
+  def getEventsForRange(from: Long, to: Long): Future[Seq[Event]]
 
-  def getUserEventInfo(eventId: EventId): Option[UserEventInfo]
+  def getUserEventInfo(eventId: EventId): Future[Option[UserEventInfo]]
 
-  def getUserInfo(): Option[UserInfo]
+  def getUserInfo(): Future[Option[UserInfo]]
 
-  def joinEventAndGetJoins(eventId: EventId): EventJoinInfo
+  def joinEventAndGetJoins(eventId: EventId): Future[EventJoinInfo]
 
-  def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo]
+  def getUsersJoined(eventId: EventId, limit: Int): Future[Set[UserInfo]]
 
   def addEvent(event: Event): Future[EventAddition]
 
-  def flagEvent(eventId: EventId): Boolean
+  def flagEvent(eventId: EventId): Future[Boolean]
 
-  def getUserReputation(): Option[UserReputationInfo]
+  def getUserReputation(): Future[Option[UserReputationInfo]]
 }

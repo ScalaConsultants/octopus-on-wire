@@ -19,12 +19,12 @@ class ApiService(userIdentity: Option[UserIdentity],
 
   val timeout = 10.seconds
 
-  override def getUserEventInfo(eventId: EventId): Option[UserEventInfo] = {
+  override def getUserEventInfo(eventId: EventId): Future[Option[UserEventInfo]] = {
     val eventFuture = eventSource.eventById(eventId)
     val userJoinedFuture = userIdentity.map(_.id).map(eventSource.hasUserJoinedEvent(eventId, _)).getOrElse(Future.successful(false))
     val joinCountFuture = eventSource.countJoins(eventId)
 
-    val resultFuture = (for {
+    (for {
       event <- eventFuture
       joinResult <- userJoinedFuture
       joinCount <- joinCountFuture
@@ -36,25 +36,20 @@ class ApiService(userIdentity: Option[UserIdentity],
         event isInTheFuture
       ))
     }).fallbackTo(Future.successful(None))
-
-    Await.result(resultFuture, timeout)
   }
 
-  override def getUserInfo(): Option[UserInfo] =
+  override def getUserInfo(): Future[Option[UserInfo]] =
     userIdentity.map { case UserIdentity(token, id) =>
-      Await.result(
-        awaitable = userCache.getOrFetchUserInfo(id, Some(token)),
-        atMost = timeout
-      )
-    }
+      userCache.getOrFetchUserInfo(id, Some(token)).map(Some.apply)
+    }.getOrElse(Future.successful(None))
 
-  override def getFutureItems(limit: Int): Seq[SimpleEvent] =
-    Await.result(eventSource.getSimpleFutureEventsNotFlaggedByUser(userIdentity.map(_.id), limit), timeout)
+  override def getFutureItems(limit: Int): Future[Seq[SimpleEvent]] =
+    eventSource.getSimpleFutureEventsNotFlaggedByUser(userIdentity.map(_.id), limit)
 
-  override def getEventsForRange(from: Long, to: Long): Seq[Event] =
-    Await.result(eventSource.getEventsBetweenDatesNotFlaggedBy(from, to, userIdentity.map(_.id)), timeout)
+  override def getEventsForRange(from: Long, to: Long): Future[Seq[Event]] =
+    eventSource.getEventsBetweenDatesNotFlaggedBy(from, to, userIdentity.map(_.id))
 
-  override def joinEventAndGetJoins(eventId: EventId): EventJoinInfo = {
+  override def joinEventAndGetJoins(eventId: EventId): Future[EventJoinInfo] = {
     val messageFuture = eventSource.eventById(eventId).flatMap { event =>
       userIdentity match {
         case Some(UserIdentity(_, id)) if event.isInTheFuture =>
@@ -66,15 +61,13 @@ class ApiService(userIdentity: Option[UserIdentity],
       case _ => Future.successful(EventNotFound.apply)
     }
 
-    Await.result(
-      messageFuture.flatMap { ejm =>
-        eventSource.countJoins(eventId).map(EventJoinInfo(_, ejm))
-      }, timeout
-    )
+    messageFuture.flatMap { ejm =>
+      eventSource.countJoins(eventId).map(EventJoinInfo(_, ejm))
+    }
   }
 
 
-  override def getUsersJoined(eventId: EventId, limit: Int): Set[UserInfo] = {
+  override def getUsersJoined(eventId: EventId, limit: Int): Future[Set[UserInfo]] = {
     val joinsFuture = eventSource.getJoins(eventId).flatMap { allEventJoins =>
       (userIdentity match {
         //user is logged in
@@ -94,10 +87,7 @@ class ApiService(userIdentity: Option[UserIdentity],
       }
     }
 
-    Await.result(
-      joinsFuture,
-      atMost = timeout
-    )
+    joinsFuture
   }
 
   override def addEvent(event: Event): Future[EventAddition] = userIdentity.map { case UserIdentity(_, uid) =>
@@ -113,11 +103,8 @@ class ApiService(userIdentity: Option[UserIdentity],
 
   }.getOrElse(Future.successful(FailedToAdd(UserNotLoggedIn)))
 
-  override def flagEvent(eventId: EventId): Boolean =
-    Await.result(
-      userIdentity.map(_.id).map(eventSource.addFlag(eventId, _)).getOrElse(Future.successful(false)),
-      atMost = timeout
-    )
+  override def flagEvent(eventId: EventId): Future[Boolean] =
+    userIdentity.map(_.id).map(eventSource.addFlag(eventId, _)).getOrElse(Future.successful(false))
 
   private def getUserReputationFuture(id: UserId): Future[UserReputationInfo] = {
     val isTrustedFuture = userCache.isUserTrusted(id)
@@ -145,8 +132,9 @@ class ApiService(userIdentity: Option[UserIdentity],
     }
   }
 
-  override def getUserReputation(): Option[UserReputationInfo] =
-    userIdentity.map(_.id).map(getUserReputationFuture).map { rep =>
-      Await.result(rep, timeout)
+  override def getUserReputation(): Future[Option[UserReputationInfo]] =
+    userIdentity match {
+      case Some(UserIdentity(_, id)) => getUserReputationFuture(id).map(Some.apply)
+      case None => Future.successful(None)
     }
 }
