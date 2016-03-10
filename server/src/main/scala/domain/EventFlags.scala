@@ -1,19 +1,20 @@
 package domain
 
+import com.google.inject.Inject
 import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scalac.octopusonwire.shared.domain.{EventFlag, EventId, UserId, _}
+import scalac.octopusonwire.shared.domain.{EventFlag, EventId, UserId}
 
 class EventFlags(tag: Tag) extends EventUserAbstractDao[EventFlag](tag, "event_flags") {
   override def * : ProvenShape[EventFlag] = toTuple <>(EventFlag.tupled, EventFlag.unapply)
 }
 
-object EventFlags extends EventUserAbstractDaoCompanion[EventFlag, EventFlags] {
-  val db = DbConfig.db
+class EventFlagDao @Inject() (dbConfig: DbConfig) extends EventUserAbstractDaoCompanion[EventFlag, EventFlags] {
+  override val db = dbConfig.db
 
   def allQuery = TableQuery[EventFlags]
 

@@ -1,12 +1,15 @@
 package data
 
+import com.google.inject.Inject
+import services.GithubApi
+
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
-class InMemoryUserCache extends UserCache {
+class InMemoryUserCache @Inject() (gh: GithubApi) extends UserCache {
   private val tokenCache = TrieMap[String, UserId]()
   private val userCache = TrieMap[UserId, UserInfo]()
 
@@ -41,4 +44,6 @@ class InMemoryUserCache extends UserCache {
   override def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit = {
     userFriends(userId) = friends
   }
+
+  override def githubApi: GithubApi = gh
 }

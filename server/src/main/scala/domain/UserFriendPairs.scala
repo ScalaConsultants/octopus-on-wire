@@ -1,5 +1,6 @@
 package domain
 
+import com.google.inject.Inject
 import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
@@ -18,12 +19,12 @@ class UserFriendPairs(tag: Tag) extends Table[UserFriendPair](tag, "user_friends
   def toTuple = (userId, friendId)
 }
 
-object UserFriendPairs {
+class UserFriendPairDao @Inject()(dbConfig: DbConfig) {
+  import dbConfig.db
+
   def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit = db.run {
     userFriendPairs ++= friends.map(UserFriendPair(userId, _))
   }
-
-  val db = DbConfig.db
 
   /**
     * @return `None` if at least one of these is true for `userId`:

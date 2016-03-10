@@ -1,8 +1,8 @@
 package domain
 
+import com.google.inject.Inject
 import config.DbConfig
 import slick.driver.PostgresDriver.api._
-import slick.jdbc.JdbcBackend
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,9 +14,8 @@ class EventJoins(tag: Tag) extends EventUserAbstractDao[EventJoin](tag, "event_j
   override def * : ProvenShape[EventJoin] = toTuple <>(EventJoin.tupled, EventJoin.unapply)
 }
 
-object EventJoins extends EventUserAbstractDaoCompanion[EventJoin, EventJoins] {
-
-  val db: JdbcBackend#DatabaseDef = DbConfig.db
+class EventJoinDao @Inject()(dbConfig: DbConfig) extends EventUserAbstractDaoCompanion[EventJoin, EventJoins] {
+  override val db = dbConfig.db
 
   val allQuery = TableQuery[EventJoins]
 

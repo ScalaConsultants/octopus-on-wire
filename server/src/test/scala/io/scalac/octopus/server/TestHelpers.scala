@@ -1,10 +1,13 @@
 package io.scalac.octopus.server
 
+import java.io.IOException
+
 import config.ServerConfig
-import data.{InMemoryUserCache, InMemoryEventSource}
+import data.{InMemoryEventSource, InMemoryUserCache}
 import org.scalatest._
 import org.scalatest.time.{Hours, Span}
-import services.ApiService
+import play.api.libs.ws.{WSClient, WSRequest}
+import services.{ApiService, GithubApi}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -12,7 +15,17 @@ import scalac.octopusonwire.shared.domain.{Event, EventId, UserId}
 
 private[server] object TestHelpers {
   val inMemoryEventSource = new InMemoryEventSource
-  val inMemoryUserCache = new InMemoryUserCache
+
+  val mockWSClient: WSClient = new WSClient {
+    override def underlying[T]: T = ???
+
+    override def url(url: String): WSRequest = ???
+
+    @throws[IOException]
+    override def close(): Unit = ???
+  }
+
+  val inMemoryUserCache = new InMemoryUserCache(new GithubApi(mockWSClient))
 
   class AuthorizedApi extends ApiService(Some("token"), Some(UserId(1)), inMemoryEventSource, inMemoryUserCache)
 

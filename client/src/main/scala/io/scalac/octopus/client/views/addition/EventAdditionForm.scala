@@ -12,7 +12,7 @@ import org.scalajs.dom.html.{Button, Div}
 import org.scalajs.dom.raw.MouseEvent
 
 import scala.language.postfixOps
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.{Date, timers}
 import scala.util.Try
 import scalac.octopusonwire.shared.domain.Event._

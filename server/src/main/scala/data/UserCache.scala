@@ -8,6 +8,8 @@ import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
 
 trait UserCache {
+  def githubApi: GithubApi
+
   def isUserTrusted(id: UserId): Future[Boolean]
 
   def getUserInfo(id: UserId): Future[Option[UserInfo]]
@@ -61,14 +63,14 @@ trait UserCache {
   }
 
   protected def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] = {
-    GithubApi.getUserInfo(id, tokenOpt).map { result =>
+    githubApi.getUserInfo(id, tokenOpt).map { result =>
       val loginOpt = (result \ "login").asOpt[String]
       loginOpt.map(name => UserInfo(id, name))
     }
   }
 
   protected def fetchCurrentUserInfo(token: String): Future[Option[UserInfo]] = {
-    GithubApi.getCurrentUserInfo(token)
+    githubApi.getCurrentUserInfo(token)
       .map { result =>
         val uid = (result \ "id").asOpt[Long].map(UserId)
         val ulogin = (result \ "login").asOpt[String]
@@ -78,7 +80,7 @@ trait UserCache {
   }
 
   def fetchUserFriends(token: String): Future[Set[UserId]] =
-    GithubApi.getCurrentUserFollowing(token).map {
+    githubApi.getCurrentUserFollowing(token).map {
       _.result.asOpt[Seq[JsValue]].toList.flatten
         .flatMap(friend => (friend \ "id").asOpt[Long]).map(UserId).toSet
     }
