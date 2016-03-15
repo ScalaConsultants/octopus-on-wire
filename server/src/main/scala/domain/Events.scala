@@ -64,7 +64,7 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
     }
 
   def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] = {
-    val serverOffset = TimeHelpers.getServerOffset
+    val serverOffset = TimeHelpers.readServerOffset()
     val eventsInPeriod = db.run {
       eventQuery.filter(_.isBetween(OffsetTime(from, serverOffset), OffsetTime(to, serverOffset))).result
     }

@@ -6,8 +6,8 @@ import domain.UserIdentity
 import tools.EventServerOps._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder._
@@ -19,29 +19,29 @@ class ApiService(userIdentity: Option[UserIdentity],
 
   val timeout = 10.seconds
 
-  override def getUserEventInfo(eventId: EventId): Future[Option[UserEventInfo]] = {
+  override def getUserEventInfo(eventId: EventId): Future[UserEventInfo] = {
     val eventFuture = eventSource.eventById(eventId)
     val userJoinedFuture = userIdentity.map(_.id).map(eventSource.hasUserJoinedEvent(eventId, _)).getOrElse(Future.successful(false))
     val joinCountFuture = eventSource.countJoins(eventId)
 
-    (for {
+    for {
       event <- eventFuture
       joinResult <- userJoinedFuture
       joinCount <- joinCountFuture
     } yield {
-      Option(UserEventInfo(
+      UserEventInfo(
         event,
         joinResult,
         joinCount,
         event isInTheFuture
-      ))
-    }).fallbackTo(Future.successful(None))
+      )
+    }
   }
 
-  override def getUserInfo(): Future[Option[UserInfo]] =
+  override def getUserInfo(): Future[UserInfo] =
     userIdentity.map { case UserIdentity(token, id) =>
-      userCache.getOrFetchUserInfo(id, Some(token)).map(Some.apply)
-    }.getOrElse(Future.successful(None))
+      userCache.getOrFetchUserInfo(id, Some(token))
+    }.getOrElse(Future.failed(new Exception("Couldn't fetch user info")))
 
   override def getFutureItems(limit: Int): Future[Seq[SimpleEvent]] =
     eventSource.getSimpleFutureEventsNotFlaggedByUser(userIdentity.map(_.id), limit)
@@ -132,9 +132,8 @@ class ApiService(userIdentity: Option[UserIdentity],
     }
   }
 
-  override def getUserReputation(): Future[Option[UserReputationInfo]] =
-    userIdentity match {
-      case Some(UserIdentity(_, id)) => getUserReputationFuture(id).map(Some.apply)
-      case None => Future.successful(None)
-    }
+  override def getUserReputation(): Future[UserReputationInfo] =
+    userIdentity map {
+      case UserIdentity(_, id) => getUserReputationFuture(id)
+    } getOrElse Future.failed(new Exception("User not logged in"))
 }

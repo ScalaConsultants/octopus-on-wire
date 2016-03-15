@@ -86,7 +86,7 @@ class Application @Inject()(eventSource: PersistentEventSource, userCache: Persi
 
   def autowireApi(path: String) = CorsEnabled {
     Action.async(parse.raw) { implicit request =>
-      println(s"Request path: $path")
+      Logger.info(s"Request path: $path")
 
       val tokenCookie: Option[String] = request.cookies.get(Github.AccessTokenKey).map(_.value)
 
@@ -112,7 +112,8 @@ class Application @Inject()(eventSource: PersistentEventSource, userCache: Persi
           router(req).map(buffer => {
             val data = Array.ofDim[Byte](buffer.remaining())
             buffer.get(data)
-            Ok(data).as(MediaType.OCTET_STREAM.toString)
+
+            Ok(data)
           })
         }
     }

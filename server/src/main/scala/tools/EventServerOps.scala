@@ -7,7 +7,7 @@ class EventServerOps(event: Event) {
   def isInTheFuture: Boolean = {
     val eventEndUTC = event.endDate - event.offset
 
-    eventEndUTC > TimeHelpers.currentUTC
+    eventEndUTC > TimeHelpers.currentUTC()
   }
 }
 
