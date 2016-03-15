@@ -13,23 +13,52 @@ A JavaScript widget for displaying upcoming Scala events on your website in a fu
 - Status: Crawling, pre-MVP
 - Goals for 2016: Deploy an MVP
 - Description: A distributed network of widgets promoting technical events. Serves information to website visitors in a similar fassion as online adverts do (but without being intrusive) - using the reach of our affiliates
-- Value to Scalac: Promoting our events, Gathering Data for Huntly
+- Value to Scalac: Promoting our events, Gathering data for Huntly
 
-# Usage
+# Client usage
 
-Firstly, copy the ```octopus-on-wire.js``` file located in the ```client/dist``` directory of this repository to your project.
-Then, embed it in the ```head``` section of your HTML file.
+**TODO**
 
-```html
-<script src="octopus-on-wire.js"></script>
-```
+# Server usage
 
-You can use the default stylesheet, which is ```client/dist/octopus-on-wire.min.css```, or provide your own.
+You'll need a running PostgreSQL instance.
 
-To embed the widget in e.g. a HTML element with a "root" id, add this line at the bottom of your body element.
+For development, the settings are as follows:
 
-```html
-<script>io.scalac.octopus.client.OctopusClient().buildWidget(document.getElementById("root"))</script>
-```
+	db_name = event_rocket
+	port = 5432
+	user = root
+	password = <empty>
+	
+You can change these defaults in `server/src/main/resources/application.conf`.
 
-That's it - the widget will be created in your root element.
+Once you have the database up and running, you can go on to run the application:
+
+	sbt run
+	
+or use IntelliJ IDEA's Play configuration to run the app.
+
+# Setup database
+
+### On Mac OS X
+
+Install postgres
+
+	brew install postgresql
+	
+Run postgres
+	
+	cd /usr/local/var/postgres
+	pg_ctl start -D . -l log
+
+Create user
+
+	createuser root
+
+Create database
+	
+	createdb event_rocket
+	
+Connect to database
+
+	psql -e event_rocket	

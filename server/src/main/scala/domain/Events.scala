@@ -1,6 +1,7 @@
 package domain
 
-import config.DbConfig.db
+import com.google.inject.Inject
+import config.DbConfig
 import config.ServerConfig.MaxEventsInMonth
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
@@ -38,7 +39,9 @@ class Events(tag: Tag) extends Table[Event](tag, "events") {
     (endDate - offset).between(from.value, to.value) || (startDate - offset).between(from.value, to.value)
 }
 
-object Events {
+class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlags: EventFlagDao) {
+  import dbConfig.db
+
   val eventQuery = TableQuery[Events]
 
   val eventById = (id: EventId) => eventQuery.filter(_.id === id)
@@ -48,7 +51,7 @@ object Events {
       eventQuery.filterNot(_.endsAfter(currentTime)).map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
-    val userJoins = EventJoins.eventJoinsByUserId(id)
+    val userJoins = eventJoins.eventJoinsByUserId(id)
     for {
       events <- pastEvents
       joins <- userJoins
@@ -63,10 +66,10 @@ object Events {
   def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] = {
     val serverOffset = TimeHelpers.getServerOffset
     val eventsInPeriod = db.run {
-      eventQuery.filter(_.isBetween(OffsetTime(from, serverOffset), OffsetTime(to,serverOffset))).result
+      eventQuery.filter(_.isBetween(OffsetTime(from, serverOffset), OffsetTime(to, serverOffset))).result
     }
 
-    val flagsByUser = EventFlags.eventFlagsByUserId(userId)
+    val flagsByUser = eventFlags.eventFlagsByUserId(userId)
 
     for {
       events <- eventsInPeriod
@@ -82,7 +85,7 @@ object Events {
         .map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
-    val flagsByUser = EventFlags.eventFlagsByUserId(userId)
+    val flagsByUser = eventFlags.eventFlagsByUserId(userId)
 
     for {
       events <- eventsInFuture

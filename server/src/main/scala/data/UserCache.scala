@@ -3,11 +3,12 @@ package data
 import play.api.libs.json.JsValue
 import services.GithubApi
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
+import scala.concurrent.{ExecutionContext, Future}
+import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 trait UserCache {
+  def githubApi: GithubApi
+
   def isUserTrusted(id: UserId): Future[Boolean]
 
   def getUserInfo(id: UserId): Future[UserInfo]
@@ -22,7 +23,7 @@ trait UserCache {
 
   def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit
 
-  def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[UserInfo] =
+  def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
     getUserInfo(id).recoverWith { case _ =>
       fetchUserInfo(id, tokenOpt).map { info =>
         saveUserInfo(info)
@@ -30,7 +31,7 @@ trait UserCache {
       }
     }
 
-  def getOrFetchUserId(token: String): Future[UserId] =
+  def getOrFetchUserId(token: String)(implicit ec: ExecutionContext): Future[UserId] =
     getUserIdByToken(token).recoverWith {
       case _ => fetchCurrentUserInfo(token).flatMap { info =>
         //update caches
@@ -42,7 +43,7 @@ trait UserCache {
       }
     }
 
-  def getOrFetchUserFriends(token: String, id: UserId): Future[Set[UserId]] = {
+  def getOrFetchUserFriends(token: String, id: UserId)(implicit ec: ExecutionContext): Future[Set[UserId]] = {
     val dbFriends = getUserFriends(id)
 
     dbFriends.fallbackTo {
@@ -53,8 +54,8 @@ trait UserCache {
     }
   }
 
-  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[UserInfo] = {
-    GithubApi.getUserInfo(id, tokenOpt).map { result =>
+  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] = {
+    githubApi.getUserInfo(id, tokenOpt).map { result =>
       val loginOpt = (result \ "login").asOpt[String]
       loginOpt.map(name => UserInfo(id, name))
     }.flatMap {
@@ -63,8 +64,8 @@ trait UserCache {
     }
   }
 
-  protected def fetchCurrentUserInfo(token: String): Future[UserInfo] = {
-    GithubApi.getCurrentUserInfo(token)
+  protected def fetchCurrentUserInfo(token: String)(implicit ec: ExecutionContext): Future[UserInfo] = {
+    githubApi.getCurrentUserInfo(token)
       .flatMap { result =>
         val uid = (result \ "id").asOpt[Long].map(UserId)
         val ulogin = (result \ "login").asOpt[String]
@@ -76,8 +77,8 @@ trait UserCache {
       }
   }
 
-  def fetchUserFriends(token: String): Future[Set[UserId]] =
-    GithubApi.getCurrentUserFollowing(token).map {
+  def fetchUserFriends(token: String)(implicit ec: ExecutionContext): Future[Set[UserId]] =
+    githubApi.getCurrentUserFollowing(token).map {
       _.result.asOpt[Seq[JsValue]].toList.flatten
         .flatMap(friend => (friend \ "id").asOpt[Long]).map(UserId).toSet
     }

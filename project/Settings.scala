@@ -7,10 +7,10 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
   */
 object Settings {
   /** The name of your application */
-  val name = "scalajs-spa"
+  val name = "octopus-on-wire"
 
   /** The version of your application */
-  val version = "1.0.2"
+  val version = "1.0.0"
 
   /** Options for the scala compiler */
   val scalacOptions = Seq(
@@ -27,16 +27,21 @@ object Settings {
 
   /** Declare global dependency versions here to avoid mismatches in multi part dependencies */
   object versions {
-    val scala = "2.11.7"
-    val scalaDom = "0.8.1"
-    val scalaRx = "0.2.8"
+    val scala = "2.11.8"
+    val scalaDom = "0.9.0"
+    val scalaRx = "0.3.1"
     val autowire = "0.2.5"
-    val booPickle = "1.1.0"
+    val booPickle = "1.1.2"
     val uTest = "0.3.1"
 
     val bootstrap = "3.3.2"
 
-    val playScripts = "0.3.0"
+    val scalatags = "0.5.4"
+    val scalatest = "2.2.6"
+    val playSlick = "2.0.0"
+    val postgres = "9.1-901-1.jdbc4"
+
+    val bower = "4.5.0"
   }
 
   /**
@@ -50,20 +55,19 @@ object Settings {
 
   /** Dependencies only used by the JVM project */
   val jvmDependencies = Def.setting(Seq(
-    "com.vmunier" %% "play-scalajs-scripts" % versions.playScripts,
-    "org.webjars.bower" % "font-awesome" % "4.5.0" % Provided,
+    "org.webjars.bower" % "font-awesome" % versions.bower % Provided,
     "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
-    "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
-    "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
-    "com.typesafe.play" %% "play-slick" % "1.1.1",
-    "com.typesafe.play" %% "play-slick-evolutions" % "1.1.1"
+    "org.scalatest" % "scalatest_2.11" % versions.scalatest % "test",
+    "postgresql" % "postgresql" % versions.postgres,
+    "com.typesafe.play" %% "play-slick" % versions.playSlick,
+    "com.typesafe.play" %% "play-slick-evolutions" % versions.playSlick
   ))
 
   /** Dependencies only used by the JS project (note the use of %%% instead of %%) */
   val scalajsDependencies = Def.setting(Seq(
     "org.scala-js" %%% "scalajs-dom" % versions.scalaDom,
     "com.lihaoyi" %%% "scalarx" % versions.scalaRx,
-    "com.lihaoyi" %%% "scalatags" % "0.4.6",
+    "com.lihaoyi" %%% "scalatags" % versions.scalatags,
     "com.lihaoyi" %%% "utest" % versions.uTest
   ))
 }

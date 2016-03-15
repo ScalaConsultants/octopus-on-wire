@@ -27,5 +27,5 @@ project/plugins/project/
 out
 *.sc
 
-client/dist/*
 server/src/main/resources/secret.conf
+**/*.DS_Store

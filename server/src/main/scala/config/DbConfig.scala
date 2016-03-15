@@ -1,11 +1,12 @@
 package config
 
-import play.api.Play
+import com.google.inject.{Inject, Singleton}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.driver.JdbcProfile
 import slick.jdbc.JdbcBackend
 
-object DbConfig {
-  private val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+@Singleton
+class DbConfig @Inject()(configProvider: DatabaseConfigProvider) {
+  val dbConfig = configProvider.get[JdbcProfile]
   val db: JdbcBackend#DatabaseDef = dbConfig.db
 }

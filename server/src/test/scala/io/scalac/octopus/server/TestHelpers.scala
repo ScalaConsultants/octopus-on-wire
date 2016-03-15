@@ -1,22 +1,37 @@
 package io.scalac.octopus.server
 
+import java.io.IOException
+
 import config.ServerConfig
 import data.{InMemoryEventSource, InMemoryUserCache}
 import domain.UserIdentity
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Hours, Span}
-import services.ApiService
+import play.api.libs.ws.{WSClient, WSRequest}
+import services.{ApiService, GithubApi}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scalac.octopusonwire.shared.domain.{UserInfo, Event, EventId, UserId}
+import scalac.octopusonwire.shared.domain.{Event, EventId, UserId, UserInfo}
 
 private[server] object TestHelpers {
   val inMemoryEventSource = new InMemoryEventSource
-  val inMemoryUserCache = new InMemoryUserCache
 
-  val inMemoryUserCacheWithUser = new InMemoryUserCache{
+  val mockWSClient: WSClient = new WSClient {
+    override def underlying[T]: T = ???
+
+    override def url(url: String): WSRequest = ???
+
+    @throws[IOException]
+    override def close(): Unit = ???
+  }
+
+  val githubApi = new GithubApi(mockWSClient)
+
+  val inMemoryUserCache = new InMemoryUserCache(githubApi)
+
+  val inMemoryUserCacheWithUser = new InMemoryUserCache(githubApi){
     override def getUserInfo(id: UserId): Future[UserInfo] = id match{
       case uid@UserId(1) => Future.successful(UserInfo(uid, "Test user"))
       case _ => super.getUserInfo(id)

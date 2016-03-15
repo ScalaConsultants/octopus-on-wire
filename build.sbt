@@ -41,23 +41,6 @@ lazy val client: Project = (project in file("client"))
   .enablePlugins(ScalaJSPlugin, ScalaJSPlay)
   .dependsOn(sharedJS)
 
-lazy val copyClientFile = taskKey[Iterable[sbt.File]]("Copy client file to a more significant name")
-copyClientFile := {
-  val paths: Map[String, String] =
-    Map("client/target/scala-2.11/client-fastopt.js" -> "client/dist/scripts/octopus-on-wire.js",
-      "server/target/web/less/main/stylesheets/main.min.css" -> "client/dist/styles/octopus-on-wire.min.css",
-      "server/target/web/public/images/next_icon.png" -> "client/dist/images/next_icon.png"
-    )
-  val toCopy: Map[sbt.File, sbt.File] = (for {
-    (src, dest) <- paths
-    original = file(src)
-    copied = file(dest)
-  } yield original -> copied).toMap
-
-  toCopy.foreach(p => IO.copyFile(p._1, p._2))
-  toCopy.values
-}
-
 
 // Client projects (just one in this case)
 lazy val clients = Seq(client)
@@ -74,7 +57,7 @@ lazy val server = (project in file("server"))
     // connect to the client project
     scalaJSProjects := clients,
     pipelineStages := Seq(scalaJSProd),
-//     compress CSS
+    // compress CSS
     LessKeys.compress in Assets := true
   )
   .enablePlugins(PlayScala)

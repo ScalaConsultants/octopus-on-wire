@@ -1,5 +1,6 @@
 package domain
 
+import com.google.inject.Inject
 import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
@@ -17,12 +18,13 @@ class TokenPairs(tag: Tag) extends Table[TokenPair](tag, "tokens") {
   def toTuple = (token, userId)
 }
 
-object TokenPairs {
+class TokenPairDao @Inject()(dbConfig: DbConfig) {
+
+  import dbConfig.db
+
   def saveUserToken(token: String, user: UserInfo): Unit = db.run {
     tokens.insertOrUpdate(TokenPair(token, user.userId))
   }
-
-  val db = DbConfig.db
 
   def userIdByToken(token: String)(implicit ec: ExecutionContext): Future[UserId] = db.run {
     tokens.filter(_.token === token).map(_.userId).result

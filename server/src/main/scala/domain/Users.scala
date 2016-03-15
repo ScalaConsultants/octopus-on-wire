@@ -1,5 +1,6 @@
 package domain
 
+import com.google.inject.Inject
 import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
@@ -17,8 +18,12 @@ class Users(tag: Tag) extends Table[UserInfo](tag, "users") {
   def toTuple = (id, login)
 }
 
-object Users {
-  def saveUserInfo(userInfo: UserInfo): Unit = db.run {
+class UserDao @Inject() (dbConfig: DbConfig){
+  import dbConfig.db
+
+  val users = TableQuery[Users]
+
+  def saveUserInfo(userInfo: UserInfo): Unit = db.run{
     users.insertOrUpdate(userInfo)
   }
 
@@ -28,7 +33,4 @@ object Users {
     case Seq(info) => Future.successful(info)
     case _ => Future.failed(new Exception("User info not found"))
   }
-
-  val db = DbConfig.db
-  val users = TableQuery[Users]
 }
