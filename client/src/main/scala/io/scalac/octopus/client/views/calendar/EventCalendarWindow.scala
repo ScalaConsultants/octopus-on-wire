@@ -6,10 +6,10 @@ import io.scalac.octopus.client.config.{ClientConfig, Github}
 import io.scalac.octopus.client.views.WindowOperations
 import io.scalac.octopus.client.views.addition.{DateSelector, EventCreateWindowOperations}
 import io.scalac.octopus.client.views.detail.EventDetailWindow
-import org.scalajs.dom
+import org.scalajs.dom.window.location
 import org.scalajs.dom.html.{Anchor, Div}
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.Date
 import scalac.octopusonwire.shared.domain.UserReputationInfo
 import scalatags.JsDom.all._
@@ -56,7 +56,7 @@ object EventCalendarWindow extends WindowOperations {
         val loginToAddEventButton: Anchor = a(
           `class` := "octopus-calendar-create-event",
           "Login to add events ", i(`class` := "fa fa-github"),
-          href := Github.login(dom.location.href)
+          href := Github.login(location.href)
         ).render
 
         val joinEventsToAddView = (reputation: UserReputationInfo) =>

@@ -1,5 +1,6 @@
 package domain
 
+import com.google.inject.Inject
 import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
@@ -15,8 +16,10 @@ class TrustedUsers(tag: Tag) extends Table[TrustedUser](tag, "trusted_users") {
   override def * : ProvenShape[TrustedUser] = id <>(TrustedUser.apply, TrustedUser.unapply)
 }
 
-object TrustedUsers {
-  val db = DbConfig.db
+class TrustedUserDao @Inject()(dbConfig: DbConfig) {
+
+  import dbConfig.db
+
   val trustedUsers = TableQuery[TrustedUsers]
 
   def isUserTrusted(userId: UserId): Future[Boolean] = db.run {

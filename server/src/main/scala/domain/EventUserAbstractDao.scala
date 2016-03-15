@@ -17,7 +17,7 @@ abstract class EventUserAbstractDao[T <: EventUserPair](tag: Tag, tableName: Str
 
 trait EventUserAbstractDaoCompanion[Entity <: EventUserPair, Dao <: EventUserAbstractDao[Entity]] {
 
-  val db: JdbcBackend#DatabaseDef
+  def db: JdbcBackend#DatabaseDef
 
   def allQuery: TableQuery[Dao]
 

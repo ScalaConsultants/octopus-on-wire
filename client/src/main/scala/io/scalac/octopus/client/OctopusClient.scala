@@ -10,9 +10,8 @@ import io.scalac.octopus.client.views.calendar.EventCalendarWindow
 import io.scalac.octopus.client.views.SliderViewOperations
 import io.scalac.octopus.client.views.detail.EventDetailWindow
 import org.scalajs.dom.html.{Div, UList}
-import org.scalajs.dom.raw.MouseEvent
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.Date
 import scala.scalajs.js.annotation.JSExport

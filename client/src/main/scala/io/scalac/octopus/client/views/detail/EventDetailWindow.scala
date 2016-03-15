@@ -12,10 +12,10 @@ import io.scalac.octopus.client.views.addition.EventCreateWindowOperations
 import io.scalac.octopus.client.views.calendar.EventCalendarWindow
 import io.scalac.octopus.client.views.{SliderViewOperations, WindowOperations}
 import org.scalajs.dom.html.{Anchor, Div}
-import org.scalajs.dom.location
+import org.scalajs.dom.window.location
 import org.scalajs.dom.raw.HTMLElement
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.timers
 import scalac.octopusonwire.shared.domain.{Event, EventId, UserEventInfo, UserInfo}
 import scalatags.JsDom.all._

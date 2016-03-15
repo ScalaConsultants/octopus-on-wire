@@ -6,10 +6,12 @@ import io.scalac.octopus.client.config.ClientConfig.{UserThumbSize, octoApi}
 import io.scalac.octopus.client.config.{ClientConfig, Github}
 import io.scalac.octopus.client.views.detail.EventDetailWindow.userInfo
 import org.scalajs.dom
+import org.scalajs.dom.window.location
 import org.scalajs.dom.html.{Anchor, Div}
-import org.scalajs.dom.location
+import concurrent.duration.{span => _, _}
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.timers
 import scalac.octopusonwire.shared.domain.{EventId, EventJoinInfo, UserInfo}
 import scalatags.JsDom.all._
 
@@ -24,9 +26,9 @@ class JoinButton(window: Div, eventId: EventId) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
         case EventJoinInfo(eventJoinCount, _) =>
           val left = window.firstChild
-          dom.setTimeout({ () =>
+          timers.setTimeout(3.seconds) { () =>
             left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
-          }, 3 * 1000) /// consult this timeout with `octopus-rocket-flying` animation class in css
+          } /// consult this timeout with `octopus-rocket-flying` animation class in css
       }
     } else location assign Github.loginWithJoinUrl(dom.window.location.href, eventId)
 

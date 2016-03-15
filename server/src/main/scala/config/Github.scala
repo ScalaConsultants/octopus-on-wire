@@ -1,4 +1,5 @@
 package config
+import concurrent.duration._
 
 object Github {
   val ApiBaseUrl = "https://api.github.com"
@@ -8,5 +9,5 @@ object Github {
   val AccessTokenKey = "access_token"
   val UserUrl = ApiBaseUrl + "/user"
   val UserFollowingUrl = UserUrl + "/following"
-  val ApiRequestTimeout = 5000
+  val ApiRequestTimeout = 5.seconds
 }
