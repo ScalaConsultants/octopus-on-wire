@@ -27,7 +27,6 @@ object Settings {
 
   /** Declare global dependency versions here to avoid mismatches in multi part dependencies */
   object versions {
-    val scala = "2.11.8"
     val scalaDom = "0.9.0"
     val scalaRx = "0.3.1"
     val autowire = "0.2.5"
@@ -40,7 +39,7 @@ object Settings {
     val scalatest = "2.2.6"
     val playSlick = "2.0.0"
     val postgres = "9.1-901-1.jdbc4"
-
+    val mockito = "1.8.5"
     val bower = "4.5.0"
   }
 
@@ -58,6 +57,7 @@ object Settings {
     "org.webjars.bower" % "font-awesome" % versions.bower % Provided,
     "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
     "org.scalatest" % "scalatest_2.11" % versions.scalatest % "test",
+    "org.mockito" % "mockito-core" % versions.mockito,
     "postgresql" % "postgresql" % versions.postgres,
     "com.typesafe.play" %% "play-slick" % versions.playSlick,
     "com.typesafe.play" %% "play-slick-evolutions" % versions.playSlick

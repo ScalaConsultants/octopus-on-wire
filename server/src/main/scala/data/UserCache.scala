@@ -1,5 +1,6 @@
 package data
 
+import domain.UserIdentity
 import play.api.libs.json.JsValue
 import services.GithubApi
 
@@ -43,7 +44,8 @@ trait UserCache {
       }
     }
 
-  def getOrFetchUserFriends(token: String, id: UserId)(implicit ec: ExecutionContext): Future[Set[UserId]] = {
+  def getOrFetchUserFriends(userIdentity: UserIdentity)(implicit ec: ExecutionContext): Future[Set[UserId]] = {
+    val UserIdentity(token, id) = userIdentity
     val dbFriends = getUserFriends(id)
 
     dbFriends.fallbackTo {
@@ -54,28 +56,11 @@ trait UserCache {
     }
   }
 
-  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] = {
-    githubApi.getUserInfo(id, tokenOpt).map { result =>
-      val loginOpt = (result \ "login").asOpt[String]
-      loginOpt.map(name => UserInfo(id, name))
-    }.flatMap {
-      case Some(info) => Future.successful(info)
-      case None => Future.failed(new Exception("User info not found"))
-    }
-  }
+  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
+    githubApi.getUserInfo(id, tokenOpt)
 
-  protected def fetchCurrentUserInfo(token: String)(implicit ec: ExecutionContext): Future[UserInfo] = {
+  protected def fetchCurrentUserInfo(token: String)(implicit ec: ExecutionContext): Future[UserInfo] =
     githubApi.getCurrentUserInfo(token)
-      .flatMap { result =>
-        val uid = (result \ "id").asOpt[Long].map(UserId)
-        val ulogin = (result \ "login").asOpt[String]
-
-        (uid zip ulogin).headOption match {
-          case Some((id, name)) => Future.successful(UserInfo(id, name))
-          case _ => Future.failed(new Exception("Invalid token"))
-        }
-      }
-  }
 
   def fetchUserFriends(token: String)(implicit ec: ExecutionContext): Future[Set[UserId]] =
     githubApi.getCurrentUserFollowing(token).map {

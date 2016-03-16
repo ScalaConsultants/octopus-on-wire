@@ -32,9 +32,9 @@ object DummyData {
 
 class InMemoryEventSource extends EventSource {
 
-  private var events: List[Event] = DummyData.events
+  protected var events: List[Event] = DummyData.events
 
-  private val eventJoins = TrieMap[EventId, Set[UserId]]() ++ DummyData.eventJoins
+  protected val eventJoins = TrieMap.empty[EventId, Set[UserId]] ++ DummyData.eventJoins
 
   override def getSimpleFutureEventsNotFlaggedByUser(userId: Option[UserId], limit: Int): Future[Seq[SimpleEvent]] =
     Future.sequence {
