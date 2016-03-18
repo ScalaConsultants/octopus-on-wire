@@ -1,11 +1,31 @@
 MODULES=database backend
 WORKDIR=$$PWD/docker/run
+LINUX_DEPS=
+MACOSX_DEPS=realpath
+MAKEFLAGS+=--silent
+OSTYPE=$(shell uname -s)
 
 all: help
 
 help:
 
-init:
+deps:
+	@echo "\033[1mInstalling dependencies...\033[0m"
+	if [ $(OSTYPE) = "Linux" ]; then \
+		for PKG in $(LINUX_DEPS); do \
+			dpkg -l | grep $$PKG | grep -c ii >/dev/null || \
+			sudo apt-get install -y $$PKG; \
+		done; \
+	elif [ $(OSTYPE) = "Darwin" ]; then \
+		which brew >/dev/null || \
+		sh -c "ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\""; \
+		for PKG in $(DEPS); do \
+			brew list -1 | grep "^$$PKG$$" >/dev/null || \
+				brew install $$PKG; \
+		done; \
+	fi
+
+init: deps
 	@echo "\033[1mInitializing directories structure...\033[0m"
 	@for NAME in $(MODULES); do \
 		if [ ! -d $(WORKDIR)/$$NAME ]; then \
