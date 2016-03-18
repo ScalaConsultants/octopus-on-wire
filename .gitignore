@@ -29,3 +29,8 @@ out
 
 server/src/main/resources/secret.conf
 **/*.DS_Store
+
+# Docker
+docker/application.conf
+docker/run/
+docker/src/*.zip
