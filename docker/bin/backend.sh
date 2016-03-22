@@ -8,6 +8,7 @@ WORKDIR=`realpath $(dirname $0)/../run/$NAME`
 BUILD_IMAGE="scalac/activator"
 DIST_IMAGE="scalac/octopus"
 DOCKER_NAME="$PROJECT-$NAME"
+OSTYPE=`uname -s`
 
 function pulled? {
   docker images | grep -E "^$1\s*"
@@ -25,16 +26,48 @@ function failed? {
   docker inspect $1 2> /dev/null | grep ExitCode | awk '{ gsub(",", "", $2); print $2 }'
 }
 
-function build {
-  if [ -z "$(pulled? $BUILD_IMAGE)" ]; then
-    docker pull $BUILD_IMAGE
+function set_backend_domain {
+  if [ -z $BACKEND_DOMAIN ]; then
+    BACKEND_DOMAIN="127.0.0.1"
+    if [ -n $DOCKER_HOST ]; then
+      BACKEND_DOMAIN=`echo $DOCKER_HOST | sed -e "s/tcp:\/\/\(.*\):.*/\1/"`
+    fi
   fi
- 
+
+  if [ -n $BACKEND_DOMAIN ]; then
+    sed -i -e "s/\(url = \".*:\/\/\).*\(:.*\"\)/\1$BACKEND_DOMAIN\2/" \
+      $PROJECT_PATH/docker/application.conf
+    rm -f $PROJECT_PATH/docker/application.conf-e 2> /dev/null
+    sed -i -e "s/\(BackendDomain = \"\).*\(\"\)/\1$BACKEND_DOMAIN\2/" \
+      $PROJECT_PATH/shared/src/main/scala/scalac/octopusonwire/shared/config/SharedConfig.scala
+    rm -f $PROJECT_PATH/shared/src/main/scala/scalac/octopusonwire/shared/config/SharedConfig.scala-e 2> /dev/null
+  fi
+}
+
+function fix_perms {
+  if [ $OSTYPE = "Linux" ]; then
+    docker run --rm -it \
+      -v $PROJECT_PATH:/src \
+      -v $WORKDIR/ivy2:/root/.ivy2 \
+      $BUILD_IMAGE \
+      bash -c "chown -R $(id -u):$(id -g) /src/client /src/project /src/server /src/shared /root/.ivy2"
+  fi
+}
+
+function sync_ivy_cache {
   if [ ! -d $WORKDIR/ivy2/cache ]; then
     mkdir -p $WORKDIR/ivy2
     [ -d ~/.ivy2 ] && \
       cp -R ~/.ivy2/* $WORKDIR/ivy2
   fi
+}
+
+function build {
+  if [ -z "$(pulled? $BUILD_IMAGE)" ]; then
+    docker pull $BUILD_IMAGE
+  fi
+
+  sync_ivy_cache
 
   local CUR_SECRET=$(grep -E "^play.crypto.secret" $PROJECT_PATH/docker/application.conf | sed -e 's/^play\.crypto\.secret=\"\(.*\)\"$/\1/')
   local NEW_SECRET=""
@@ -48,25 +81,32 @@ function build {
         activator playGenerateSecret| grep 'new secret:' | sed -e 's/^.*\:\s\(.*\)$/\1/'" | strings)
 
     sed -i -e "/^play\.crypto\.secret=\"\(.*\)\"$/d" $PROJECT_PATH/docker/application.conf
+    rm -f $PROJECT_PATH/docker/application.conf-e 2> /dev/null
     echo "play.crypto.secret=\"$NEW_SECRET\"" >> $PROJECT_PATH/docker/application.conf
   fi
+
+  set_backend_domain
 
   docker run --rm -it \
     -v $PROJECT_PATH:/src \
     -v $WORKDIR/ivy2:/root/.ivy2 \
     $BUILD_IMAGE \
     bash -c "cd /src && \
-      activator dist && \
-      chown -R $(id -u):$(id -g) /src/client /src/project /src/server /src/shared /root/.ivy2"
+      activator dist"
+
+  fix_perms
 
   cp $PROJECT_PATH/server/target/universal/server-$VERSION.zip $PROJECT_PATH/docker/src
-  docker build -t $DIST_IMAGE -f $PROJECT_PATH/docker/src/Dockerfile.backend $PROJECT_PATH/docker/src
+  docker build -t $DIST_IMAGE -f $PROJECT_PATH/docker/src/Dockerfile $PROJECT_PATH/docker/src
 }
 
 function watch {
-  if [ -z "$(pulled? $DIST_IMAGE)" ]; then
-    build
+  if [ -z "$(pulled? $BUILD_IMAGE)" ]; then
+    docker pull $BUILD_IMAGE
   fi
+
+  sync_ivy_cache
+  set_backend_domain
 
   docker run --rm -it \
     -v $PROJECT_PATH:/src \
@@ -74,8 +114,9 @@ function watch {
     -p 9000:9000 \
     $BUILD_IMAGE \
     bash -c "cd /src && \
-      activator ~run -Dconfig.file=/src/docker/application.conf; \
-      chown -R $(id -u):$(id -g) /src/client /src/project /src/server /src/shared /root/.ivy2"
+      activator ~run -Dconfig.file=/src/docker/application.conf"
+
+  fix_perms
 }
 
 function start {
@@ -87,7 +128,8 @@ function start {
 		-v $PROJECT_PATH/docker/application.conf:/opt/scalac/octopus/conf/application.conf \
 		-p 9000:9000 \
 		--name $DOCKER_NAME \
-	  $DIST_IMAGE
+	  $DIST_IMAGE \
+    > /dev/null
 }
 
 function stop {
@@ -109,11 +151,25 @@ function status {
 function clean {
   docker run --rm -it \
     -v $PROJECT_PATH:/src \
+    -v $WORKDIR/ivy2:/root/.ivy2 \
     $BUILD_IMAGE \
-    bash -c "rm -rf /src/docker/run/$NAME"
+    bash -c "cd src && \
+      activator clean"
+}
+
+function clean-dist {
+  docker run --rm -it \
+    -v $PROJECT_PATH:/src \
+    -v $WORKDIR/ivy2:/root/.ivy2 \
+    $BUILD_IMAGE \
+    bash -c "cd src && \
+      rm -rf /src/docker/run/$NAME"
 
   rm -f $PROJECT_PATH/docker/src/*.zip
   docker rmi $DIST_IMAGE
+
+  git checkout docker/application.conf
+  git checkout shared/src/main/scala/scalac/octopusonwire/shared/config/SharedConfig.scala
 }
 
 case $1 in
@@ -123,7 +179,7 @@ case $1 in
 				echo "$DOCKER_NAME is already running."
 				exit 0
 			else
-				docker start $DOCKER_NAME
+				docker start $DOCKER_NAME > /dev/null
 			fi
 		else
 			start
@@ -150,7 +206,8 @@ case $1 in
         echo "$DOCKER_NAME is still running."
   			exit 1
       else
-        docker rm $DOCKER_NAME
+        docker rm $DOCKER_NAME > /dev/null && \
+          echo "$DOCKER_NAME removed."
       fi
     else
       echo "$DOCKER_NAME does not exist."
@@ -165,8 +222,11 @@ case $1 in
   clean)
     clean
   ;;
+  clean-dist)
+    clean-dist
+  ;;
 	*)
-	echo "Usage: $0 [start|stop|status|remove|watch|build|clean]"
+	echo "Usage: $0 [start|stop|status|remove|watch|build|clean|clean-dist]"
 	exit 1
 	;;
 esac

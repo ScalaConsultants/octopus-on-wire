@@ -34,3 +34,6 @@ server/src/main/resources/secret.conf
 docker/application.conf
 docker/run/
 docker/src/*.zip
+
+# Used to parameterize build
+shared/src/main/scala/scalac/octopusonwire/shared/config/SharedConfig.scala

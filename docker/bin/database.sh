@@ -1,10 +1,10 @@
 #!/bin/bash
 
+VERSION=""
 PROJECT=`basename $(realpath $(dirname $0)/../..)`
 PROJECT_PATH=$(realpath $(dirname $0)/../..)
 NAME=`basename $0 | awk '{ gsub(".sh$", "", $0); print $0 }'`
 WORKDIR=`realpath $(dirname $0)/../run/$NAME`
-VERSION=""
 DIST_IMAGE="scalac/postgres"
 DOCKER_NAME="$PROJECT-$NAME"
 
@@ -25,39 +25,24 @@ function failed? {
 }
 
 function build {
-  docker build -t $DIST_IMAGE -f $PROJECT_PATH/docker/src/Dockerfile.$NAME $PROJECT_PATH/docker/src
+  docker pull scalac/postgres
 }
 
 function start {
   if [ -z "$(pulled? $DIST_IMAGE)" ]; then
     build
   fi
-  
-  if [ ! -d $WORKDIR/etc ]; then
-    mkdir $WORKDIR/etc
-    docker run --rm \
-      -v $WORKDIR/etc:/tmp/workdir \
-      $DIST_IMAGE bash -c 'cp -aR /etc/postgresql/* /tmp/workdir'
-  fi
 
-  if [ ! -d $WORKDIR/var ]; then
-    mkdir $WORKDIR/var
-    docker run --rm \
-      -v $WORKDIR/var:/tmp/workdir \
-      $DIST_IMAGE bash -c 'cp -aR /var/lib/postgresql/* /tmp/workdir'
-  fi
- 
   docker run -d \
-		-v $WORKDIR/etc:/etc/postgresql \
-    -v $WORKDIR/var:/var/lib/postgresql \
     -v $PROJECT_PATH/docker/init.sql:/tmp/init.sql \
-		-p 15432:5432 \
-		--name $DOCKER_NAME \
-	  $DIST_IMAGE
+	  -p 15432:5432 \
+	  --name $DOCKER_NAME \
+	  $DIST_IMAGE \
+    > /dev/null
 }
 
 function stop {
-	docker stop $DOCKER_NAME >/dev/null
+	docker stop $DOCKER_NAME > /dev/null
 }
 
 function status {
@@ -72,12 +57,15 @@ function status {
 	fi
 }
 
-function clean {          
+function clean {
+  return 0
+}
+
+function clean-dist {
   docker run --rm -it \
     -v $PROJECT_PATH:/src \
     $DIST_IMAGE \
     bash -c "rm -rf /src/docker/run/$NAME"
-    docker rmi $DIST_IMAGE
 }
 
 case $1 in
@@ -87,7 +75,7 @@ case $1 in
 				echo "$DOCKER_NAME is already running."
 				exit 0
 			else
-				docker start $DOCKER_NAME
+				docker start $DOCKER_NAME > /dev/null
 			fi
 		else
 			start
@@ -114,7 +102,8 @@ case $1 in
         echo "$DOCKER_NAME is still running."
   			exit 1
       else
-        docker rm $DOCKER_NAME
+        docker rm $DOCKER_NAME > /dev/null && \
+          echo "$DOCKER_NAME removed."
       fi
     else
       echo "$DOCKER_NAME does not exist."
@@ -123,11 +112,11 @@ case $1 in
   build)
     build
   ;;
-  clean)
-    clean
+  clean-dist)
+    clean-dist
   ;;
 	*)
-	echo "Usage: $0 [start|stop|status|remove|build|clean]"
+	echo "Usage: $0 [start|stop|status|remove|build|clean|clean-dist]"
 	exit 1
 	;;
 esac

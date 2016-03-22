@@ -1,7 +1,7 @@
 MODULES=database backend
 WORKDIR=$$PWD/docker/run
 LINUX_DEPS=
-MACOSX_DEPS=realpath
+MACOSX_DEPS=coreutils docker-machine-nfs
 MAKEFLAGS+=--silent
 OSTYPE=$(shell uname -s)
 
@@ -23,6 +23,10 @@ deps:
 			brew list -1 | grep "^$$PKG$$" >/dev/null || \
 				brew install $$PKG; \
 		done; \
+		[ -f /usr/local/bin/tac ] || \
+			ln -s /usr/local/bin/gtac /usr/local/bin/tac 2>/dev/null; \
+		grep Users /etc/exports > /dev/null || \
+			docker-machine-nfs default; \
 	fi
 
 init: deps
@@ -34,42 +38,50 @@ init: deps
 		fi \
 	done
 
-startup: init
+startup: init remove
 	@echo "\033[1mInitializing docker containers...\033[0m"
 	@for NAME in $(MODULES); do \
-		docker/bin/$$NAME.sh start | grep running || \
-		(sleep 2 && \
-		docker/bin/$$NAME.sh status); \
+		docker/bin/$$NAME.sh start; \
+	done && \
+	for NAME in $(MODULES); do \
+		docker/bin/$$NAME.sh status; \
 	done
 
 shutdown:
 	@echo "\033[1mShutting down docker containers...\033[0m"
-	@for NAME in `echo $(MODULES) | sed 's/ /\n/g' | tac`; do \
+	@for NAME in `echo $(MODULES) | tr ' ' '\n' | tac`; do \
 		docker/bin/$$NAME.sh stop; \
 	done
 
-clean: shutdown
+remove: shutdown
 	@echo "\033[1mRemoving docker containers...\033[0m"
-	@for NAME in `echo $(MODULES) | sed 's/ /\n/g' | tac`; do \
+	@for NAME in `echo $(MODULES) | tr ' ' '\n' | tac`; do \
 		docker/bin/$$NAME.sh remove; \
 	done
 
-clean-dist: shutdown clean
+clean: remove
+	@echo "\033[1mCleaning...\033[0m"
+	@for NAME in `echo $(MODULES) | tr ' ' '\n' | tac`; do \
+		docker/bin/$$NAME.sh clean; \
+	done
+
+clean-dist: remove
 	@echo "\033[1mRemoving directories structure...\033[0m"
-	@for NAME in `echo $(MODULES) | sed 's/ /\n/g' | tac`; do \
+	@for NAME in `echo $(MODULES) | tr ' ' '\n' | tac`; do \
 		if [ -d $(WORKDIR)/$$NAME ]; then \
 			echo `basename $(WORKDIR)`/$$NAME; \
-			docker/bin/$$NAME.sh clean; \
+			docker/bin/$$NAME.sh "clean-dist"; \
 		fi \
 	done
 
-watch: init
+watch: init remove
 	@echo "\033[1mWatching for changes...\033[0m"
-	@docker/bin/database.sh start
+	@docker/bin/database.sh start && \
+		docker/bin/database.sh status
 	@docker/bin/backend.sh watch
 	@docker/bin/database.sh stop
 
-build: init
+build: init remove
 	@echo "\033[1mBuilding image...\033[0m"
 	@for NAME in $(MODULES); do \
 		docker/bin/$$NAME.sh build; \
