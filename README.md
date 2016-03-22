@@ -23,50 +23,65 @@ A JavaScript widget for displaying upcoming Scala events on your website in a fu
 
 ### The easy way
 
-Server build and development process is wrapped around `GNU Make` and `Docker`.
+**Dependencies**
 
-**Available targets:**
+You will need to install docker (on Linux) or docker toolbox (on OSX) manually.
+ `make` will install other dependencies automaticaly asking you about your password if it's needed.
+
+OSX dependencies:
+- brew
+- coreutils
+- docker-machine-nfs
+
+OSX notes:
+- To speed up builds tweak CPU and RAM settings of the `boot2docker` VM.
+
+**Usage**
 
 ```bash
-make watch      # start environment in DEV mode in the foreground
-                # rebuild on file change
-                # http://127.0.0.1:9000/plain
+make watch      # an alias for `actovator ~run`
+                # use BACKEND_DOMAIN to override defaults
 
-make startup    # start environment in PROD mode in the background
-                # http://127.0.0.1:9000/plain
+make startup    # starts PROD env in background
+                # use BACKEND_DOMAIN to override defaults
 
-make shutdown   # shutdown environment
+make shutdown   # stops containers
 
-make clean      # remove conatainers
+make clean      # an alias for `activator clean`
 
-make clean-dist # remove conatainers and images
-                # wipe out database and ivy2 cache
+make clean-dist # removes conatainers and `scalac/octopus` image
+                # restores initial settings
 ```
 
 **Description**
 
-This bundle contain two modules: `database` and `backend`, which operate in separeted
-conantainers named after source root diriectory name and module name defined in `Makefile`,
-for ex.: `project-module`.
+This bundle contain two modules: `database` and `backend` which operate in separete conantainers.
+Containers are named after source root diriectory and module name defined in `Makefile`, for ex.: `${PROJECT_NAME}-${MODULE}`.
 
 `make` will build two images: `scalac/postgres` and `scalac/octopus`, next based on that
 images it will start `octopus-on-wire-database` and `octopus-on-wire-backend` containers.
 
-Configuration file for `octopus-on-wire-backend` can be found at `docker/application.conf`.
+Configuration for `octopus-on-wire-backend` can be found in `docker/application.conf` file.
 It's automatically generated and used only by the containers. Never push your configuration
 file back in to the repository because it contains `play.crypto.secret` value. Initially
-this value is empty and generated automatically during build process. This file was also
-added to `.gitignore` to avoid accidental disclosure.
+this value is empty and generated automatically during build process. This file was marked 
+as `assume-unchanged` and added to `.gitignore` to avoid accidental disclosure.
+
+`shared/src/main/scala/scalac/octopusonwire/shared/config/SharedConfig.scala` is changed
+during build in order to override `SharedConfig.BackendDomain` by `BACKEND_DOMAIN` environment variable.
+This file was also marked as `assume-unchanged` and added to `.gitignore`.
 
 To speed up build process `octopus-on-wire-backend` will copy your existing `~/.ivy2`
-folder to `docker/run/backend/ivy2` and use this folder as a persistant cache during 
-container restarts.
+folder to `docker/run/backend/ivy2` and use this folder as a persistant cache during build.
 
 To preserve database content between restarts `octopus-on-wire-database` will use
 `docker/run/database` as a persistant data storage.
 
-`octopus-on-wire-database` executes `docker/init.sql` file. Use it to add extra SQL,
-for ex.: test data or database configuration.
+`octopus-on-wire-database` executes `docker/init.sql` and `docker/init.sh` files on start.
+You can use those files to override default settings.
+
+**TODO**
+- overriding database connection settings with environment variables
 
 ### The hard way
 
