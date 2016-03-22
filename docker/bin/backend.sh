@@ -27,6 +27,9 @@ function failed? {
 }
 
 function set_backend_domain {
+  git update-index --assume-unchanged docker/application.conf
+  git update-index --assume-unchanged shared/src/main/scala/scalac/octopusonwire/shared/config/SharedConfig.scala
+
   if [ -z $BACKEND_DOMAIN ]; then
     BACKEND_DOMAIN="127.0.0.1"
     if [ -n $DOCKER_HOST ]; then
