@@ -25,7 +25,7 @@ A JavaScript widget for displaying upcoming Scala events on your website in a fu
 
 **Dependencies**
 
-You will need to install docker (on Linux) or docker toolbox (on OSX) manually.
+You will need to install [Docker](https://docs.docker.com/linux/step_one/) (on Linux) or [Docker Toolbox](https://docs.docker.com/linux/step_one/) (on OSX)) manually.
  `make` will install other dependencies automaticaly asking you about your password if it's needed.
 
 OSX dependencies:
@@ -39,27 +39,62 @@ OSX notes:
 **Usage**
 
 ```bash
-make watch      # an alias for `actovator ~run`
-                # use BACKEND_DOMAIN to override defaults
+make build      # builds `scalac/octopus` image
 
-make startup    # starts PROD env in background
-                # use BACKEND_DOMAIN to override defaults
+make watch      # an alias for `activator ~run`
+
+make startup    # starts `backend` and `database` containers in a background
 
 make shutdown   # stops containers
 
 make clean      # an alias for `activator clean`
 
-make clean-dist # removes conatainers and `scalac/octopus` image
+make clean-dist # removes `backend` and `database` conatainers
+                # removes `scalac/octopus` image
                 # restores initial settings
 ```
+
+Deployed application will be available at `http://${BACKEND_DOMAIN}:9000/plain`.
+
+**Environment variables**
+
+You can override default configuration using environment variables.
+
+```bash
+BACKEND_DOMAIN  # overrides SharedConfig.BackendDomain
+DB_HOST         # overrides database address
+DB_PORT         # overrides database port
+DB_NAME         # overrides database name
+DB_USER         # overrides database user
+DB_PASS         # overrides database password
+```
+
+For ex.:
+
+```bash
+BACKEND_DOMAIN=app.example.com \
+DB_HOST=db.example.com \
+DB_PORT=5432 \
+DB_NAME=octopus \
+DB_USER=octopus \
+DB_PASS=octopus \
+make startup
+```
+
+By default `BACKEND_DOMAIN` is set to `127.0.0.1` on Linux or `$(docker-machine ip default)` on OSX.
+By default `DB_HOST` is set docker0 interface IP (172.17.42.1) on Linux or `$(docker-machine ip default)` on OSX.
+To avoid conflicts with existing database `DB_PORT` is set to `15434` by default.
 
 **Description**
 
 This bundle contain two modules: `database` and `backend` which operate in separete conantainers.
 Containers are named after source root diriectory and module name defined in `Makefile`, for ex.: `${PROJECT_NAME}-${MODULE}`.
 
-`make` will build two images: `scalac/postgres` and `scalac/octopus`, next based on that
+`make` will pull `scalac/postgres` and build `scalac/octopus` images, next base on that
 images it will start `octopus-on-wire-database` and `octopus-on-wire-backend` containers.
+
+`make` will take care for starting and stopping components in the right order, so whenever
+you run for ex.: `startup` or `watch` it will execute all required task to find itself in the desired state.
 
 Configuration for `octopus-on-wire-backend` can be found in `docker/application.conf` file.
 It's automatically generated and used only by the containers. Never push your configuration
@@ -72,16 +107,10 @@ during build in order to override `SharedConfig.BackendDomain` by `BACKEND_DOMAI
 This file was also marked as `assume-unchanged` and added to `.gitignore`.
 
 To speed up build process `octopus-on-wire-backend` will copy your existing `~/.ivy2`
-folder to `docker/run/backend/ivy2` and use this folder as a persistant cache during build.
-
-To preserve database content between restarts `octopus-on-wire-database` will use
-`docker/run/database` as a persistant data storage.
+folder to `docker/run/backend/ivy2` and use this folder as a persistant cache during builds.
 
 `octopus-on-wire-database` executes `docker/init.sql` and `docker/init.sh` files on start.
 You can use those files to override default settings.
-
-**TODO**
-- overriding database connection settings with environment variables
 
 ### The hard way
 
