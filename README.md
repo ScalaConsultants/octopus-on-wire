@@ -84,7 +84,7 @@ make startup
 ```
 
 By default `BACKEND_DOMAIN` is set to `127.0.0.1` on Linux or `$(docker-machine ip default)` on OSX.<br/>
-By default `DB_HOST` is set docker0 interface IP (172.17.42.1) on Linux or `$(docker-machine ip default)` on OSX.<br/>
+By default `DB_HOST` is set to docker0 interface IP (172.17.42.1) on Linux or `$(docker-machine ip default)` on OSX.<br/>
 To avoid conflicts with existing database `DB_PORT` is set to `15434` by default.
 
 **Description**
