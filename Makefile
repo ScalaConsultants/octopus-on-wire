@@ -38,7 +38,7 @@ init: deps
 		fi \
 	done
 
-startup: init remove
+startup: build
 	@echo "\033[1mInitializing docker containers...\033[0m"
 	@for NAME in $(MODULES); do \
 		docker/bin/$$NAME.sh start; \

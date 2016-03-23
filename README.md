@@ -47,11 +47,13 @@ make startup    # starts `backend` and `database` containers in a background
 
 make shutdown   # stops containers
 
+make remove     # removes containers
+
 make clean      # an alias for `activator clean`
 
 make clean-dist # removes `backend` and `database` conatainers
                 # removes `scalac/octopus` image
-                # restores initial settings
+                # restores initial settings (removes `play.crypto.secret`!)
 ```
 
 Deployed application will be available at `http://${BACKEND_DOMAIN}:9000/plain`.
