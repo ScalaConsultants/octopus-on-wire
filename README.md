@@ -25,7 +25,7 @@ A JavaScript widget for displaying upcoming Scala events on your website in a fu
 
 **Dependencies**
 
-You will need to install [Docker](https://docs.docker.com/linux/step_one/) (on Linux) or [Docker Toolbox](https://docs.docker.com/linux/step_one/) (on OSX)) manually.
+You will need to install [Docker](https://docs.docker.com/linux/step_one/) (on Linux) or [Docker Toolbox](https://docs.docker.com/linux/step_one/) (on OSX)) manually.<br/>
  `make` will install other dependencies automaticaly asking you about your password if it's needed.
 
 OSX dependencies:
@@ -81,8 +81,8 @@ DB_PASS=octopus \
 make startup
 ```
 
-By default `BACKEND_DOMAIN` is set to `127.0.0.1` on Linux or `$(docker-machine ip default)` on OSX.
-By default `DB_HOST` is set docker0 interface IP (172.17.42.1) on Linux or `$(docker-machine ip default)` on OSX.
+By default `BACKEND_DOMAIN` is set to `127.0.0.1` on Linux or `$(docker-machine ip default)` on OSX.<br/>
+By default `DB_HOST` is set docker0 interface IP (172.17.42.1) on Linux or `$(docker-machine ip default)` on OSX.<br/>
 To avoid conflicts with existing database `DB_PORT` is set to `15434` by default.
 
 **Description**
@@ -94,7 +94,7 @@ Containers are named after source root diriectory and module name defined in `Ma
 images it will start `octopus-on-wire-database` and `octopus-on-wire-backend` containers.
 
 `make` will take care for starting and stopping components in the right order, so whenever
-you run for ex.: `startup` or `watch` it will execute all required task to find itself in the desired state.
+you run for ex.: `startup` or `watch` it will execute all required tasks to find itself in the desired state.
 
 Configuration for `octopus-on-wire-backend` can be found in `docker/application.conf` file.
 It's automatically generated and used only by the containers. Never push your configuration
