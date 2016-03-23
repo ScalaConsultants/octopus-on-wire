@@ -25,7 +25,7 @@ A JavaScript widget for displaying upcoming Scala events on your website in a fu
 
 **Dependencies**
 
-You will need to install [Docker](https://docs.docker.com/linux/step_one/) (on Linux) or [Docker Toolbox](https://docs.docker.com/linux/step_one/) (on OSX)) manually.<br/>
+You will need to install [Docker](https://docs.docker.com/linux/step_one/) (on Linux) or [Docker Toolbox](https://docs.docker.com/linux/step_one/) (on OSX) manually.<br/>
  `make` will install other dependencies automaticaly asking you about your password if it's needed.
 
 OSX dependencies:
