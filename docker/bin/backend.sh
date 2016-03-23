@@ -33,7 +33,7 @@ function set_unchanged_files {
 
 function set_database_host {
   if [ ! "$DB_HOST" ]; then
-    DB_HOST=`ifconfig docker0 | grep "inet addr" | awk '{ split($2,a,":"); print a[2]; }' 2> /dev/null`
+    DB_HOST=`ifconfig docker0 2> /dev/null | grep "inet addr" | awk '{ split($2,a,":"); print a[2]; }'`
     if [ "$DOCKER_HOST" ]; then
       DB_HOST=`echo $DOCKER_HOST | sed -e "s/tcp:\/\/\(.*\):.*/\1/"`
     fi
