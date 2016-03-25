@@ -16,7 +16,7 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder._
 import scalac.octopusonwire.shared.domain.FailedToAdd._
 import scalac.octopusonwire.shared.domain.{UserInfo, _}
 
-class ApiServiceTests extends OctoSpec with MockitoSugar {
+class ApiServiceTests extends OctoSpec{
   val validId = UserIdentity("some-token", UserId(1))
   val mockEventSource: EventSource = new InMemoryEventSource with MockedEvents
 

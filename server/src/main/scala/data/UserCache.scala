@@ -63,8 +63,5 @@ trait UserCache {
     githubApi.getCurrentUserInfo(token)
 
   def fetchUserFriends(token: String)(implicit ec: ExecutionContext): Future[Set[UserId]] =
-    githubApi.getCurrentUserFollowing(token).map {
-      _.result.asOpt[Seq[JsValue]].toList.flatten
-        .flatMap(friend => (friend \ "id").asOpt[Long]).map(UserId).toSet
-    }
+    githubApi.getCurrentUserFollowing(token)
 }
