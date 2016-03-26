@@ -18,7 +18,7 @@ trait UserCache {
 
   def getUserIdByToken(token: String): Future[UserId]
 
-  def saveUserToken(token: String, user: UserInfo): Unit
+  def saveUserToken(token: String, userId: UserId): Unit
 
   def getUserFriends(userId: UserId): Future[Set[UserId]]
 
@@ -37,7 +37,7 @@ trait UserCache {
       case _ => fetchCurrentUserInfo(token).flatMap { info =>
         //update caches
         saveUserInfo(info)
-        saveUserToken(token, info)
+        saveUserToken(token, info.userId)
         Future.successful(info.userId)
       }.recoverWith {
         case _ => Future.failed(new Exception("Invalid user token"))
@@ -59,7 +59,7 @@ trait UserCache {
   protected def fetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
     githubApi.getUserInfo(id, tokenOpt)
 
-  protected def fetchCurrentUserInfo(token: String)(implicit ec: ExecutionContext): Future[UserInfo] =
+  def fetchCurrentUserInfo(token: String)(implicit ec: ExecutionContext): Future[UserInfo] =
     githubApi.getCurrentUserInfo(token)
 
   def fetchUserFriends(token: String)(implicit ec: ExecutionContext): Future[Set[UserId]] =

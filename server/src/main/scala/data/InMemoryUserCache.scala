@@ -39,8 +39,8 @@ class InMemoryUserCache @Inject() (gh: GithubApi) extends UserCache {
     case None => Future.failed(new Exception("User info not found"))
   }
 
-  override def saveUserToken(token: String, user: UserInfo): Unit = {
-    tokenCache(token) = user.userId
+  override def saveUserToken(token: String, userId: UserId): Unit = {
+    tokenCache(token) = userId
   }
 
   override def getUserFriends(userId: UserId): Future[Set[UserId]] = Future {

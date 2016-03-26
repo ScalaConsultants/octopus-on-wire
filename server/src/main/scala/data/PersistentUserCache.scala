@@ -24,7 +24,7 @@ class PersistentUserCache @Inject()(tokens: TokenPairDao,
 
   override def getUserIdByToken(token: String): Future[UserId] = tokens.userIdByToken(token)
 
-  override def saveUserToken(token: String, user: UserInfo): Unit = tokens.saveUserToken(token, user)
+  override def saveUserToken(token: String, userId: UserId): Unit = tokens.saveUserToken(token, userId)
 
   override def getUserFriends(userId: UserId): Future[Set[UserId]] =
     userFriendPairsDao.getUserFriends(userId).filter(_.nonEmpty)

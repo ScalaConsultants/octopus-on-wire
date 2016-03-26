@@ -1,13 +1,14 @@
-package services
+package io.scalac.octopus.server.services
 
 import config.Github._
 import io.scalac.octopus.server.OctoSpec
 import org.mockito.Mockito._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString}
+import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.Results.EmptyContent
 import play.mvc.Http.HeaderNames
+import services.GithubApi
 
 import scala.concurrent.duration._
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
@@ -22,9 +23,7 @@ class GithubApiTests extends OctoSpec {
       .get()
     ).thenReturnFuture(response)
 
-    when(response.json).thenReturn(JsObject(
-      Map("id" -> JsNumber(1), "login" -> JsString("username"))
-    ))
+    when(response.json).thenReturn(Json.obj("id" -> JsNumber(1), "login" -> JsString("username")))
 
     val timeout = Timeout(1.second)
 
@@ -42,9 +41,7 @@ class GithubApiTests extends OctoSpec {
       .get()
     ).thenReturnFuture(response)
 
-    when(response.json).thenReturn(JsObject(
-      Map("message" -> JsString("Bad credentials"))
-    ))
+    when(response.json).thenReturn(Json.obj("message" -> JsString("Bad credentials")))
 
     val timeout = Timeout(1.second)
 
@@ -63,9 +60,7 @@ class GithubApiTests extends OctoSpec {
       .get()
     ).thenReturnFuture(response)
 
-    when(response.json).thenReturn(JsObject(
-      Map("login" -> JsString("username"))
-    ))
+    when(response.json).thenReturn(Json.obj("login" -> JsString("username")))
 
     val gh = new GithubApi(ws)
 
@@ -83,9 +78,7 @@ class GithubApiTests extends OctoSpec {
       .get()
     ).thenReturnFuture(response)
 
-    when(response.json).thenReturn(JsObject(
-      Map("message" -> JsString("Not found"))
-    ))
+    when(response.json).thenReturn(Json.obj("message" -> JsString("Not found")))
 
     val gh = new GithubApi(ws)
 
@@ -107,7 +100,7 @@ class GithubApiTests extends OctoSpec {
     when(response.json).thenReturn(JsArray(
       List(
         1, 2, 3
-      ).map(id => JsObject(Map("id" -> JsNumber(id))))
+      ).map(id => Json.obj("id" -> JsNumber(id)))
     ))
 
     val gh = new GithubApi(ws)
@@ -128,11 +121,7 @@ class GithubApiTests extends OctoSpec {
     ).thenReturnFuture(response)
 
     when(response.json).thenReturn(
-      JsObject(
-        Map(
-          "error" -> JsString("Bad credentials")
-        )
-      )
+      Json.obj("error" -> JsString("Bad credentials"))
     )
 
     val gh = new GithubApi(ws)
@@ -154,7 +143,7 @@ class GithubApiTests extends OctoSpec {
       .post(EmptyContent())
     ).thenReturnFuture(response)
 
-    when(response.json).thenReturn(JsObject(Map(AccessTokenKey -> JsString(expectedToken))))
+    when(response.json).thenReturn(Json.obj(AccessTokenKey -> JsString(expectedToken)))
 
     val gh = new GithubApi(ws)
     gh.getGithubToken(theCode).futureValue shouldBe expectedToken
@@ -173,7 +162,7 @@ class GithubApiTests extends OctoSpec {
       .post(EmptyContent())
     ).thenReturnFuture(response)
 
-    when(response.json).thenReturn(JsObject(Map("error" -> JsString("bad_verification_code"))))
+    when(response.json).thenReturn(Json.obj("error" -> JsString("bad_verification_code")))
 
     val gh = new GithubApi(ws)
     gh.getGithubToken(theCode).failed.futureValue shouldBe an[Exception]

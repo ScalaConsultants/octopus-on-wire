@@ -22,8 +22,8 @@ class TokenPairDao @Inject()(dbConfig: DbConfig) {
 
   import dbConfig.db
 
-  def saveUserToken(token: String, user: UserInfo): Unit = db.run {
-    tokens.insertOrUpdate(TokenPair(token, user.userId))
+  def saveUserToken(token: String, userId: UserId): Unit = db.run {
+    tokens.insertOrUpdate(TokenPair(token, userId))
   }
 
   def userIdByToken(token: String)(implicit ec: ExecutionContext): Future[UserId] = db.run {

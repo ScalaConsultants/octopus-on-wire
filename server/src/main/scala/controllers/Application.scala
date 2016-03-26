@@ -54,33 +54,35 @@ class Application @Inject()(eventSource: PersistentEventSource, userCache: Persi
 
   def plain = Action(Ok(views.html.plain()))
 
-  def loginWithGithub(code: String, source_url: String) = Action.async { request =>
-    githubApi.getGithubToken(code).flatMap { token =>
-      userCache.getOrFetchUserId(token).map { _ =>
-        RedirectWithToken(source_url, withToken = token)
-      }
-    }
+  def loginWithGithub(code: String, sourceUrl: String) = Action.async { request =>
+    val tokenFut = githubApi.getGithubToken(code)
+    for {
+      token <- tokenFut
+      userId <- userCache.getOrFetchUserId(token)
+    } yield RedirectWithToken(sourceUrl, withToken = token)
   }
 
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
-    githubApi.getGithubToken(code).flatMap { token =>
-      userCache.getOrFetchUserId(token).map { userId =>
-        new ApiService(Some(UserIdentity(token, userId)), eventSource, userCache)
-          .joinEventAndGetJoins(EventId(joinEvent))
-
-        RedirectWithToken(sourceUrl, withToken = token)
-      }
+    val tokenFut = githubApi.getGithubToken(code)
+    for {
+      token <- tokenFut
+      userId <- userCache.getOrFetchUserId(token)
+    } yield {
+      new ApiService(Some(UserIdentity(token, userId)), eventSource, userCache)
+        .joinEventAndGetJoins(EventId(joinEvent))
+      RedirectWithToken(sourceUrl, withToken = token)
     }
   }
 
   def flagEventWithGithub(flagEventById: Long, code: String, sourceUrl: String) = Action.async { request =>
-    githubApi.getGithubToken(code).flatMap { token =>
-      userCache.getOrFetchUserId(token).map { userId =>
-        new ApiService(Some(UserIdentity(token, userId)), eventSource, userCache)
-          .flagEvent(EventId(flagEventById))
-
-        RedirectWithToken(sourceUrl, withToken = token)
-      }
+    val tokenFut = githubApi.getGithubToken(code)
+    for {
+      token <- tokenFut
+      userId <- userCache.getOrFetchUserId(token)
+    } yield {
+      new ApiService(Some(UserIdentity(token, userId)), eventSource, userCache)
+        .flagEvent(EventId(flagEventById))
+      RedirectWithToken(sourceUrl, withToken = token)
     }
   }
 
