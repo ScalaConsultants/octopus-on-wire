@@ -37,8 +37,6 @@ class PersistentEventSource @Inject()(events: EventDao, eventJoins: EventJoinDao
       case _ => Added()
     }
 
-  private def getFlaggers(eventId: EventId): Future[Set[UserId]] = eventFlags.getFlaggers(eventId)
-
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
     events.eventExists(eventId).flatMap {
       case true => eventFlags.flagEvent(eventId, by)

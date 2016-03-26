@@ -22,4 +22,5 @@ object EventJoinMessageBuilder {
 
   case object TryingToJoinPastEvent extends EventJoinMessageBuilder
 
+  val allStates = JoinSuccessful :: AlreadyJoined :: EventNotFound :: UserNotFound :: TryingToJoinPastEvent :: Nil
 }

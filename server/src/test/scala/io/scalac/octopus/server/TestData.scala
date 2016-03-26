@@ -8,7 +8,7 @@ import scalac.octopusonwire.shared.domain.{Event, EventId, NoId}
 object TestData {
   def getSampleValidEvent = {
     val start = System.currentTimeMillis() + 10.hours.toMillis
-    val end = start + Span(5, Hours).toMillis
+    val end = start + 5.hours.toMillis
     Event(NoId, "Some valid event", start, end, 0, "Somewhere", "http://example.com")
   }
 
