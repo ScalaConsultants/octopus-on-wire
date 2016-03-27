@@ -26,14 +26,6 @@ class UserFriendPairDao @Inject()(dbConfig: DbConfig) {
     userFriendPairs ++= friends.map(UserFriendPair(userId, _))
   }.map(_ => ())
 
-  /**
-    * @return `None` if at least one of these is true for `userId`:
-    *         <ul>
-    *         <li>no friends have been cached</li>
-    *         <li>no friends were cached by the time they were fetched</li>
-    *         </ul>
-    *         a `Set` of `UserId`s otherwise.
-    **/
   def getUserFriends(userId: UserId): Future[Set[UserId]] = db.run {
     userFriendPairs.filter(_.userId === userId).map(_.friendId).result
   }.map(_.toSet)
