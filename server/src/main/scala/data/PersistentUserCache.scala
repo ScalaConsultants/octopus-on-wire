@@ -20,17 +20,17 @@ class PersistentUserCache @Inject()(tokens: TokenPairDao,
 
   override def getUserInfo(id: UserId): Future[UserInfo] = userDao.userById(id)
 
-  override def saveUserInfo(userInfo: UserInfo): Unit = userDao.saveUserInfo(userInfo)
+  override def saveUserInfo(userInfo: UserInfo): Future[Int] = userDao.saveUserInfo(userInfo)
 
   override def getUserIdByToken(token: String): Future[UserId] = tokens.userIdByToken(token)
 
-  override def saveUserToken(token: String, userId: UserId): Unit = tokens.saveUserToken(token, userId)
+  override def saveUserToken(token: String, userId: UserId): Future[Int] = tokens.saveUserToken(token, userId)
 
   override def getUserFriends(userId: UserId): Future[Set[UserId]] =
     userFriendPairsDao.getUserFriends(userId).filter(_.nonEmpty)
 
-  override def saveUserFriends(userId: UserId, friends: Set[UserId], githubTokenOpt: Option[String]): Unit = {
-    val saveUsersFuture = Future.sequence(friends.map(getOrFetchUserInfo(_, githubTokenOpt)))
+  override def saveUserFriends(userId: UserId, friends: Set[UserId], token: String): Future[Unit] = {
+    val saveUsersFuture = Future.sequence(friends.map(getOrFetchUserInfo(_, Some(token))))
 
     for {
       users <- saveUsersFuture

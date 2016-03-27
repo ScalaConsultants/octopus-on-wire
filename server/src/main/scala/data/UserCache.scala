@@ -14,15 +14,15 @@ trait UserCache {
 
   def getUserInfo(id: UserId): Future[UserInfo]
 
-  def saveUserInfo(userInfo: UserInfo): Unit
+  def saveUserInfo(userInfo: UserInfo): Future[Int]
 
   def getUserIdByToken(token: String): Future[UserId]
 
-  def saveUserToken(token: String, userId: UserId): Unit
+  def saveUserToken(token: String, userId: UserId): Future[Int]
 
   def getUserFriends(userId: UserId): Future[Set[UserId]]
 
-  def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit
+  def saveUserFriends(userId: UserId, friends: Set[UserId], token: String): Future[Unit]
 
   def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
     getUserInfo(id).recoverWith { case _ =>
@@ -34,13 +34,11 @@ trait UserCache {
 
   def getOrFetchUserId(token: String)(implicit ec: ExecutionContext): Future[UserId] =
     getUserIdByToken(token).recoverWith {
-      case _ => fetchCurrentUserInfo(token).flatMap { info =>
+      case _ => fetchCurrentUserInfo(token).map { info =>
         //update caches
         saveUserInfo(info)
         saveUserToken(token, info.userId)
-        Future.successful(info.userId)
-      }.recoverWith {
-        case _ => Future.failed(new Exception("Invalid user token"))
+        info.userId
       }
     }
 
@@ -48,15 +46,15 @@ trait UserCache {
     val UserIdentity(token, id) = userIdentity
     val dbFriends = getUserFriends(id)
 
-    dbFriends.fallbackTo {
+    dbFriends.recoverWith { case _ =>
       fetchUserFriends(token).map { friends =>
-        saveUserFriends(id, friends, Some(token))
+        saveUserFriends(id, friends, token)
         friends
       }
     }
   }
 
-  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
+  def fetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
     githubApi.getUserInfo(id, tokenOpt)
 
   def fetchCurrentUserInfo(token: String)(implicit ec: ExecutionContext): Future[UserInfo] =

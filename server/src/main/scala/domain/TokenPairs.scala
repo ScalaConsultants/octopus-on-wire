@@ -22,7 +22,7 @@ class TokenPairDao @Inject()(dbConfig: DbConfig) {
 
   import dbConfig.db
 
-  def saveUserToken(token: String, userId: UserId): Unit = db.run {
+  def saveUserToken(token: String, userId: UserId): Future[Int] = db.run {
     tokens.insertOrUpdate(TokenPair(token, userId))
   }
 

@@ -18,12 +18,13 @@ class Users(tag: Tag) extends Table[UserInfo](tag, "users") {
   def toTuple = (id, login)
 }
 
-class UserDao @Inject() (dbConfig: DbConfig){
+class UserDao @Inject()(dbConfig: DbConfig) {
+
   import dbConfig.db
 
   val users = TableQuery[Users]
 
-  def saveUserInfo(userInfo: UserInfo): Unit = db.run{
+  def saveUserInfo(userInfo: UserInfo)(implicit ec: ExecutionContext): Future[Int] = db.run {
     users.insertOrUpdate(userInfo)
   }
 

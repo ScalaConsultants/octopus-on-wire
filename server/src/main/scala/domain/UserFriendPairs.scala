@@ -22,9 +22,9 @@ class UserFriendPairs(tag: Tag) extends Table[UserFriendPair](tag, "user_friends
 class UserFriendPairDao @Inject()(dbConfig: DbConfig) {
   import dbConfig.db
 
-  def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit = db.run {
+  def saveUserFriends(userId: UserId, friends: Set[UserId]): Future[Unit] = db.run {
     userFriendPairs ++= friends.map(UserFriendPair(userId, _))
-  }
+  }.map(_ => ())
 
   /**
     * @return `None` if at least one of these is true for `userId`:
