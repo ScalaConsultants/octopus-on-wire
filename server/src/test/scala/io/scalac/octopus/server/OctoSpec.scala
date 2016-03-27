@@ -26,8 +26,8 @@ trait OctoSpec extends FlatSpec with ScalaFutures with ShouldMatchers with Mocki
 
 }
 
-trait DbSpec {
-  self: BeforeAndAfterEach =>
+trait DbSpec extends BeforeAndAfterEach {
+  self: Suite =>
   lazy val appBuilder = new GuiceApplicationBuilder()
   lazy val injector = appBuilder.injector()
   lazy val databaseApi = injector.instanceOf[DBApi]

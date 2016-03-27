@@ -4,12 +4,12 @@ import config.DbConfig
 import domain.{EventDao, EventFlagDao, EventJoinDao, UserDao}
 import io.scalac.octopus.server.{DbSpec, OctoSpec, TestData}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfterEach
 import slick.driver.PostgresDriver.api._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scalac.octopusonwire.shared.domain.{EventFlag, EventId, UserId, UserInfo}
 
-class EventFlagDaoTests extends OctoSpec with BeforeAndAfterEach with DbSpec {
+class EventFlagDaoTests extends OctoSpec with DbSpec {
   val dbConfig = mock[DbConfig]
 
   when(dbConfig.db).thenReturn(db)
@@ -20,7 +20,7 @@ class EventFlagDaoTests extends OctoSpec with BeforeAndAfterEach with DbSpec {
     val eventDao = new EventDao(dbConfig, mock[EventJoinDao], mock[EventFlagDao])
     val userDao = new UserDao(dbConfig)
 
-    val sampleUsers = List(1, 2, 3).map(i => UserInfo(UserId(i), s"test$i"))
+    val sampleUsers = TestData.sampleUsers(3)
 
     val fut = db.run {
       DBIO.seq(
@@ -63,7 +63,7 @@ class EventFlagDaoTests extends OctoSpec with BeforeAndAfterEach with DbSpec {
     val fut = db.run {
       DBIO.seq(
         eventDao.eventQuery += TestData.getSampleValidEvent,
-        userDao.users ++= List(1, 2).map(id => UserInfo(UserId(id), s"test$id")),
+        userDao.users ++= TestData.sampleUsers(2),
         efd.allQuery += EventFlag(EventId(1), UserId(2))
       )
     }
@@ -79,12 +79,10 @@ class EventFlagDaoTests extends OctoSpec with BeforeAndAfterEach with DbSpec {
     val eventDao = new EventDao(dbConfig, mock[EventJoinDao], mock[EventFlagDao])
     val userDao = new UserDao(dbConfig)
 
-    val sampleEvents = List(1, 2, 3, 4).map(id => TestData.getSampleValidEvent.copy(id = EventId(id)))
-
     val fut = db.run {
       DBIO.seq(
-        eventDao.eventQuery ++= sampleEvents,
-        userDao.users ++= List(1, 2).map(id => UserInfo(UserId(id), s"test$id")),
+        eventDao.eventQuery ++= TestData.sampleValidEvents(4),
+        userDao.users ++= TestData.sampleUsers(3),
         efd.allQuery ++=
           EventFlag(EventId(4), UserId(2)) :: List(1, 2, 3).map(eid => EventFlag(EventId(eid), UserId(1)))
       )
@@ -122,19 +120,20 @@ class EventFlagDaoTests extends OctoSpec with BeforeAndAfterEach with DbSpec {
     val eventDao = new EventDao(dbConfig, mock[EventJoinDao], mock[EventFlagDao])
     val userDao = new UserDao(dbConfig)
 
-    val sampleEvents = List(1, 2).map(id => TestData.getSampleValidEvent.copy(id = EventId(id)))
-    val sampleUsers = List(1, 2).map(id => UserInfo(UserId(id), s"test$id"))
+    val sampleUsers = TestData.sampleUsers(2)
 
     val fut = db.run {
       DBIO.seq(
-        eventDao.eventQuery ++= sampleEvents,
+        eventDao.eventQuery ++= TestData.sampleValidEvents(2),
         userDao.users ++= sampleUsers,
         efd.allQuery ++= EventFlag(EventId(1), UserId(2)) :: EventFlag(EventId(2), UserId(1)) :: Nil
       )
+    } map {_ =>
+      efd.flagEvent(EventId(1), UserId(1))
     }
 
     whenReady(fut) { _ =>
-      efd.flagEvent(EventId(1), UserId(1)).futureValue shouldBe true
+      efd.userHasFlaggedEvent(EventId(1), UserId(1)).futureValue shouldBe true
     }
   }
 
