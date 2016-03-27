@@ -16,14 +16,13 @@ class EventFlags(tag: Tag) extends EventUserAbstractDao[EventFlag](tag, "event_f
 class EventFlagDao @Inject() (dbConfig: DbConfig) extends EventUserAbstractDaoCompanion[EventFlag, EventFlags] {
   override val db = dbConfig.db
 
-  def allQuery = TableQuery[EventFlags]
+  override def allQuery = TableQuery[EventFlags]
 
   val getFlaggers = getAllUserIdByEventId _
 
   val userHasFlaggedEvent = getExistsByEventIdAndUserId _
 
-  def eventFlagsByUserId(idOpt: Option[UserId]): Future[Seq[EventFlag]] =
-    idOpt.map(getByUserId).getOrElse(Future.successful(Nil))
+  val eventFlagsByUserId: (UserId) => Future[Seq[EventFlag]] = getByUserId _
 
   def flagEvent(eventId: EventId, by: UserId): Future[Boolean] =
     userHasFlaggedEvent(eventId, by).flatMap {

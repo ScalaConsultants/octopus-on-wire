@@ -69,7 +69,7 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
       eventQuery.filter(_.isBetween(OffsetTime(from, serverOffset), OffsetTime(to, serverOffset))).result
     }
 
-    val flagsByUser = eventFlags.eventFlagsByUserId(userId)
+    val flagsByUser = userId.map(eventFlags.eventFlagsByUserId).getOrElse(Future.successful(Nil))
 
     for {
       events <- eventsInPeriod
@@ -85,7 +85,7 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
         .map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
-    val flagsByUser = eventFlags.eventFlagsByUserId(userId)
+    val flagsByUser = userId.map(eventFlags.eventFlagsByUserId).getOrElse(Future.successful(Nil))
 
     for {
       events <- eventsInFuture

@@ -205,7 +205,7 @@ class PersistentEventSourceTests extends OctoSpec {
     es.addFlag(EventId(1), UserId(1)).futureValue shouldBe true
   }
 
-  "it" should "not flags to an existing event when it's flagged by user" in {
+  it should "not add flags to an existing event when it's flagged by user" in {
     val (events, joins, flags) = boilerplate
 
     val es = new PersistentEventSource(events, joins, flags)
@@ -216,7 +216,7 @@ class PersistentEventSourceTests extends OctoSpec {
     es.addFlag(EventId(1), UserId(1)).futureValue shouldBe false
   }
 
-  "it" should "not flags to a nonexistent event" in {
+  it should "not add flags to a nonexistent event" in {
     val (events, joins, flags) = boilerplate
 
     val es = new PersistentEventSource(events, joins, flags)

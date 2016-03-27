@@ -13,6 +13,15 @@ import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 class PersistentUserCacheTests extends OctoSpec {
   def boilerplate = (mock[TokenPairDao], mock[TrustedUserDao], mock[UserFriendPairDao], mock[UserDao], mock[GithubApi])
 
+  //this one is for the 100% coverage ;)
+  "githubApi" should "exist" in {
+    val (tokens, trusted, friends, users, gh) = boilerplate
+
+    val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)
+
+    uc.githubApi shouldBe a[GithubApi]
+  }
+
   "isUserTrusted" should "forward result from trusted" in {
     val (tokens, trusted, friends, users, gh) = boilerplate
 
@@ -58,6 +67,18 @@ class PersistentUserCacheTests extends OctoSpec {
     whenReady(uc.saveUserInfo(uinfo)) { joined =>
       joined shouldBe 1
       verify(users).saveUserInfo(uinfo)
+    }
+  }
+
+  "saveUserToken" should "save user token" in {
+    val (tokens, trusted, friends, users, gh) = boilerplate
+
+    val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)
+
+    when(tokens.saveUserToken("some-token", UserId(1))).thenReturnFuture(1)
+
+    whenReady(uc.saveUserToken("some-token", UserId(1))) { _ =>
+      verify(tokens).saveUserToken("some-token", UserId(1))
     }
   }
 
