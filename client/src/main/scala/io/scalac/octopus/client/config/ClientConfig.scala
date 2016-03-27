@@ -2,6 +2,7 @@ package io.scalac.octopus.client.config
 
 import java.nio.ByteBuffer
 
+import concurrent.duration._
 import autowire.ClientProxy
 import boopickle.Default
 
@@ -16,12 +17,12 @@ object ClientConfig {
   val UsersToDisplay = 10
   val UserThumbSize = 100
   val ItemsToFetch = 5
-  val ItemChangeInterval = 5000
-  val MoveToCalendarDelay = 2000
-  val KeyCheckDelay = 50
+  val ItemChangeInterval = 5.seconds
+  val MoveToCalendarDelay = 2.seconds
+  val KeyCheckDelay = 50.milliseconds
   val InitialSlideIndex = 0
-  val WindowLoadTime = 300
-  val WindowOpenDelay = 50
+  val WindowLoadTime = 300.milliseconds
+  val WindowOpenDelay = 50.milliseconds
   val WeeksToDisplay = 6
   val ApiUrl = s"http://$BackendDomain:9000"
 

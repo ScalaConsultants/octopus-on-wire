@@ -26,7 +26,7 @@ class JoinButton(window: Div, eventId: EventId) {
       if (!joined) octoApi.joinEventAndGetJoins(eventId).call().foreach {
         case EventJoinInfo(eventJoinCount, _) =>
           val left = window.firstChild
-          timers.setTimeout(3.seconds) { () =>
+            timers.setTimeout(3.seconds) {
             left.replaceChild(getButton(joined = true, eventJoinCount, active = true), left.lastChild)
           } /// consult this timeout with `octopus-rocket-flying` animation class in css
       }
