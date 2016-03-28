@@ -40,6 +40,7 @@ class Events(tag: Tag) extends Table[Event](tag, "events") {
 }
 
 class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlags: EventFlagDao) {
+
   import dbConfig.db
 
   val eventQuery = TableQuery[Events]
@@ -48,14 +49,14 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
 
   def countPastJoinsBy(id: UserId, currentTime: OffsetTime): Future[Int] = {
     val pastEvents = db.run {
-      eventQuery.filterNot(_.endsAfter(currentTime)).map(_.toSimpleTuple).result
-    }.map(_.map(SimpleEvent.tupled))
+      eventQuery.filterNot(_.endsAfter(currentTime)).map(_.id).result
+    }
 
     val userJoins = eventJoins.eventJoinsByUserId(id)
     for {
       events <- pastEvents
       joins <- userJoins
-    } yield events.count(ev => joins.map(_.eventId).contains(ev.id))
+    } yield events.count(ev => joins.map(_.eventId) contains ev)
   }
 
   def eventExists(eventId: EventId): Future[Boolean] =
@@ -98,10 +99,9 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
   }
 
   def findEventById(id: EventId)(implicit ec: ExecutionContext): Future[Event] = db.run {
-    eventById(id).result
-  } flatMap {
-    case Seq(event) => Future.successful(event)
-    case _ => Future.failed(new Exception("Event not found"))
+    eventById(id).result.headOption
+  } collect {
+    case Some(ev) => ev
   }
 }
 

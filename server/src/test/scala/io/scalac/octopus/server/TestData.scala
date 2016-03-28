@@ -18,7 +18,7 @@ object TestData {
     Event(NoId, "Some invalid event", start, end, 0, "Hell", "http://microsoft.com")
   }
 
-  def sampleValidEvents(count: Int) = (1 to count).map(i => getSampleValidEvent.copy(id = EventId(i)))
+  def sampleValidEvents(count: Int) = (1 to count).map(i => getSampleValidEvent.copy(id = EventId(i))).toList
 
   def sampleUsers(count: Int) = (1 to count).map(i => UserInfo(UserId(i), s"test$i"))
 }
