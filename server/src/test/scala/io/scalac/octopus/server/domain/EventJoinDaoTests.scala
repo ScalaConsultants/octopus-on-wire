@@ -11,10 +11,6 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder.{AlreadyJoined
 import scalac.octopusonwire.shared.domain._
 
 class EventJoinDaoTests extends OctoSpec with DbSpec {
-  val dbConfig = mock[DbConfig]
-
-  when(dbConfig.db).thenReturn(db)
-
   "eventJoinsByUserId" should "return the amount of events the user has joined" in {
     val ejd = new EventJoinDao(dbConfig)
     val eventDao = new EventDao(dbConfig, mock[EventJoinDao], mock[EventFlagDao])

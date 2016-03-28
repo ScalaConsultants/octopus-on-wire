@@ -10,10 +10,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scalac.octopusonwire.shared.domain.{EventFlag, EventId, UserId, UserInfo}
 
 class EventFlagDaoTests extends OctoSpec with DbSpec {
-  val dbConfig = mock[DbConfig]
-
-  when(dbConfig.db).thenReturn(db)
-
   "getFlaggers" should "return some users" in {
     val efd = new EventFlagDao(dbConfig)
 
@@ -128,7 +124,7 @@ class EventFlagDaoTests extends OctoSpec with DbSpec {
         userDao.users ++= sampleUsers,
         efd.allQuery ++= EventFlag(EventId(1), UserId(2)) :: EventFlag(EventId(2), UserId(1)) :: Nil
       )
-    } map {_ =>
+    } flatMap {_ =>
       efd.flagEvent(EventId(1), UserId(1))
     }
 

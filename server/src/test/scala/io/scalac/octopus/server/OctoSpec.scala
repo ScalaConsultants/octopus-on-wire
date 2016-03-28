@@ -1,7 +1,7 @@
 package io.scalac.octopus.server
 
+import config.DbConfig
 import org.mockito.Mockito
-import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -21,13 +21,15 @@ trait OctoSpec extends FlatSpec with ScalaFutures with ShouldMatchers with Mocki
   }
 
   def mockDeep[T <: AnyRef](implicit manifest: Manifest[T]): T = {
-    Mockito.mock(manifest.runtimeClass.asInstanceOf[Class[T]], RETURNS_DEEP_STUBS)
+    Mockito.mock(manifest.runtimeClass.asInstanceOf[Class[T]], Mockito.RETURNS_DEEP_STUBS)
   }
 
 }
 
-trait DbSpec extends BeforeAndAfterEach {
-  self: Suite =>
+import Mockito._
+
+trait DbSpec extends BeforeAndAfterEach with BeforeAndAfterAll{
+  self: Suite with MockitoSugar =>
   lazy val appBuilder = new GuiceApplicationBuilder()
   lazy val injector = appBuilder.injector()
   lazy val databaseApi = injector.instanceOf[DBApi]
@@ -36,8 +38,12 @@ trait DbSpec extends BeforeAndAfterEach {
 
   //type annotation is required here
   val conf: DatabaseConfig[PostgresDriver] = DatabaseConfig.forConfig("slick.dbs.test")
-  val db = conf.db
 
+  val db = conf.db
+  val dbConfig = mock[DbConfig]
+
+
+  when(dbConfig.db).thenReturn(db)
   override protected def beforeEach(): Unit = {
     val dbEvolutions = new DatabaseEvolutions(database, "")
     val evos: Seq[Evolution] = ThisClassLoaderEvolutionsReader.evolutions("default")
@@ -48,5 +54,9 @@ trait DbSpec extends BeforeAndAfterEach {
 
   override protected def afterEach(): Unit = {
     Evolutions.cleanupEvolutions(database)
+  }
+
+  override protected def afterAll(): Unit = {
+    db.close()
   }
 }

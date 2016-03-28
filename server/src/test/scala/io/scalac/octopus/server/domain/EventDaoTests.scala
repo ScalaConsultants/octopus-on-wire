@@ -13,10 +13,6 @@ import concurrent.duration._
 import scalac.octopusonwire.shared.domain.{EventFlag, EventId, EventJoin, UserId}
 
 class EventDaoTests extends OctoSpec with DbSpec {
-  val dbConfig = mock[DbConfig]
-
-  when(dbConfig.db).thenReturn(db)
-
   "findEventById" should "work if there is an event for given id" in {
     val eventDao = new EventDao(dbConfig, mock[EventJoinDao], mock[EventFlagDao])
 
