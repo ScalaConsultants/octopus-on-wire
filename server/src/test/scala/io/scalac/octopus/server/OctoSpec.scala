@@ -26,10 +26,7 @@ trait OctoSpec extends FlatSpec with ScalaFutures with ShouldMatchers with Mocki
 
 }
 
-import Mockito._
-
-trait DbSpec extends BeforeAndAfterEach with BeforeAndAfterAll{
-  self: Suite with MockitoSugar =>
+object TestDb {
   lazy val appBuilder = new GuiceApplicationBuilder()
   lazy val injector = appBuilder.injector()
   lazy val databaseApi = injector.instanceOf[DBApi]
@@ -40,23 +37,25 @@ trait DbSpec extends BeforeAndAfterEach with BeforeAndAfterAll{
   val conf: DatabaseConfig[PostgresDriver] = DatabaseConfig.forConfig("slick.dbs.test")
 
   val db = conf.db
+}
+
+trait DbSpec extends BeforeAndAfterEach {
+  self: Suite with MockitoSugar =>
+
+  val db = TestDb.db
+
   val dbConfig = mock[DbConfig]
+  Mockito.when(dbConfig.db).thenReturn(db)
 
-
-  when(dbConfig.db).thenReturn(db)
   override protected def beforeEach(): Unit = {
-    val dbEvolutions = new DatabaseEvolutions(database, "")
+    val dbEvolutions = new DatabaseEvolutions(TestDb.database, "")
     val evos: Seq[Evolution] = ThisClassLoaderEvolutionsReader.evolutions("default")
     val evolutions = dbEvolutions.scripts(evos)
 
-    new DatabaseEvolutions(database, "").evolve(evolutions, autocommit = true)
+    new DatabaseEvolutions(TestDb.database).evolve(evolutions, autocommit = true)
   }
 
   override protected def afterEach(): Unit = {
-    Evolutions.cleanupEvolutions(database)
-  }
-
-  override protected def afterAll(): Unit = {
-    db.close()
+    Evolutions.cleanupEvolutions(TestDb.database)
   }
 }

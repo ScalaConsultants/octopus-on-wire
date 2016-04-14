@@ -33,6 +33,7 @@ class EventDaoTests extends OctoSpec with DbSpec {
     }.flatMap { _ =>
       eventDao.findEventById(EventId(2))
     }.failed.futureValue shouldBe an[Exception]
+
   }
 
   "eventExists" should "return true if there is an event for the given id" in {

@@ -1,6 +1,5 @@
 package io.scalac.octopus.server.domain
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import domain.{TrustedUser, TrustedUserDao, UserDao}
 import io.scalac.octopus.server.{DbSpec, OctoSpec, TestData}
 import slick.driver.PostgresDriver.api._
