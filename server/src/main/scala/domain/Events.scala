@@ -8,7 +8,7 @@ import slick.lifted.{ProvenShape, TableQuery, Tag}
 import tools.{OffsetTime, TimeHelpers}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scalac.octopusonwire.shared.domain._
 
 class Events(tag: Tag) extends Table[Event](tag, "events") {
@@ -40,6 +40,7 @@ class Events(tag: Tag) extends Table[Event](tag, "events") {
 }
 
 class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlags: EventFlagDao) {
+
   import dbConfig.db
 
   val eventQuery = TableQuery[Events]
@@ -48,14 +49,14 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
 
   def countPastJoinsBy(id: UserId, currentTime: OffsetTime): Future[Int] = {
     val pastEvents = db.run {
-      eventQuery.filterNot(_.endsAfter(currentTime)).map(_.toSimpleTuple).result
-    }.map(_.map(SimpleEvent.tupled))
+      eventQuery.filterNot(_.endsAfter(currentTime)).map(_.id).result
+    }
 
     val userJoins = eventJoins.eventJoinsByUserId(id)
     for {
       events <- pastEvents
       joins <- userJoins
-    } yield events.count(ev => joins.map(_.eventId).contains(ev.id))
+    } yield events.count(ev => joins.map(_.eventId) contains ev)
   }
 
   def eventExists(eventId: EventId): Future[Boolean] =
@@ -64,12 +65,12 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
     }
 
   def getEventsBetweenDatesNotFlaggedBy(from: Long, to: Long, userId: Option[UserId]): Future[Seq[Event]] = {
-    val serverOffset = TimeHelpers.getServerOffset
+    val serverOffset = TimeHelpers.readServerOffset()
     val eventsInPeriod = db.run {
       eventQuery.filter(_.isBetween(OffsetTime(from, serverOffset), OffsetTime(to, serverOffset))).result
     }
 
-    val flagsByUser = eventFlags.eventFlagsByUserId(userId)
+    val flagsByUser = userId.map(eventFlags.eventFlagsByUserId).getOrElse(Future.successful(Nil))
 
     for {
       events <- eventsInPeriod
@@ -85,7 +86,7 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
         .map(_.toSimpleTuple).result
     }.map(_.map(SimpleEvent.tupled))
 
-    val flagsByUser = eventFlags.eventFlagsByUserId(userId)
+    val flagsByUser = userId.map(eventFlags.eventFlagsByUserId).getOrElse(Future.successful(Nil))
 
     for {
       events <- eventsInFuture
@@ -97,7 +98,7 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
     eventQuery.returning(eventQuery.map(_.id)) += event
   }
 
-  def findEventById(id: EventId): Future[Option[Event]] = db.run {
+  def findEventById(id: EventId)(implicit ec: ExecutionContext): Future[Option[Event]] = db.run {
     eventById(id).result.headOption
   }
 }

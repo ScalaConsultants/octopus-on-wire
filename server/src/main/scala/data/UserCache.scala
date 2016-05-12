@@ -1,11 +1,10 @@
 package data
 
-import play.api.libs.json.JsValue
+import domain.UserIdentity
 import services.GithubApi
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scalac.octopusonwire.shared.domain.{UserInfo, UserId}
+import scala.concurrent.{ExecutionContext, Future}
+import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 trait UserCache {
   def githubApi: GithubApi
@@ -14,74 +13,57 @@ trait UserCache {
 
   def getUserInfo(id: UserId): Future[Option[UserInfo]]
 
-  def saveUserInfo(userInfo: UserInfo): Unit
+  def saveUserInfo(userInfo: UserInfo): Future[Int]
 
   def getUserIdByToken(token: String): Future[Option[UserId]]
 
-  def saveUserToken(token: String, user: UserInfo): Unit
+  def saveUserToken(token: String, userId: UserId): Future[Int]
 
   def getUserFriends(userId: UserId): Future[Option[Set[UserId]]]
 
-  def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit
+  def saveUserFriends(userId: UserId, friends: Set[UserId], token: String): Future[Unit]
 
-  def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] =
+  def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
     getUserInfo(id).flatMap {
-      case None => fetchUserInfo(id, tokenOpt).map { infoOpt =>
-        infoOpt foreach saveUserInfo
-        infoOpt
-      }
-      case someInfo => Future.successful(someInfo)
-    }
-
-  def getOrFetchUserId(tokenOpt: Option[String]): Future[Option[UserId]] =
-    tokenOpt.map { token =>
-      getUserIdByToken(token).flatMap {
-        case None => fetchCurrentUserInfo(token).map { infoOpt =>
-          //update caches
-          infoOpt.foreach(user => {
-            saveUserInfo(user)
-            saveUserToken(token, user)
-          })
-
-          infoOpt.map(_.userId)
+      case Some(info) => Future.successful(info)
+      case None =>
+        fetchUserInfo(id, tokenOpt).map { info =>
+          saveUserInfo(info)
+          info
         }
-        case someId => Future.successful(someId)
-      }
-    }.getOrElse(Future(None))
+    }
 
-  def getOrFetchUserFriends(token: String, id: UserId): Future[Set[UserId]] = {
-    val dbFriends = for {
-      Some(friends) <- getUserFriends(id)
-    } yield friends
-
-    dbFriends.fallbackTo {
-      fetchUserFriends(token).map { friends =>
-        saveUserFriends(id, friends, Some(token))
-        friends
+  def getOrFetchUserId(token: String)(implicit ec: ExecutionContext): Future[UserId] =
+    getUserIdByToken(token).flatMap {
+      case Some(id) => Future.successful(id)
+      case _ => fetchCurrentUserInfo(token).map { case info =>
+        //update caches
+        saveUserInfo(info)
+        saveUserToken(token, info.userId)
+        info.userId
       }
+    }
+
+  def getOrFetchUserFriends(userIdentity: UserIdentity)(implicit ec: ExecutionContext): Future[Set[UserId]] = {
+    val UserIdentity(token, id) = userIdentity
+    val dbFriends = getUserFriends(id)
+
+    dbFriends.flatMap {
+      case Some(friends) => Future.successful(friends)
+      case None =>
+        fetchUserFriends(token).map { friends =>
+          saveUserFriends(id, friends, token)
+          friends
+        }
     }
   }
 
-  protected def fetchUserInfo(id: UserId, tokenOpt: Option[String]): Future[Option[UserInfo]] = {
-    githubApi.getUserInfo(id, tokenOpt).map { result =>
-      val loginOpt = (result \ "login").asOpt[String]
-      loginOpt.map(name => UserInfo(id, name))
-    }
-  }
+  def fetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
+    githubApi.getUserInfo(id, tokenOpt)
 
-  protected def fetchCurrentUserInfo(token: String): Future[Option[UserInfo]] = {
+  def fetchCurrentUserInfo(token: String)(implicit ec: ExecutionContext): Future[UserInfo] =
     githubApi.getCurrentUserInfo(token)
-      .map { result =>
-        val uid = (result \ "id").asOpt[Long].map(UserId)
-        val ulogin = (result \ "login").asOpt[String]
 
-        (uid, ulogin).zipped.map((id, name) => UserInfo(id, name)).headOption
-      }
-  }
-
-  def fetchUserFriends(token: String): Future[Set[UserId]] =
-    githubApi.getCurrentUserFollowing(token).map {
-      _.result.asOpt[Seq[JsValue]].toList.flatten
-        .flatMap(friend => (friend \ "id").asOpt[Long]).map(UserId).toSet
-    }
+  def fetchUserFriends(token: String)(implicit ec: ExecutionContext): Future[Set[UserId]] =
+    githubApi.getCurrentUserFollowing(token)
 }

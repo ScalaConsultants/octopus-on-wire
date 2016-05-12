@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain._
 
-class PersistentEventSource @Inject() (events: EventDao, eventJoins: EventJoinDao, eventFlags: EventFlagDao) extends EventSource {
+class PersistentEventSource @Inject()(events: EventDao, eventJoins: EventJoinDao, eventFlags: EventFlagDao) extends EventSource {
   override def countPastJoinsBy(id: UserId): Future[Int] =
     events.countPastJoinsBy(id, OffsetTime.serverCurrent)
 
@@ -37,11 +37,9 @@ class PersistentEventSource @Inject() (events: EventDao, eventJoins: EventJoinDa
       case _ => Added()
     }
 
-  private def getFlaggers(eventId: EventId): Future[Set[UserId]] = eventFlags.getFlaggers(eventId)
-
   override def addFlag(eventId: EventId, by: UserId): Future[Boolean] =
-  events.eventExists(eventId).flatMap{
-    case true => eventFlags.flagEvent(eventId, by)
-    case _ => Future.successful(false)
-  }
+    events.eventExists(eventId).flatMap {
+      case true => eventFlags.flagEvent(eventId, by)
+      case _ => Future.successful(false)
+    }
 }

@@ -22,26 +22,13 @@ class UserFriendPairs(tag: Tag) extends Table[UserFriendPair](tag, "user_friends
 class UserFriendPairDao @Inject()(dbConfig: DbConfig) {
   import dbConfig.db
 
-  def saveUserFriends(userId: UserId, friends: Set[UserId]): Unit = db.run {
+  def saveUserFriends(userId: UserId, friends: Set[UserId]): Future[Unit] = db.run {
     userFriendPairs ++= friends.map(UserFriendPair(userId, _))
-  }
+  }.map(_ => ())
 
-  /**
-    * @return `None` if at least one of these is true for `userId`:
-    *         <ul>
-    *         <li>no friends have been cached</li>
-    *         <li>no friends were cached by the time they were fetched</li>
-    *         </ul>
-    *         a `Set` of `UserId`s otherwise.
-    **/
-  def getUserFriends(userId: UserId): Future[Option[Set[UserId]]] = db.run {
+  def getUserFriends(userId: UserId): Future[Set[UserId]] = db.run {
     userFriendPairs.filter(_.userId === userId).map(_.friendId).result
-  }.map { friends =>
-    friends.isEmpty match {
-      case true => None
-      case _ => Some(friends.toSet)
-    }
-  }
+  }.map(_.toSet)
 
   val userFriendPairs = TableQuery[UserFriendPairs]
 }

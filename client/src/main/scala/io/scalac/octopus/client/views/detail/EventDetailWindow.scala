@@ -27,7 +27,10 @@ object EventDetailWindow extends WindowOperations {
   type EventWindowOption = Option[(EventId, Div)]
 
   var userInfo: Option[UserInfo] = None
-  octoApi.getUserInfo().call().foreach(userInfo = _)
+
+  octoApi.getUserInfo().call().map(userInfo = _).recover{
+    case _ => println("Invalid GitHub token")
+  }
 
   protected var eventWindow: EventWindowOption = None
 
@@ -45,7 +48,8 @@ object EventDetailWindow extends WindowOperations {
     /*The window is visible, but the clicked event is another one.
       Close it and open a window for the clicked event*/
     case Some((_, window)) =>
-      if(eventType == ClickEvent) { // prevent from accidental hovers damaging
+      if (eventType == ClickEvent) {
+        // prevent from accidental hovers damaging
         closeWindow(octopusHome)
         switchWindow(eventId, octopusHome, eventType)
       } else eventWindow
@@ -90,36 +94,35 @@ object EventDetailWindow extends WindowOperations {
         ).render
       }
 
-      octoApi.getUserEventInfo(eventId).call().foreach {
-        case Some(info) =>
+      val elemArrayFromUserEventInfo: UserEventInfo => Array[HTMLElement] = {
+        case UserEventInfo(event, joined, joinCount, eventActive) =>
+          Array(
+            div(
+              `class` := "octopus-event view-left",
+              h1(event.name, `class` := "octopus-event-name"),
+              p(event.datesToString, `class` := "octopus-event-date"),
+              p(event.location, `class` := "octopus-event-location"),
+              new JoinButton(window, eventId)
+                .getButton(joined, joinCount, eventActive)
+            ),
+            div(`class` := "octopus-event view-right",
+              closingXIcon(octopusHome),
+              twitterLinkIcon(event),
+              a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank"),
+              flagIcon()
+            ),
+            bottomArrow
+          ).map(_.render)
+      }
 
+      octoApi.getUserEventInfo(eventId).call().map {
+        case Some(info) =>
           //clear window
           while (window.childElementCount > 0)
             window.removeChild(window.firstChild)
 
-          def elemArrayFromUserEventInfo(info: UserEventInfo): Array[HTMLElement] = info match {
-            case UserEventInfo(event, joined, joinCount, eventActive) =>
-              Array(
-                div(
-                  `class` := "octopus-event view-left",
-                  h1(event.name, `class` := "octopus-event-name"),
-                  p(event.datesToString, `class` := "octopus-event-date"),
-                  p(event.location, `class` := "octopus-event-location"),
-                  new JoinButton(window, eventId)
-                    .getButton(joined, joinCount, eventActive)
-                ),
-                div(`class` := "octopus-event view-right",
-                  closingXIcon(octopusHome),
-                  twitterLinkIcon(event),
-                  a(href := event.url, `class` := "octopus-link octopus-event-link", target := "_blank"),
-                  flagIcon()
-                ),
-                bottomArrow
-              ).map(_.render)
-          }
-
-
           elemArrayFromUserEventInfo(info).foreach(window appendChild _)
+
         case _ => println("No event found for id: " + eventId)
       }
 

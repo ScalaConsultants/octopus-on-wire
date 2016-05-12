@@ -1,11 +1,13 @@
 package scalac.octopusonwire.shared.tools
+
 import scala.language.implicitConversions
 
-class LongRangeOps(i: Long){
+class LongRangeOps(i: Long) {
   def inRange(a: Long, b: Long) = i >= a && i <= b
 }
 
-object LongRangeOps{
+object LongRangeOps {
   implicit def int2IntRangeOps(i: Int): LongRangeOps = new LongRangeOps(i)
+
   implicit def long2IntRangeOps(l: Long): LongRangeOps = new LongRangeOps(l)
 }

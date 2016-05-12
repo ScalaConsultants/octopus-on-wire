@@ -19,12 +19,10 @@ class EventJoinDao @Inject()(dbConfig: DbConfig) extends EventUserAbstractDaoCom
 
   val allQuery = TableQuery[EventJoins]
 
-  val eventJoinsById = queryByEventId _
-
   def eventJoinsByUserId(id: UserId) = getByUserId(id)
 
   def getJoiners(eventId: EventId): Future[Set[UserId]] = db.run {
-    eventJoinsById(eventId).map(_.userId).result
+    queryByEventId(eventId).map(_.userId).result
   }.map(_.toSet)
 
   val countJoins = getCountByEventId _

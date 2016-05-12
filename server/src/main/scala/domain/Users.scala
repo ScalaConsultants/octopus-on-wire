@@ -5,7 +5,7 @@ import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 class Users(tag: Tag) extends Table[UserInfo](tag, "users") {
@@ -18,16 +18,17 @@ class Users(tag: Tag) extends Table[UserInfo](tag, "users") {
   def toTuple = (id, login)
 }
 
-class UserDao @Inject() (dbConfig: DbConfig){
+class UserDao @Inject()(dbConfig: DbConfig) {
+
   import dbConfig.db
 
   val users = TableQuery[Users]
 
-  def saveUserInfo(userInfo: UserInfo): Unit = db.run{
+  def saveUserInfo(userInfo: UserInfo)(implicit ec: ExecutionContext): Future[Int] = db.run {
     users.insertOrUpdate(userInfo)
   }
 
-  def userById(id: UserId): Future[Option[UserInfo]] = db.run{
-    users.filter(_.id === id).result.headOption
-  }
+  def userById(id: UserId)(implicit ec: ExecutionContext): Future[Option[UserInfo]] = db.run {
+    users.filter(_.id === id).result
+  }.map(_.headOption)
 }

@@ -9,7 +9,7 @@ import com.google.inject.Inject
 import config.Github._
 import config.{Github, Router, ServerConfig}
 import data._
-import domain.EventDao
+import domain.{EventDao, UserIdentity}
 import play.api.mvc._
 import play.api.{Environment, Logger, Mode}
 import services.{ApiService, GithubApi}
@@ -17,6 +17,7 @@ import tools.OffsetTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.language.{implicitConversions, postfixOps}
 import scalac.octopusonwire.shared.Api
 import scalac.octopusonwire.shared.domain.EventId
@@ -53,66 +54,86 @@ class Application @Inject()(eventSource: PersistentEventSource, userCache: Persi
 
   def plain = Action(Ok(views.html.plain()))
 
-  def loginWithGithub(code: String, source_url: String) = Action.async { request =>
-    githubApi.getGithubToken(code).flatMap { tokenOpt =>
-      userCache.getOrFetchUserId(tokenOpt).map { _ =>
-        RedirectWithToken(source_url, withToken = tokenOpt)
-      }
-    }
+  def loginWithGithub(code: String, sourceUrl: String) = Action.async { request =>
+    val tokenFut = githubApi.getGithubToken(code)
+    for {
+      token <- tokenFut
+      userId <- userCache.getOrFetchUserId(token)
+    } yield RedirectWithToken(sourceUrl, withToken = token)
   }
 
   def joinEventWithGithub(joinEvent: Long, code: String, sourceUrl: String) = Action.async { request =>
-    githubApi.getGithubToken(code).flatMap { tokenOpt =>
-      userCache.getOrFetchUserId(tokenOpt)
-        .map { userOpt =>
-          new ApiService(tokenOpt, userOpt, eventSource, userCache)
-            .joinEventAndGetJoins(EventId(joinEvent))
-
-          RedirectWithToken(sourceUrl, withToken = tokenOpt)
-        }
+    val tokenFut = githubApi.getGithubToken(code)
+    for {
+      token <- tokenFut
+      userId <- userCache.getOrFetchUserId(token)
+    } yield {
+      new ApiService(Some(UserIdentity(token, userId)), eventSource, userCache)
+        .joinEventAndGetJoins(EventId(joinEvent))
+      RedirectWithToken(sourceUrl, withToken = token)
     }
   }
 
   def flagEventWithGithub(flagEventById: Long, code: String, sourceUrl: String) = Action.async { request =>
-    githubApi.getGithubToken(code).flatMap { tokenOpt =>
-      userCache.getOrFetchUserId(tokenOpt)
-        .map { userOpt =>
-          new ApiService(tokenOpt, userOpt, eventSource, userCache)
-            .flagEvent(EventId(flagEventById))
-
-          RedirectWithToken(sourceUrl, withToken = tokenOpt)
-        }
+    val tokenFut = githubApi.getGithubToken(code)
+    for {
+      token <- tokenFut
+      userId <- userCache.getOrFetchUserId(token)
+    } yield {
+      new ApiService(Some(UserIdentity(token, userId)), eventSource, userCache)
+        .flagEvent(EventId(flagEventById))
+      RedirectWithToken(sourceUrl, withToken = token)
     }
   }
 
   def autowireApi(path: String) = CorsEnabled {
     Action.async(parse.raw) { implicit request =>
-      println(s"Request path: $path")
+      Logger.info(s"Request path: $path")
 
       val tokenCookie: Option[String] = request.cookies.get(Github.AccessTokenKey).map(_.value)
 
-      val userFuture = userCache.getOrFetchUserId(tokenCookie)
+      val userIdFuture = tokenCookie.map(userCache.getOrFetchUserId)
+        .getOrElse(Future.failed(new Exception("No token supplied")))
 
       // get the request body as Array[Byte]
       val b = request.body.asBytes(parse.UNLIMITED).get
       val req = autowire.Core.Request(path.split("/"), Unpickle[Map[String, ByteBuffer]].fromBytes(b.asByteBuffer))
+      userIdFuture
+        .map { userId =>
+          tokenCookie match {
+            case Some(token) => Some(UserIdentity(token, userId))
+            case _ => None
+          }
+        }
+        .recover { case _ => None }
+        .flatMap { userIdentityOpt =>
+          val apiService = new ApiService(userIdentityOpt, eventSource, userCache)
+          val router = Router.route[Api](apiService)
 
-      userFuture.flatMap { userOpt =>
-        val apiService = new ApiService(tokenCookie, userOpt, eventSource, userCache)
-        val router = Router.route[Api](apiService)
+          // call Autowire route
+          router(req).map(buffer => {
+            val data = Array.ofDim[Byte](buffer.remaining())
+            buffer.get(data)
 
-        // call Autowire route
-        router(req).map(buffer => {
-          val data = Array.ofDim[Byte](buffer.remaining())
-          buffer.get(data)
-          Ok(data)
-        })
-      }
+            Ok(data)
+          })
+        }
     }
   }
 
-  /*Enables CORS*/
+  // Enables CORS
   def options(path: String) = CorsEnabled(Action(NoContent))
+}
+
+object RedirectWithToken extends Results {
+  def apply(url: String, withToken: String): Result = Redirect(url).withCookies(Cookie(
+    name = AccessTokenKey,
+    value = withToken,
+    maxAge = Some(14.days.toMillis.toInt),
+    domain = Some(ServerConfig.CookieDomain),
+    secure = false, //we don't have HTTPS yet
+    httpOnly = true
+  ))
 }
 
 case class CorsEnabled[A](action: Action[A]) extends Action[A] {
@@ -131,15 +152,4 @@ case class CorsEnabled[A](action: Action[A]) extends Action[A] {
         case _ => newResult
       }
     }
-}
-
-object RedirectWithToken extends Results {
-  def apply(url: String, withToken: Option[String]): Result = Redirect(url).withCookies(Cookie(
-    name = AccessTokenKey,
-    value = withToken.getOrElse(""),
-    maxAge = withToken.map(_ => 14 * 3600 * 24).orElse(Some(-1)),
-    domain = Some(ServerConfig.Domain),
-    secure = false, //we don't have HTTPS yet
-    httpOnly = true
-  ))
 }

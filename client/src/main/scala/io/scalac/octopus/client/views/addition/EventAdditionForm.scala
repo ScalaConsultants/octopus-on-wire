@@ -58,7 +58,7 @@ class EventAdditionForm(val startDay: Date, octopusHome: Div) extends EventField
   }
 
   //sends valid event to the server
-  def sendEvent(event: Event) = {
+  def sendEvent(event: Event): Unit = {
     showWithText(messageField, "Submitting event, please wait...")
     hide(submitButton)
     octoApi.addEvent(event).call().foreach {

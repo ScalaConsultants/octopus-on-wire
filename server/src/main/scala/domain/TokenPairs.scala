@@ -5,7 +5,7 @@ import config.DbConfig
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ProvenShape, TableQuery, Tag}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scalac.octopusonwire.shared.domain.{UserInfo, TokenPair, UserId}
 
 class TokenPairs(tag: Tag) extends Table[TokenPair](tag, "tokens") {
@@ -22,13 +22,13 @@ class TokenPairDao @Inject()(dbConfig: DbConfig) {
 
   import dbConfig.db
 
-  def saveUserToken(token: String, user: UserInfo): Unit = db.run {
-    tokens.insertOrUpdate(TokenPair(token, user.userId))
+  def saveUserToken(token: String, userId: UserId): Future[Int] = db.run {
+    tokens.insertOrUpdate(TokenPair(token, userId))
   }
 
-  def userIdByToken(token: String): Future[Option[UserId]] = db.run {
-    tokens.filter(_.token === token).map(_.userId).result.headOption
-  }
+  def userIdByToken(token: String)(implicit ec: ExecutionContext): Future[Option[UserId]] = db.run {
+    tokens.filter(_.token === token).map(_.userId).result
+  }.map(_.headOption)
 
   val tokens = TableQuery[TokenPairs]
 }

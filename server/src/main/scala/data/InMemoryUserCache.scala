@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
-class InMemoryUserCache @Inject() (gh: GithubApi) extends UserCache {
+class InMemoryUserCache @Inject()(gh: GithubApi) extends UserCache {
   private val tokenCache = TrieMap[String, UserId]()
   private val userCache = TrieMap[UserId, UserInfo]()
 
@@ -25,23 +25,31 @@ class InMemoryUserCache @Inject() (gh: GithubApi) extends UserCache {
     userCache.get(id)
   }
 
-  override def saveUserInfo(userInfo: UserInfo): Unit = {
+  override def saveUserInfo(userInfo: UserInfo): Future[Int] = Future.successful {
+    val result = userCache.keySet.contains(userInfo.userId)
     userCache(userInfo.userId) = userInfo
+
+    if (result) 0 else 1
   }
 
   override def getUserIdByToken(token: String): Future[Option[UserId]] = Future {
     tokenCache.get(token)
   }
 
-  override def saveUserToken(token: String, user: UserInfo): Unit = {
-    tokenCache(token) = user.userId
+  override def saveUserToken(token: String, userId: UserId): Future[Int] = Future {
+    val result = tokenCache.keySet.contains(token)
+    tokenCache(token) = userId
+
+    if (result) 0 else 1
   }
 
   override def getUserFriends(userId: UserId): Future[Option[Set[UserId]]] = Future {
-    userFriends.get(userId)
+    userFriends.getOrElse(userId, Set.empty)
+  }.map {
+    friends => Some(friends).filter(_.nonEmpty)
   }
 
-  override def saveUserFriends(userId: UserId, friends: Set[UserId], tokenOpt: Option[String]): Unit = {
+  override def saveUserFriends(userId: UserId, friends: Set[UserId], token: String): Future[Unit] = Future {
     userFriends(userId) = friends
   }
 

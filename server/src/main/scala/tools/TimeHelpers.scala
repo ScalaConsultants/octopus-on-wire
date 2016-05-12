@@ -7,16 +7,16 @@ object TimeHelpers {
 
   def days(d: Int): Long = 3600000L * d * 24
 
-  def now: Long = System.currentTimeMillis
+  def now(): Long = System.currentTimeMillis()
 
-  def currentUTC = System.currentTimeMillis - getServerOffset
+  def currentUTC() = System.currentTimeMillis() - readServerOffset()
 
-  def getServerOffset = Calendar.getInstance.getTimeZone.getRawOffset
+  def readServerOffset() = Calendar.getInstance().getTimeZone.getRawOffset
 }
 
 class OffsetTime private(val value: Long) extends AnyVal
 
 object OffsetTime {
-  def serverCurrent = apply(TimeHelpers.currentUTC, TimeHelpers.getServerOffset)
+  def serverCurrent = apply(TimeHelpers.currentUTC(), TimeHelpers.readServerOffset())
   def apply(time: Long, offset: Long) = new OffsetTime(time - offset)
 }
