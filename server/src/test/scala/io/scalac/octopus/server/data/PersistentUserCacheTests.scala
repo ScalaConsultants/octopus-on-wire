@@ -41,9 +41,9 @@ class PersistentUserCacheTests extends OctoSpec {
 
     val uinfo = UserInfo(UserId(1), "username")
 
-    when(users.userById(UserId(1))).thenReturnFuture(uinfo)
+    when(users.userById(UserId(1))).thenReturnFuture(Some(uinfo))
 
-    uc.getUserInfo(UserId(1)).futureValue shouldBe uinfo
+    uc.getUserInfo(UserId(1)).futureValue shouldBe Some(uinfo)
   }
 
   it should "fail if the user doesn't exist" in {
@@ -51,9 +51,9 @@ class PersistentUserCacheTests extends OctoSpec {
 
     val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)
 
-    when(users.userById(UserId(2))).thenReturn(Future.failed(new Exception("User not found")))
+    when(users.userById(UserId(2))).thenReturnFuture(None)
 
-    uc.getUserInfo(UserId(2)).failed.futureValue shouldBe an[Exception]
+    uc.getUserInfo(UserId(2)).futureValue shouldBe None
   }
 
   "saveUserInfo" should "save user info" in {
@@ -86,22 +86,22 @@ class PersistentUserCacheTests extends OctoSpec {
     val (tokens, trusted, friends, users, gh) = boilerplate
     val token = "some-token"
 
-    when(tokens.userIdByToken(token)).thenReturnFuture(UserId(1))
+    when(tokens.userIdByToken(token)).thenReturnFuture(Some(UserId(1)))
 
     val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)
 
-    uc.getUserIdByToken(token).futureValue shouldBe UserId(1)
+    uc.getUserIdByToken(token).futureValue shouldBe Some(UserId(1))
   }
 
   it should "fail if given invalid token" in {
     val (tokens, trusted, friends, users, gh) = boilerplate
     val token = "bad-token"
 
-    when(tokens.userIdByToken(token)).thenReturn(Future.failed(new Exception("Invalid token")))
+    when(tokens.userIdByToken(token)).thenReturnFuture(None)
 
     val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)
 
-    uc.getUserIdByToken(token).failed.futureValue shouldBe an[Exception]
+    uc.getUserIdByToken(token).futureValue shouldBe None
   }
 
   "getUserFriends" should "return some friends for existing users" in {
@@ -111,7 +111,7 @@ class PersistentUserCacheTests extends OctoSpec {
 
     val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)
 
-    uc.getUserFriends(UserId(1)).futureValue should contain theSameElementsAs Set(2, 3, 4).map(UserId(_))
+    uc.getUserFriends(UserId(1)).futureValue shouldBe Some(Set(2, 3, 4).map(UserId(_)))
   }
 
   it should "fail if the list is empty" in {
@@ -121,7 +121,7 @@ class PersistentUserCacheTests extends OctoSpec {
 
     val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)
 
-    uc.getUserFriends(UserId(1)).failed.futureValue shouldBe an[Exception]
+    uc.getUserFriends(UserId(1)).futureValue shouldBe None
   }
 
   "saveUserFriends" should "save friends" in {
@@ -130,7 +130,7 @@ class PersistentUserCacheTests extends OctoSpec {
     val ids = Set(2, 3, 4).map(UserId(_))
 
     ids.foreach { id =>
-      when(users.userById(id)).thenReturnFuture(UserInfo(id, "username"))
+      when(users.userById(id)).thenReturnFuture(Some(UserInfo(id, "username")))
     }
 
     val uc = new PersistentUserCache(tokens, trusted, friends, users, gh)

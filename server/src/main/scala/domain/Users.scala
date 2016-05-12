@@ -28,10 +28,7 @@ class UserDao @Inject()(dbConfig: DbConfig) {
     users.insertOrUpdate(userInfo)
   }
 
-  def userById(id: UserId)(implicit ec: ExecutionContext): Future[UserInfo] = db.run {
+  def userById(id: UserId)(implicit ec: ExecutionContext): Future[Option[UserInfo]] = db.run {
     users.filter(_.id === id).result
-  }.flatMap {
-    case Seq(info) => Future.successful(info)
-    case _ => Future.failed(new Exception("User info not found"))
-  }
+  }.map(_.headOption)
 }

@@ -26,12 +26,9 @@ class TokenPairDao @Inject()(dbConfig: DbConfig) {
     tokens.insertOrUpdate(TokenPair(token, userId))
   }
 
-  def userIdByToken(token: String)(implicit ec: ExecutionContext): Future[UserId] = db.run {
+  def userIdByToken(token: String)(implicit ec: ExecutionContext): Future[Option[UserId]] = db.run {
     tokens.filter(_.token === token).map(_.userId).result
-  }.flatMap {
-    case Seq(id) => Future.successful(id)
-    case _ => Future.failed(new Exception("User id not found"))
-  }
+  }.map(_.headOption)
 
   val tokens = TableQuery[TokenPairs]
 }

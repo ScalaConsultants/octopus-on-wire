@@ -21,11 +21,8 @@ class InMemoryUserCache @Inject()(gh: GithubApi) extends UserCache {
     trustedUsers contains id
   }
 
-  override def getUserInfo(id: UserId): Future[UserInfo] = Future {
+  override def getUserInfo(id: UserId): Future[Option[UserInfo]] = Future {
     userCache.get(id)
-  } flatMap {
-    case Some(info) => Future.successful(info)
-    case None => Future.failed(new Exception("User info not found"))
   }
 
   override def saveUserInfo(userInfo: UserInfo): Future[Int] = Future.successful {
@@ -35,11 +32,8 @@ class InMemoryUserCache @Inject()(gh: GithubApi) extends UserCache {
     if (result) 0 else 1
   }
 
-  override def getUserIdByToken(token: String): Future[UserId] = Future {
+  override def getUserIdByToken(token: String): Future[Option[UserId]] = Future {
     tokenCache.get(token)
-  } flatMap {
-    case Some(info) => Future.successful(info)
-    case None => Future.failed(new Exception("User info not found"))
   }
 
   override def saveUserToken(token: String, userId: UserId): Future[Int] = Future {
@@ -49,11 +43,10 @@ class InMemoryUserCache @Inject()(gh: GithubApi) extends UserCache {
     if (result) 0 else 1
   }
 
-  override def getUserFriends(userId: UserId): Future[Set[UserId]] = Future {
+  override def getUserFriends(userId: UserId): Future[Option[Set[UserId]]] = Future {
     userFriends.getOrElse(userId, Set.empty)
-  }.flatMap {
-    case friends if friends.nonEmpty => Future.successful(friends)
-    case _ => Future.failed(new Exception("No friends found"))
+  }.map {
+    friends => Some(friends).filter(_.nonEmpty)
   }
 
   override def saveUserFriends(userId: UserId, friends: Set[UserId], token: String): Future[Unit] = Future {

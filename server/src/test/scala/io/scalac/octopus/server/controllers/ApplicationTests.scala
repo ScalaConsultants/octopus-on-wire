@@ -86,7 +86,7 @@ class ApplicationTests extends OctoSpec {
     when(gh.getGithubToken(code)).thenReturnFuture(token)
     when(uc.getOrFetchUserId(token)).thenReturnFuture(UserId(1))
 
-    when(es.eventById(expectedEvent.id)).thenReturnFuture(expectedEvent)
+    when(es.eventById(expectedEvent.id)).thenReturnFuture(Some(expectedEvent))
     when(es.joinEvent(UserId(1), expectedEvent.id)).thenReturnFuture(JoinSuccessful.apply)
 
     val app = new Application(es, uc, gh, env, edao)

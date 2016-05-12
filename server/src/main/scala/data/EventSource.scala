@@ -12,7 +12,7 @@ trait EventSource {
 
   def joinEvent(userId: UserId, eventId: EventId): Future[EventJoinMessage]
 
-  def eventById(id: EventId): Future[Event]
+  def eventById(id: EventId): Future[Option[Event]]
 
   def countJoins(eventId: EventId): Future[Int]
 

@@ -22,7 +22,7 @@ class EventDaoTests extends OctoSpec with DbSpec {
       eventDao.eventQuery += newEvent
     }.flatMap { _ =>
       eventDao.findEventById(EventId(1))
-    }.futureValue(Timeout(5.seconds)) shouldBe newEvent
+    }.futureValue(Timeout(5.seconds)) shouldBe Some(newEvent)
   }
 
   it should "fail if there is no event for given id" in {
@@ -32,7 +32,7 @@ class EventDaoTests extends OctoSpec with DbSpec {
       eventDao.eventQuery += TestData.getSampleValidEvent
     }.flatMap { _ =>
       eventDao.findEventById(EventId(2))
-    }.failed.futureValue shouldBe an[Exception]
+    }.futureValue shouldBe None
 
   }
 

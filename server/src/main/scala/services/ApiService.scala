@@ -14,32 +14,33 @@ import scalac.octopusonwire.shared.domain.FailedToAdd.{EventCantEndInThePast, Us
 import scalac.octopusonwire.shared.domain._
 
 class ApiService(userIdentity: Option[UserIdentity],
-                 val eventSource: EventSource, val userCache: UserCache) extends Api {
+                 eventSource: EventSource, userCache: UserCache) extends Api {
 
-  override def getUserEventInfo(eventId: EventId): Future[UserEventInfo] = {
+  override def getUserEventInfo(eventId: EventId): Future[Option[UserEventInfo]] = {
     val eventFuture = eventSource.eventById(eventId)
     val userJoinedFuture = userIdentity.map(_.id).map(eventSource.hasUserJoinedEvent(eventId, _))
       .getOrElse(Future.successful(false))
     val joinCountFuture = eventSource.countJoins(eventId)
 
     for {
-      event <- eventFuture
+      eventOpt <- eventFuture
       joinResult <- userJoinedFuture
       joinCount <- joinCountFuture
-    } yield {
+    } yield eventOpt.map(event =>
       UserEventInfo(
         event,
         joinResult,
         joinCount,
         event isInTheFuture
       )
-    }
+    )
   }
 
-  override def getUserInfo(): Future[UserInfo] =
+  override def getUserInfo(): Future[Option[UserInfo]] =
     userIdentity.map { case UserIdentity(token, id) =>
       userCache.getOrFetchUserInfo(id, Some(token))
-    }.getOrElse(Future.failed(new Exception("Couldn't fetch user info")))
+        .map(Some.apply)
+    }.getOrElse(Future.successful(None))
 
   override def getFutureItems(limit: Int): Future[Seq[SimpleEvent]] =
     eventSource.getSimpleFutureEventsNotFlaggedByUser(userIdentity.map(_.id), limit)
@@ -48,16 +49,16 @@ class ApiService(userIdentity: Option[UserIdentity],
     eventSource.getEventsBetweenDatesNotFlaggedBy(from, to, userIdentity.map(_.id))
 
   override def joinEventAndGetJoins(eventId: EventId): Future[EventJoinInfo] = {
-    val messageFuture = eventSource.eventById(eventId).flatMap { event =>
-      userIdentity match {
-        case Some(UserIdentity(_, id)) if event.isInTheFuture =>
-          eventSource.joinEvent(id, eventId)
-        case None => Future.successful(UserNotFound.apply)
-        case _ => Future.successful(TryingToJoinPastEvent.apply)
-      }
-    } recoverWith {
-      case _ => Future.successful(EventNotFound.apply)
+    val messageFuture = eventSource.eventById(eventId).flatMap {
+      _.map {
+        event => userIdentity match {
+          case Some(UserIdentity(_, id)) if event.isInTheFuture => eventSource.joinEvent(id, eventId)
+          case None => Future.successful(UserNotFound.apply)
+          case _ => Future.successful(TryingToJoinPastEvent.apply)
+        }
+      }.getOrElse(Future.successful(EventNotFound.apply))
     }
+
     messageFuture.flatMap { ejm =>
       eventSource.countJoins(eventId).map(EventJoinInfo(_, ejm))
     }
@@ -107,7 +108,7 @@ class ApiService(userIdentity: Option[UserIdentity],
       isTrusted <- isTrustedFuture
       pastJoins <- pastJoinsFuture
       user <- userFuture
-    } yield buildReputationResponse(isTrusted, pastJoins, Option(user))
+    } yield buildReputationResponse(isTrusted, pastJoins, user)
   }
 
   private def buildReputationResponse(isTrusted: Boolean, pastJoins: Int, user: Option[UserInfo]): UserReputationInfo = {
@@ -121,8 +122,8 @@ class ApiService(userIdentity: Option[UserIdentity],
     }
   }
 
-  override def getUserReputation(): Future[UserReputationInfo] =
+  override def getUserReputation(): Future[Option[UserReputationInfo]] =
     userIdentity map {
-      case UserIdentity(_, id) => getUserReputationFuture(id)
-    } getOrElse Future.failed(new Exception("User not logged in"))
+      case UserIdentity(_, id) => getUserReputationFuture(id).map(Some.apply)
+    } getOrElse Future.successful(None)
 }

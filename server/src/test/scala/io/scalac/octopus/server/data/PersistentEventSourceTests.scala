@@ -157,19 +157,19 @@ class PersistentEventSourceTests extends OctoSpec {
 
     val event = TestData.getSampleValidEvent.copy(id = EventId(1))
 
-    when(events.findEventById(EventId(1))).thenReturnFuture(event)
+    when(events.findEventById(EventId(1))).thenReturnFuture(Some(event))
     val es = new PersistentEventSource(events, joins, flags)
 
-    es.eventById(EventId(1)).futureValue shouldBe event
+    es.eventById(EventId(1)).futureValue shouldBe Some(event)
   }
 
   it should "fail when given nonexistent id" in {
     val (events, joins, flags) = boilerplate
 
-    when(events.findEventById(EventId(999))).thenReturn(Future.failed(new Exception("Event not found")))
+    when(events.findEventById(EventId(999))).thenReturnFuture(None)
     val es = new PersistentEventSource(events, joins, flags)
 
-    es.eventById(EventId(999)).failed.futureValue shouldBe an[Exception]
+    es.eventById(EventId(999)).futureValue shouldBe None
   }
 
   "addEvent" should "add event when given new event id" in {

@@ -5,12 +5,10 @@ import domain.UserIdentity
 import io.scalac.octopus.server.OctoSpec
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import services.GithubApi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scalac.octopusonwire.shared.domain.{UserId, UserInfo}
 
 class UserCacheTests extends OctoSpec {
@@ -22,7 +20,7 @@ class UserCacheTests extends OctoSpec {
     val info = UserInfo(UserId(1), "username")
 
     when(userCache.getOrFetchUserInfo(UserId(1), None)).thenCallRealMethod()
-    when(userCache.getUserInfo(UserId(1))).thenReturnFuture(info)
+    when(userCache.getUserInfo(UserId(1))).thenReturnFuture(Some(info))
 
     whenReady(userCache.getOrFetchUserInfo(UserId(1), None)) { v =>
       v shouldBe info
@@ -38,7 +36,7 @@ class UserCacheTests extends OctoSpec {
     val userCache = mock[AbstractUserCache]
 
     when(userCache.getOrFetchUserInfo(UserId(999), None)).thenCallRealMethod()
-    when(userCache.getUserInfo(UserId(999))).thenReturn(Future.failed(new Exception("User info not found")))
+    when(userCache.getUserInfo(UserId(999))).thenReturnFuture(None)
     when(userCache.fetchUserInfo(UserId(999), None)).thenReturn(Future.failed(new Exception("User not found")))
 
     whenReady(userCache.getOrFetchUserInfo(UserId(999), None).failed) { v =>
@@ -57,7 +55,7 @@ class UserCacheTests extends OctoSpec {
     val userCache = mock[AbstractUserCache]
 
     when(userCache.getOrFetchUserInfo(UserId(999), None)).thenCallRealMethod()
-    when(userCache.getUserInfo(UserId(999))).thenReturn(Future.failed(new Exception("User info not found")))
+    when(userCache.getUserInfo(UserId(999))).thenReturnFuture(None)
     when(userCache.fetchUserInfo(UserId(999), None)).thenReturnFuture(info)
 
     whenReady(userCache.getOrFetchUserInfo(UserId(999), None)) { v =>
@@ -74,7 +72,7 @@ class UserCacheTests extends OctoSpec {
     val token = "some-token"
 
     when(userCache.getOrFetchUserId(token)).thenCallRealMethod()
-    when(userCache.getUserIdByToken(token)).thenReturnFuture(UserId(1))
+    when(userCache.getUserIdByToken(token)).thenReturnFuture(Some(UserId(1)))
 
     whenReady(userCache.getOrFetchUserId(token)) { v =>
       v shouldBe UserId(1)
@@ -90,26 +88,26 @@ class UserCacheTests extends OctoSpec {
     val token = "some-token"
 
     when(userCache.getOrFetchUserId(token)).thenCallRealMethod()
-    when(userCache.getUserIdByToken(token)).thenReturn(Future.failed(new Exception("User not found")))
+    when(userCache.getUserIdByToken(token)).thenReturnFuture(None)
     when(userCache.fetchCurrentUserInfo(token)).thenReturn(Future.failed(new Exception("Invalid token")))
 
     whenReady(userCache.getOrFetchUserId(token).failed) { v =>
       v shouldBe an[Exception]
-      verify(userCache).getUserIdByToken(token)
+
       verify(userCache).fetchCurrentUserInfo(token)
       verify(userCache, times(0)).saveUserInfo(any[UserInfo])
       verify(userCache, times(0)).saveUserToken(token, UserId(1))
     }
   }
 
-  it should "fetch wheen needed and save info if the token is valid" in {
+  it should "fetch when needed and save info if the token is valid" in {
     val userCache = mock[AbstractUserCache]
     val token = "some-token"
 
     val info = UserInfo(UserId(1), "username")
 
     when(userCache.getOrFetchUserId(token)).thenCallRealMethod()
-    when(userCache.getUserIdByToken(token)).thenReturn(Future.failed(new Exception("User not found")))
+    when(userCache.getUserIdByToken(token)).thenReturnFuture(None)
     when(userCache.fetchCurrentUserInfo(token)).thenReturnFuture(info)
 
     whenReady(userCache.getOrFetchUserId(token)) { v =>
@@ -127,7 +125,7 @@ class UserCacheTests extends OctoSpec {
     val ids = Set(2, 3, 4).map(UserId(_))
 
     when(userCache.getOrFetchUserFriends(ident)).thenCallRealMethod()
-    when(userCache.getUserFriends(UserId(1))).thenReturnFuture(ids)
+    when(userCache.getUserFriends(UserId(1))).thenReturnFuture(Some(ids))
 
     whenReady(userCache.getOrFetchUserFriends(ident)) { v =>
       v should contain theSameElementsAs ids
@@ -142,7 +140,7 @@ class UserCacheTests extends OctoSpec {
     val ident = UserIdentity("some-token", UserId(1))
 
     when(userCache.getOrFetchUserFriends(ident)).thenCallRealMethod()
-    when(userCache.getUserFriends(UserId(1))).thenReturn(Future.failed(new Exception("No users found")))
+    when(userCache.getUserFriends(UserId(1))).thenReturnFuture(None)
     when(userCache.fetchUserFriends("some-token")).thenReturn(Future.failed(new Exception("Invalid token")))
 
     whenReady(userCache.getOrFetchUserFriends(ident).failed) { v =>
@@ -153,13 +151,13 @@ class UserCacheTests extends OctoSpec {
     }
   }
 
-  it should "fetch wheen needed and save friends if the token is valid" in {
+  it should "fetch ween needed and save friends if the token is valid" in {
     val userCache = mock[AbstractUserCache]
     val ident = UserIdentity("some-token", UserId(1))
     val ids = Set(2, 3, 4).map(UserId(_))
 
     when(userCache.getOrFetchUserFriends(ident)).thenCallRealMethod()
-    when(userCache.getUserFriends(UserId(1))).thenReturn(Future.failed(new Exception("No users found")))
+    when(userCache.getUserFriends(UserId(1))).thenReturnFuture(None)
     when(userCache.fetchUserFriends("some-token")).thenReturnFuture(ids)
 
     whenReady(userCache.getOrFetchUserFriends(ident)) { v =>

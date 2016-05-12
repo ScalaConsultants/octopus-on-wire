@@ -45,7 +45,7 @@ class UserDaoTests extends OctoSpec with DbSpec {
       userDao.userById(UserId(1))
     }
 
-    result.futureValue shouldBe user
+    result.futureValue shouldBe Some(user)
   }
 
   it should "fail when there is no user for the id requested" in {
@@ -58,6 +58,6 @@ class UserDaoTests extends OctoSpec with DbSpec {
       userDao.userById(UserId(2))
     }
 
-    result.failed.futureValue shouldBe an[Exception]
+    result.futureValue shouldBe None
   }
 }

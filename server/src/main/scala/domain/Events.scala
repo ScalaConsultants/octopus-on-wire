@@ -98,10 +98,8 @@ class EventDao @Inject()(dbConfig: DbConfig, eventJoins: EventJoinDao, eventFlag
     eventQuery.returning(eventQuery.map(_.id)) += event
   }
 
-  def findEventById(id: EventId)(implicit ec: ExecutionContext): Future[Event] = db.run {
+  def findEventById(id: EventId)(implicit ec: ExecutionContext): Future[Option[Event]] = db.run {
     eventById(id).result.headOption
-  } collect {
-    case Some(ev) => ev
   }
 }
 

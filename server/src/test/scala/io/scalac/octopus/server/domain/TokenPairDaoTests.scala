@@ -20,7 +20,7 @@ class TokenPairDaoTests extends OctoSpec with DbSpec {
       tpd.saveUserToken("valid-token", UserId(1))
     }.flatMap { _ =>
       tpd.userIdByToken("valid-token")
-    }.futureValue(Timeout(5.seconds)) shouldBe UserId(1)
+    }.futureValue(Timeout(5.seconds)) shouldBe Some(UserId(1))
   }
 
   it should "update user token" in {
@@ -36,8 +36,8 @@ class TokenPairDaoTests extends OctoSpec with DbSpec {
     }
 
     whenReady(fut) { _ =>
-      tpd.userIdByToken("new-token").futureValue shouldBe UserId(1)
-      tpd.userIdByToken("old-token").failed.futureValue shouldBe an[Exception]
+      tpd.userIdByToken("new-token").futureValue shouldBe Some(UserId(1))
+      tpd.userIdByToken("old-token").futureValue shouldBe None
     }
   }
 
@@ -51,7 +51,7 @@ class TokenPairDaoTests extends OctoSpec with DbSpec {
       tpd.saveUserToken("some-token", UserId(1))
     }.flatMap{_ =>
       tpd.userIdByToken("non-token")
-    }.failed.futureValue shouldBe an[Exception]
+    }.futureValue shouldBe None
   }
 
   it should "succeed if there is a user for the requested token" in {
@@ -64,6 +64,6 @@ class TokenPairDaoTests extends OctoSpec with DbSpec {
       tpd.saveUserToken("some-token", UserId(1))
     }.flatMap{_ =>
       tpd.userIdByToken("some-token")
-    }.futureValue shouldBe UserId(1)
+    }.futureValue shouldBe Some(UserId(1))
   }
 }

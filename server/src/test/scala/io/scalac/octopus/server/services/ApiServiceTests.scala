@@ -6,7 +6,6 @@ import domain.UserIdentity
 import io.scalac.octopus.server.OctoSpec
 import io.scalac.octopus.server.TestData._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
 import services.{ApiService, GithubApi}
 import tools.TimeHelpers._
 
@@ -16,7 +15,7 @@ import scalac.octopusonwire.shared.domain.EventJoinMessageBuilder._
 import scalac.octopusonwire.shared.domain.FailedToAdd._
 import scalac.octopusonwire.shared.domain.{UserInfo, _}
 
-class ApiServiceTests extends OctoSpec{
+class ApiServiceTests extends OctoSpec {
   val validId = UserIdentity("some-token", UserId(1))
   val mockEventSource: EventSource = new InMemoryEventSource with MockedEvents
 
@@ -27,7 +26,7 @@ class ApiServiceTests extends OctoSpec{
   "getUserInfo" should "fail for non-logged user" in {
     val apiService = new InMemoryApiService(None, mockGithubApi)
 
-    apiService.getUserInfo().failed.futureValue shouldBe an[Exception]
+    apiService.getUserInfo().futureValue shouldBe None
   }
 
   it should "work for logged user" in {
@@ -42,7 +41,7 @@ class ApiServiceTests extends OctoSpec{
       mockGh
     )
 
-    apiService.getUserInfo().futureValue shouldBe UserInfo(UserId(1), userName)
+    apiService.getUserInfo().futureValue shouldBe Some(UserInfo(UserId(1), userName))
   }
   it should "fail if token is wrong" in {
     val mockGh = mock[GithubApi]
@@ -60,47 +59,47 @@ class ApiServiceTests extends OctoSpec{
 
   "getUserEventInfo" should "fail for nonexistent event" in {
     val apiService = new InMemoryApiService(None, mockGithubApi)
-    apiService.getUserEventInfo(EventId(100)).failed.futureValue shouldBe an[Exception]
+    apiService.getUserEventInfo(EventId(100)).futureValue shouldBe None
   }
   it should "work if the event exists" in {
     val apiService = new InMemoryApiService(None, mockGithubApi)
-    apiService.getUserEventInfo(EventId(1)).futureValue shouldBe UserEventInfo(
+    apiService.getUserEventInfo(EventId(1)).futureValue shouldBe Some(UserEventInfo(
       DummyData.events.head,
       userJoined = false,
       11,
       eventActive = true
-    )
+    ))
   }
   it should "work if the user is logged but didn't join" in {
     val apiService = new InMemoryApiService(Some(validId), mockGithubApi)
 
-    apiService.getUserEventInfo(EventId(1)).futureValue shouldBe UserEventInfo(
+    apiService.getUserEventInfo(EventId(1)).futureValue shouldBe Some(UserEventInfo(
       DummyData.events.head,
       userJoined = false,
       11,
       eventActive = true
-    )
+    ))
   }
   it should "work if the user has joined event" in {
     val apiService = new InMemoryApiService(Some(validId), mockGithubApi)
     whenReady(apiService.joinEventAndGetJoins(EventId(1))) { z =>
-      apiService.getUserEventInfo(EventId(1)).futureValue shouldBe UserEventInfo(
+      apiService.getUserEventInfo(EventId(1)).futureValue shouldBe Some(UserEventInfo(
         DummyData.events.head,
         userJoined = true,
         12,
         eventActive = true
-      )
+      ))
     }
   }
   it should "work if the user is not logged in" in {
     val apiService = new InMemoryApiService(None, mockGithubApi)
     whenReady(apiService.joinEventAndGetJoins(EventId(1))) { z =>
-      apiService.getUserEventInfo(EventId(1)).futureValue shouldBe UserEventInfo(
+      apiService.getUserEventInfo(EventId(1)).futureValue shouldBe Some(UserEventInfo(
         DummyData.events.head,
         userJoined = false,
         11,
         eventActive = true
-      )
+      ))
     }
   }
 
@@ -210,7 +209,7 @@ class ApiServiceTests extends OctoSpec{
 
     when(es.countPastJoinsBy(validId.id)).thenReturnFuture(ReputationRequiredToAddEvents)
     when(uc.isUserTrusted(validId.id)).thenReturnFuture(false)
-    when(uc.getUserInfo(validId.id)).thenReturnFuture(UserInfo(validId.id, "some-user"))
+    when(uc.getUserInfo(validId.id)).thenReturnFuture(Some(UserInfo(validId.id, "some-user")))
 
     val api = new ApiService(Some(validId), es, uc)
     (api addEvent oldEvent).futureValue shouldBe FailedToAdd(EventCantEndInThePast)
@@ -222,7 +221,7 @@ class ApiServiceTests extends OctoSpec{
 
     when(es.countPastJoinsBy(validId.id)).thenReturnFuture(DefaultReputation)
     when(uc.isUserTrusted(validId.id)).thenReturnFuture(false)
-    when(uc.getUserInfo(validId.id)).thenReturnFuture(UserInfo(validId.id, "some-user"))
+    when(uc.getUserInfo(validId.id)).thenReturnFuture(Some(UserInfo(validId.id, "some-user")))
 
     val api = new ApiService(Some(validId), es, uc)
     (api addEvent getSampleValidEvent).futureValue shouldBe FailedToAdd(UserCantAddEventsYet)
@@ -237,7 +236,7 @@ class ApiServiceTests extends OctoSpec{
     when(es.countPastJoinsBy(validId.id)).thenReturnFuture(ReputationRequiredToAddEvents)
     when(es.addEvent(event)).thenReturnFuture(Added())
     when(uc.isUserTrusted(validId.id)).thenReturnFuture(false)
-    when(uc.getUserInfo(validId.id)).thenReturnFuture(UserInfo(validId.id, "some-user"))
+    when(uc.getUserInfo(validId.id)).thenReturnFuture(Some(UserInfo(validId.id, "some-user")))
 
     val api = new ApiService(Some(validId), es, uc)
 
@@ -253,17 +252,17 @@ class ApiServiceTests extends OctoSpec{
     when(es.countPastJoinsBy(validId.id)).thenReturnFuture(0)
     when(es.addEvent(event)).thenReturnFuture(Added())
     when(uc.isUserTrusted(validId.id)).thenReturnFuture(true)
-    when(uc.getUserInfo(validId.id)).thenReturnFuture(UserInfo(validId.id, "some-user"))
+    when(uc.getUserInfo(validId.id)).thenReturnFuture(Some(UserInfo(validId.id, "some-user")))
 
     val api = new ApiService(Some(validId), es, uc)
 
     (api addEvent event).futureValue shouldBe Added()
   }
 
-  "getUserReputation" should "throw exception if user not logged in" in {
+  "getUserReputation" should "fail if user not logged in" in {
     val es = mock[EventSource]
     val uc = mock[UserCache]
-    new ApiService(None, es, uc).getUserReputation().failed.futureValue shouldBe an[Exception]
+    new ApiService(None, es, uc).getUserReputation().futureValue shouldBe None
   }
 
   it should "work for logged in user" in {
@@ -272,9 +271,9 @@ class ApiServiceTests extends OctoSpec{
 
     when(uc.isUserTrusted(validId.id)).thenReturnFuture(false)
     when(es.countPastJoinsBy(validId.id)).thenReturnFuture(0)
-    when(uc.getUserInfo(validId.id)).thenReturnFuture(UserInfo(validId.id, "username"))
+    when(uc.getUserInfo(validId.id)).thenReturnFuture(Some(UserInfo(validId.id, "username")))
     new ApiService(Some(validId), es, uc).getUserReputation().futureValue shouldBe
-      UserReputationInfo("username", DefaultReputation, ReputationRequiredToAddEvents)
+      Some(UserReputationInfo("username", DefaultReputation, ReputationRequiredToAddEvents))
   }
 
   it should "work for trusted user" in {
@@ -283,9 +282,9 @@ class ApiServiceTests extends OctoSpec{
 
     when(uc.isUserTrusted(validId.id)).thenReturnFuture(true)
     when(es.countPastJoinsBy(validId.id)).thenReturnFuture(0)
-    when(uc.getUserInfo(validId.id)).thenReturnFuture(UserInfo(validId.id, "username"))
+    when(uc.getUserInfo(validId.id)).thenReturnFuture(Some(UserInfo(validId.id, "username")))
     new ApiService(Some(validId), es, uc).getUserReputation().futureValue shouldBe
-      UserReputationInfo("username", ReputationRequiredToAddEvents + DefaultReputation, ReputationRequiredToAddEvents)
+      Some(UserReputationInfo("username", ReputationRequiredToAddEvents + DefaultReputation, ReputationRequiredToAddEvents))
   }
 
   "flagEvent" should "not work for logged user" in {

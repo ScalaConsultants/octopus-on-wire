@@ -1,7 +1,6 @@
 package data
 
 import domain.UserIdentity
-import play.api.libs.json.JsValue
 import services.GithubApi
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -12,29 +11,32 @@ trait UserCache {
 
   def isUserTrusted(id: UserId): Future[Boolean]
 
-  def getUserInfo(id: UserId): Future[UserInfo]
+  def getUserInfo(id: UserId): Future[Option[UserInfo]]
 
   def saveUserInfo(userInfo: UserInfo): Future[Int]
 
-  def getUserIdByToken(token: String): Future[UserId]
+  def getUserIdByToken(token: String): Future[Option[UserId]]
 
   def saveUserToken(token: String, userId: UserId): Future[Int]
 
-  def getUserFriends(userId: UserId): Future[Set[UserId]]
+  def getUserFriends(userId: UserId): Future[Option[Set[UserId]]]
 
   def saveUserFriends(userId: UserId, friends: Set[UserId], token: String): Future[Unit]
 
   def getOrFetchUserInfo(id: UserId, tokenOpt: Option[String])(implicit ec: ExecutionContext): Future[UserInfo] =
-    getUserInfo(id).recoverWith { case _ =>
-      fetchUserInfo(id, tokenOpt).map { info =>
-        saveUserInfo(info)
-        info
-      }
+    getUserInfo(id).flatMap {
+      case Some(info) => Future.successful(info)
+      case None =>
+        fetchUserInfo(id, tokenOpt).map { info =>
+          saveUserInfo(info)
+          info
+        }
     }
 
   def getOrFetchUserId(token: String)(implicit ec: ExecutionContext): Future[UserId] =
-    getUserIdByToken(token).recoverWith {
-      case _ => fetchCurrentUserInfo(token).map { info =>
+    getUserIdByToken(token).flatMap {
+      case Some(id) => Future.successful(id)
+      case _ => fetchCurrentUserInfo(token).map { case info =>
         //update caches
         saveUserInfo(info)
         saveUserToken(token, info.userId)
@@ -46,11 +48,13 @@ trait UserCache {
     val UserIdentity(token, id) = userIdentity
     val dbFriends = getUserFriends(id)
 
-    dbFriends.recoverWith { case _ =>
-      fetchUserFriends(token).map { friends =>
-        saveUserFriends(id, friends, token)
-        friends
-      }
+    dbFriends.flatMap {
+      case Some(friends) => Future.successful(friends)
+      case None =>
+        fetchUserFriends(token).map { friends =>
+          saveUserFriends(id, friends, token)
+          friends
+        }
     }
   }
 

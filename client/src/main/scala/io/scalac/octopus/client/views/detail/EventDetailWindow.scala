@@ -15,7 +15,6 @@ import org.scalajs.dom.html.{Anchor, Div}
 import org.scalajs.dom.window.location
 import org.scalajs.dom.raw.HTMLElement
 
-import scala.annotation.tailrec
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.timers
 import scalac.octopusonwire.shared.domain.{Event, EventId, UserEventInfo, UserInfo}
@@ -29,8 +28,9 @@ object EventDetailWindow extends WindowOperations {
 
   var userInfo: Option[UserInfo] = None
 
-  /*failed case ignored because it's None by default*/
-  octoApi.getUserInfo().call().foreach { info => userInfo = Some(info) }
+  octoApi.getUserInfo().call().map(userInfo = _).recover{
+    case _ => println("Invalid GitHub token")
+  }
 
   protected var eventWindow: EventWindowOption = None
 
@@ -115,14 +115,14 @@ object EventDetailWindow extends WindowOperations {
           ).map(_.render)
       }
 
-      octoApi.getUserEventInfo(eventId).call().map { info =>
+      octoApi.getUserEventInfo(eventId).call().map {
+        case Some(info) =>
+          //clear window
+          while (window.childElementCount > 0)
+            window.removeChild(window.firstChild)
 
-        //clear window
-        while (window.childElementCount > 0)
-          window.removeChild(window.firstChild)
+          elemArrayFromUserEventInfo(info).foreach(window appendChild _)
 
-        elemArrayFromUserEventInfo(info).foreach(window appendChild _)
-      }.recover {
         case _ => println("No event found for id: " + eventId)
       }
 

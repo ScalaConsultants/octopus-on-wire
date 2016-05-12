@@ -70,9 +70,8 @@ object EventCalendarWindow extends WindowOperations {
           ).render
 
         ClientConfig.octoApi.getUserReputation().call().map {
-          case rep if rep.canAddEvents => addEventButton
-          case rep => joinEventsToAddView(rep)
-        }.recover {
+          case Some(rep) if rep.canAddEvents => addEventButton
+          case Some(rep) => joinEventsToAddView(rep)
           case _ => loginToAddEventButton
         }.foreach {
           window.replaceChild(_, window.childNodes(1))

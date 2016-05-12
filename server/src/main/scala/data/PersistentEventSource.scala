@@ -29,7 +29,7 @@ class PersistentEventSource @Inject()(events: EventDao, eventJoins: EventJoinDao
 
   override def getJoins(eventId: EventId): Future[Set[UserId]] = eventJoins.getJoiners(eventId)
 
-  override def eventById(id: EventId): Future[Event] = events.findEventById(id)
+  override def eventById(id: EventId): Future[Option[Event]] = events.findEventById(id)
 
   override def addEvent(event: Event): Future[EventAddition] =
     events.addEventAndGetId(event).map {

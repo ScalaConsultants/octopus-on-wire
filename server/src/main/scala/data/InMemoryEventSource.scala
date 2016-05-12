@@ -77,10 +77,7 @@ class InMemoryEventSource extends EventSource {
       else AlreadyJoined.apply
     }
 
-  override def eventById(id: EventId): Future[Event] = Future(getEvents find (_.id == id)) flatMap {
-    case Some(event) => Future.successful(event)
-    case None => Future.failed(new Exception("Event not found"))
-  }
+  override def eventById(id: EventId): Future[Option[Event]] = Future(getEvents find (_.id == id))
 
   override def countJoins(eventId: EventId): Future[Int] = Future(eventJoins.getOrElse(eventId, Nil).size)
 

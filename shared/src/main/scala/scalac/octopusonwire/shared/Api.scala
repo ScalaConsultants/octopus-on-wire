@@ -8,9 +8,9 @@ trait Api {
 
   def getEventsForRange(from: Long, to: Long): Future[Seq[Event]]
 
-  def getUserEventInfo(eventId: EventId): Future[UserEventInfo]
+  def getUserEventInfo(eventId: EventId): Future[Option[UserEventInfo]]
 
-  def getUserInfo(): Future[UserInfo]
+  def getUserInfo(): Future[Option[UserInfo]]
 
   def joinEventAndGetJoins(eventId: EventId): Future[EventJoinInfo]
 
@@ -20,5 +20,5 @@ trait Api {
 
   def flagEvent(eventId: EventId): Future[Boolean]
 
-  def getUserReputation(): Future[UserReputationInfo]
+  def getUserReputation(): Future[Option[UserReputationInfo]]
 }
